@@ -15,6 +15,14 @@ Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competiti
 
 ## 0. Goal of the demo (the vertical slice)
 
+### E3 — direct evaluation and workspace access — 2026-11-15
+
+**Implemented, Codex:** user explicitly requested removal of the evaluation token/private-link gate. Branch `codex/evals-direct-access`, isolated from fetched main `9899e8e` and the shared root's unrelated plan edit. Removed the gate from `/evals` and `/api/evals`, retaining server-only provider credentials/redaction and no-store responses, and updated access documentation. Evaluations, including transcripts/context, are accessible to anyone who can reach the app when this branch is served. No deployment or merge is included.
+
+**Scope extended by user and implemented:** removed `/team`'s personal-session-link form and expired-link prerequisite as well. `app/api/workspace-session/route.ts` automatically issues/reuses a separate browser device session in the first non-leader member's existing snapshot scope, verifies persisted read-back and recovers expired sessions. Leader verification, recording consent and provider start controls remain enforced. This shares that member's workspace permissions with app visitors; automatic connection does not verify a visitor's identity or start a call.
+
+**Verified on 2026-11-15:** 220/220 synthetic tests, both typechecks, production build, 46 local documentation links and whitespace checks pass. Isolated production HTTP checks pass for direct eval reads, session issuance/reuse, member identity and leader denial, board/API authentication, voice-consent refusal and no automatic call/consent creation. Client regression covers coalesced starts and renewal without session storage. No live provider/storage read, browser/hardware/audio QA, merge or deployment was performed. Shared root edits/services were preserved. Next: review/merge this branch and release it through the existing deployment process.
+
 > **One approved Wispr meeting → one codebase finding → one exact code pointer → one personalized Bolna call → one verifiably saved action.**
 
 Demo script (≈90 s, must be >45 s on Bolna's own log):
