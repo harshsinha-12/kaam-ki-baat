@@ -29,7 +29,7 @@ const AREA = new Map(S.areas.map((a) => [a.id, a]));
 const PR_INDEX = new Map(S.prs.map((p, i) => [p.number, i]));
 
 const SUGGESTIONS = [
-  "Code freeze kab hai — who decided?",
+  "Code freeze kab hai, who decided?",
   "Where is a decision saved in the code?",
   "Why doesn't my head turn pick the agent?",
   "Who approves when the leader wasn't clear?",
@@ -132,7 +132,7 @@ export function Story() {
             </h1>
             <p style={{ color: MUTED, maxWidth: 760, margin: 0, lineHeight: 1.55 }}>
               Each dot on the line is a pull request merged into main. The lanes below show which part of the product it changed.
-              Ask where something comes from, and the trail lights up from where it started to the latest change — the same answer the voice agent gives.
+              Ask where something comes from, and the trail lights up from where it started to the latest change. It is the same answer the voice agent gives.
             </p>
           </div>
           <dl style={{ display: "grid", gridTemplateColumns: "repeat(4, auto)", gap: "4px 28px", margin: 0 }}>
@@ -144,7 +144,7 @@ export function Story() {
 
         {/* ask */}
         <form onSubmit={(e) => { e.preventDefault(); if (q.trim()) ask(q.trim()); }} style={{ display: "flex", gap: 8, marginTop: 26, flexWrap: "wrap" }}>
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask where something comes from — e.g. “who approves when the leader wasn't clear?”" aria-label="Ask where something comes from"
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask where something comes from, e.g. “who approves when the leader wasn't clear?”" aria-label="Ask where something comes from"
             style={{ flex: "1 1 420px", padding: "12px 16px", borderRadius: 999, border: `1px solid ${LINE}`, background: PANEL, color: INK, fontSize: 14 }} />
           <button type="submit" style={{ ...btn, background: INK, color: BG, border: 0, fontWeight: 650 }}>Trace it</button>
           <button type="button" onClick={playStory} style={btn}>▶ Play the story</button>
@@ -236,7 +236,7 @@ export function Story() {
               <>
                 <div style={{ fontSize: 12, letterSpacing: ".12em", textTransform: "uppercase", color: MUTED }}>How to read it</div>
                 <p style={{ lineHeight: 1.6, margin: "10px 0 0", color: "#cfcabe" }}>
-                  Left to right is time. Click a lane — <b style={{ color: INK }}>Team Memory</b>, <b style={{ color: INK }}>Leader Desk</b>, <b style={{ color: INK }}>Code Navigator</b> — to see every change that shaped it.
+                  Left to right is time. Click a lane (<b style={{ color: INK }}>Team Memory</b>, <b style={{ color: INK }}>Leader Desk</b>, <b style={{ color: INK }}>Code Navigator</b>) to see every change that shaped it.
                   Click a dot on the top line to read one pull request. Or press <b style={{ color: INK }}>Play the story</b> for the six chapters.
                 </p>
               </>
@@ -270,7 +270,7 @@ export function Story() {
                   {S.areas.map((a) => (
                     <button key={a.id} onClick={() => pickArea(a.id)} style={{ display: "flex", gap: 10, alignItems: "baseline", background: "none", border: 0, padding: 0, color: INK, cursor: "pointer", textAlign: "left", font: "inherit", fontSize: 13.5 }}>
                       <span style={{ width: 8, height: 8, borderRadius: 8, background: a.color, flex: "none", transform: "translateY(-1px)" }} />
-                      <span><b style={{ fontWeight: 600 }}>{a.label}</b> <span style={{ color: MUTED }}>— {a.plain}</span></span>
+                      <span><b style={{ fontWeight: 600 }}>{a.label}</b> <span style={{ color: MUTED }}>· {a.plain}</span></span>
                     </button>
                   ))}
                 </div>

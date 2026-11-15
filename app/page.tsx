@@ -2,7 +2,7 @@ import Landing from "./landing/Landing";
 import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "Kaam Ki Baat — Meeting mein bola. Repo mein bana?",
+  title: "Kaam Ki Baat: Meeting mein bola. Repo mein bana?",
   description: "A voice teammate that remembers what your team decided, asks the leader when it doesn't know, and points to the exact line of code.",
 };
 

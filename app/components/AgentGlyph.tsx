@@ -1,8 +1,8 @@
 // Agent mascot (after the Air Agents app): a soft, rounded hexagon with glossy
 // eyes that blink, look toward where you are, and float a little when active.
 // One colour per zone, used everywhere the zone appears (docs/design/colors.md).
-export const ZONE_COLOR = { team_memory: "#7cc4ff", leader_desk: "#f5c451", code_navigator: "#ff8a65" } as const;
-const ZONE_DEEP = { team_memory: "#3d8fd6", leader_desk: "#d99a1e", code_navigator: "#e0603d" } as const;
+export const ZONE_COLOR = { team_memory: "#9cc4ee", leader_desk: "#ecc87a", code_navigator: "#eba08a" } as const;
+const ZONE_DEEP = { team_memory: "#4f86c2", leader_desk: "#b98a2e", code_navigator: "#b9614b" } as const;
 export type GlyphZone = keyof typeof ZONE_COLOR;
 
 // Hexagon with rounded corners: each corner is a quadratic curve through the vertex.
@@ -24,7 +24,7 @@ export function AgentGlyph({ zone, size = 40, active = false, look = 0, reduced 
   const dx = look * 3.2;
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden
-      style={{ overflow: "visible", filter: active ? `drop-shadow(0 10px 18px ${c}55)` : "drop-shadow(0 4px 8px rgba(0,0,0,.35))", transition: "filter .5s" }}>
+      style={{ overflow: "visible", filter: active ? `drop-shadow(0 8px 16px ${c}40)` : "drop-shadow(0 4px 8px rgba(0,0,0,.35))", transition: "filter .5s" }}>
       <defs>
         <radialGradient id={`${id}-g`} cx="35%" cy="28%" r="80%">
           <stop offset="0" stopColor="#ffffff" stopOpacity=".55" />

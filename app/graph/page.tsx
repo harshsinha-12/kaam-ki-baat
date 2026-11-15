@@ -1,6 +1,6 @@
 import { Explorer } from "./Explorer";
 
-export const metadata = { title: "Code graph — Kaam Ki Baat", description: "Search this repository in plain words and see how the Code Navigator finds the answer." };
+export const metadata = { title: "Code graph · Kaam Ki Baat", description: "Search this repository in plain words and see how the Code Navigator finds the answer." };
 
 export const dynamic = "force-dynamic";
 

@@ -32,11 +32,11 @@ const CAPTIONS: Record<string, string> = {
   agent: "Kaam Ki Baat cleans it up and resolves “woh bug” to his task.",
   tm: "Left: Team Memory checks what the team actually decided.",
   wispr: "It reads the approved meeting through the Wispr MCP.",
-  meet: "Source found: Charan, line kkb#18 — Harsh owns the fix.",
+  meet: "Source found: Charan, line kkb#18. Harsh owns the fix.",
   cn: "Right: the Code Navigator takes over.",
   graph: "It walks this repo's code graph instead of grepping.",
   file: "Lands on lib/core/persist-update.ts at the pinned commit.",
-  fn: "persistVerifiedUpdate — the timeout and read-back lines get boxed.",
+  fn: "persistVerifiedUpdate: the timeout and read-back lines get boxed.",
   test: "Its regression test is the way to check the fix.",
   pr: "Fix on a branch, PR against main, merged only after checks pass.",
 };
@@ -180,7 +180,7 @@ export function DemoGraph({ graph }: { graph: Graph }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 0, borderRadius: 28, overflow: "hidden", marginTop: 40,
       background: "#000", border: "1px solid #1d1d1b" }}>
       <div style={{ padding: "36px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
-        <div style={{ color: "#f0d35c", fontSize: 14, fontWeight: 600 }}>Live demo graph</div>
+        <div style={{ color: "#8a8a8a", fontSize: 14, fontWeight: 500 }}>Live demo graph</div>
         <div style={{ fontFamily: "var(--serif)", fontSize: "clamp(30px, 3.4vw, 46px)", lineHeight: 1.05, color: C.ink }}>Every answer walks a path you can see.</div>
         <p style={{ color: "#aaa69a", lineHeight: 1.6, fontSize: 15.5, margin: 0 }}>
           One question, traced end to end: from voice, to the meeting line that decided it, to the exact function in this repo, to the branch that fixes it.

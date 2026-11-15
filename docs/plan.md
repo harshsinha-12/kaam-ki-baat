@@ -19,6 +19,12 @@ Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competiti
 - Removed only the lower `GraphSection` presentation, its unused imports/styles, and dead `#graph` nav anchor; retained `DemoGraph` at `#demo`, `CodeNav`, `/graph`, and the authenticated code-graph APIs.
 - Added `tests/landing-single-graph.test.ts` to prevent the duplicated landing section from returning. CI/build and deployed-render verification must be checked after the PR.
 
+## UI redesign: landing, nav and workspace (Claude, 2026-11-16)
+
+- Requested by the user (Charan): rebuild the landing page and `/team` workspace for a calmer, human design system modelled on cardboard.ai (true black, Instrument Serif headlines, Geist UI type, solid 12px buttons, colour only for the active agent), remove em dashes from UI copy, add a scrollspy toggle nav, arrow-key agent switching, a "For leads" section (Bolna team check + code graph walk), and an aligned sidebar workspace. The user explicitly authorized merging this PR so it goes live.
+- Branch `claude/ui-redesign`. Files: `app/landing/*`, `app/team/page.tsx`, `app/zones/zones.module.css`, `app/components/{spatial,code-source,webcam}.module.css`, `AgentGlyph.tsx` colours, `app/layout.tsx` fonts, em-dash copy fixes across `app/**`. No `lib/**` behaviour changed.
+- Verification: CI (typecheck, tests, build) and the Vercel preview are the checks; no local `npm ci` was possible in this session (no registry access). Workspace logic, API calls and keyboard focus controls are unchanged; only layout and styles moved.
+
 ## 0. Goal of the demo (the vertical slice)
 
 ### E3 — direct evaluation and workspace access — 2026-11-15

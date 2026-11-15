@@ -1,7 +1,7 @@
 import React from "react";
 import { ImageResponse } from "next/og";
 
-export const alt = "Kaam Ki Baat — Meeting mein bola. Repo mein bana? A voice teammate connecting team decisions to code.";
+export const alt = "Kaam Ki Baat: Meeting mein bola. Repo mein bana? A voice teammate connecting team decisions to code.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
