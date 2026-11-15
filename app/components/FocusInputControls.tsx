@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BrowserFocusController } from "@/lib/focus/browser-controller";
 import type { ConfirmedFocus, FocusSnapshot } from "@/lib/focus/input-contracts";
-import { FOCUS_PROVIDERS, type FocusProvider, type Zone } from "@/lib/zones/contracts";
+import type { FocusProvider, Zone } from "@/lib/zones/contracts";
+import { WebcamHeadTracker, type WebcamTrackingStatus } from "./WebcamHeadTracker";
 import { sessionToken } from "../zones/client";
 import styles from "./spatial.module.css";
 
@@ -18,6 +19,7 @@ export function FocusInputControls({ onConfirmedFocus }: { onConfirmedFocus: (fo
   const [connection, setConnection] = useState("disconnected");
   const [error, setError] = useState("");
   const [changing, setChanging] = useState(false);
+  const [webcamStatus, setWebcamStatus] = useState<WebcamTrackingStatus>("idle");
   const controller = useRef<BrowserFocusController | null>(null);
   const confirmedCallback = useRef(onConfirmedFocus);
   confirmedCallback.current = onConfirmedFocus;
@@ -44,6 +46,7 @@ export function FocusInputControls({ onConfirmedFocus }: { onConfirmedFocus: (fo
           headers: { Authorization: `Session ${deviceToken}`, "Content-Type": "application/json" },
           ...(body ? { body: JSON.stringify(body) } : {}),
         });
+        if (!response.headers.get("content-type")?.includes("application/json")) throw new Error("Focus service unavailable. Reconnect when the service is ready.");
         const value = await response.json() as Record<string, unknown>;
         if (!response.ok || value.ok !== true) {
           if (alive && [401, 403].includes(response.status)) { setConnection("unavailable"); setAccess(null); }
@@ -118,11 +121,13 @@ export function FocusInputControls({ onConfirmedFocus }: { onConfirmedFocus: (fo
 
   const provider = snapshot?.input.provider ?? "manual";
   const focus = snapshot?.focus;
+  const currentSelection = !!focus?.zone && focus.provider === provider && focus.inputEpoch === snapshot?.input.epoch;
   const zoneAccess = focus?.zone ? access?.[focus.zone] : null;
   const airpods = snapshot?.status;
   const airpodsFresh = airpods?.fresh && Date.now() - Date.parse(airpods.receivedAt) <= 6000;
+  const webcamLease = controller.current?.lease;
   return <section className={styles.inputPanel} aria-label="Focus input controls">
-    <h3>Focus input</h3>
+    <div className={styles.inputTop}><div><span className={styles.eyebrow}>Workspace control</span><h3>Focus input</h3></div><span className={styles.connectionBadge} data-state={connection}>{changing ? "Switching…" : connection}</span></div>
     {!deviceToken ? <form className={styles.connect} onSubmit={e => {
       e.preventDefault(); const token = draft.trim(); setDeviceToken(token); setDraft("");
       try { sessionStorage.setItem("kkb_session", token); } catch { /* private mode */ }
@@ -134,21 +139,25 @@ export function FocusInputControls({ onConfirmedFocus }: { onConfirmedFocus: (fo
     </form> : <>
       <fieldset className={styles.inputSelector} disabled={connection !== "connected" || changing}>
         <legend>Choose one input</legend>
-        {FOCUS_PROVIDERS.map(input => <label key={input}><input type="radio" name="focus-input" checked={provider === input} onChange={() => void switchInput(input)} /> {input === "manual" ? "Manual" : input === "webcam" ? "Webcam" : "AirPods"}</label>)}
+        {(["manual", "webcam", "airpods"] as const).map(input => <label key={input} className={styles.inputChoice} data-active={provider === input}><input type="radio" name="focus-input" aria-label={input === "manual" ? "Manual" : input === "webcam" ? "Webcam" : "AirPods"} checked={provider === input} onChange={() => void switchInput(input)} /><span><strong>{input === "manual" ? "Manual" : input === "webcam" ? "Webcam" : "AirPods"}</strong><small>{input === "manual" ? "Keyboard & click" : input === "webcam" ? "Local head tracking" : "macOS companion"}</small></span></label>)}
       </fieldset>
-      <p role="status" aria-live="polite">Connection: {connection}{changing ? " · switching input…" : ""} · Selected zone: {focus?.zone ? ZONE_LABELS[focus.zone] : "none confirmed"}
+      <p className={styles.focusReadout} role="status" aria-live="polite">Selected zone: <strong>{currentSelection && focus?.zone ? ZONE_LABELS[focus.zone] : "awaiting this input"}</strong>
+        {!currentSelection && focus?.zone ? ` · Last confirmed: ${ZONE_LABELS[focus.zone]} (${focus.provider})` : ""}
         {zoneAccess && !zoneAccess.allowed ? ` · locked: ${zoneAccess.reason}` : ""}</p>
       {provider === "manual" && <>
-        <p>Permission: no motion permission needed · Calibration: not required. Use ← / ↑ / → to select, then Enter or Activate.</p>
-        <div className={styles.manualZones} aria-label="Select a zone">{(["team_memory", "leader_desk", "code_navigator"] as const).map((zone, i) => <button key={zone} disabled={connection !== "connected" || changing} aria-pressed={focus?.zone === zone} onClick={() => select(zone)}>{["←", "↑", "→"][i]} {ZONE_LABELS[zone]}</button>)}</div>
+        <p className={styles.provenance}>Permission: no motion permission needed · Calibration: not required. Use ← / ↑ / → to select, then Enter or Activate.</p>
+        <div className={styles.manualZones} aria-label="Select a zone">{(["team_memory", "leader_desk", "code_navigator"] as const).map((zone, i) => <button key={zone} disabled={connection !== "connected" || changing} aria-pressed={currentSelection && focus?.zone === zone} onClick={() => select(zone)}>{["←", "↑", "→"][i]} {ZONE_LABELS[zone]}</button>)}</div>
       </>}
-      {provider === "webcam" && <p>Webcam controls are being integrated. Permission and calibration are required before selection.</p>}
+      {provider === "webcam" && <>
+        <p className={styles.provenance}>Permission: {["tracking", "calibrating", "lost"].includes(webcamStatus) ? "camera granted" : webcamStatus === "unavailable" ? "unavailable — see camera status" : "requested when you start camera"} · Calibration: {webcamStatus === "tracking" ? "calibrated" : webcamStatus === "lost" ? "tracking lost; no new selection" : "not confirmed"}</p>
+        <WebcamHeadTracker key={snapshot?.input.epoch} disabled={connection !== "connected" || changing} onStatusChange={setWebcamStatus} onSelect={zone => select(zone, webcamLease)} />
+      </>}
       {provider === "airpods" && <div>
         <p>AirPods: {!airpodsFresh ? "unavailable — no fresh companion heartbeat" : airpods!.state.replaceAll("_", " ")} · Permission: {!airpodsFresh ? "unknown" : ["denied", "permission_required"].includes(airpods!.state) ? airpods!.state.replaceAll("_", " ") : "reported by companion"} · Calibration: {airpodsFresh && airpods?.calibrated ? "calibrated" : "not confirmed"}</p>
         <p>Open the macOS companion with the same device session. Start motion and recenter there. Head turns select only.</p>
       </div>}
-      <div className={styles.callControls}>
-        <button disabled={connection !== "connected" || changing || !focus?.zone || !zoneAccess?.allowed} onClick={() => void controller.current?.activate().catch(e => setError(e.message))}>Activate {focus?.zone ? ZONE_LABELS[focus.zone] : "selected zone"}</button>
+      <div className={styles.focusActions}>
+        <button className={styles.activateButton} disabled={connection !== "connected" || changing || !currentSelection || !zoneAccess?.allowed} onClick={() => void controller.current?.activate().catch(e => setError(e.message))}>Activate {currentSelection && focus?.zone ? ZONE_LABELS[focus.zone] : "selected zone"}</button>
         <span>Active zone: {focus?.activeZone ? ZONE_LABELS[focus.activeZone] : "none"}</span>
         <button onClick={() => void disconnect()} disabled={changing}>Disconnect focus controls</button>
         {connection === "unavailable" && <button onClick={forget}>Forget unavailable session</button>}
