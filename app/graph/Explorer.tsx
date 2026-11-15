@@ -146,7 +146,7 @@ export function Explorer() {
   }, []);
 
   const runSearch = useCallback((text = q, m = mode) => {
-    const h = search(IDX, G, text, m, 8);
+    const h = search(IDX, G as unknown as Parameters<typeof search>[1], text, m, 8);
     setHits(h); setSelected(h[0] ? byId.get(h[0].id) ?? null : null);
     highlight.current = new Set(h.slice(0, 1).map((x) => x.id));
     if (h[0]) flyTo([h[0].id], 1.8);
