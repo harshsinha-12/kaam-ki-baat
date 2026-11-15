@@ -4,6 +4,42 @@ A voice teammate that connects what a team agreed in a meeting with what its Git
 
 **Stage:** the application core, four runtime tools, evidence specialists and GitHub adapter are implemented. Current demo work and exact verification results are tracked in [the plan](docs/plan.md). Real calls, agent changes, deployment, and merging each need a separate instruction.
 
+> **Meeting mein bola. Repo mein bana?** *(Said in the meeting. Built in the repo?)*
+
+![Live demo graph: one question traced from voice to the meeting line to the exact function and the fix PR](docs/images/demo-graph.png)
+
+## The problem
+
+Teams decide things out loud and then lose them. A week later nobody can say who owns a task, whether the code exists, whether it merged, or whether the tests passed on the latest commit. So someone pings the lead and waits, or guesses, and the guess ships.
+
+- **55%** of people say next steps are unclear when a meeting ends ([Microsoft Work Trend Index 2023](https://www.microsoft.com/en-us/worklab/work-trend-index/will-ai-fix-work), 31,000 workers).
+- **69%** of developers lose 8+ hours a week to inefficiencies ([Atlassian × DX, State of DevEx 2024](https://www.atlassian.com/blog/development/developer-experience-report-2024)).
+- **61%** of developers spend 30+ minutes a day searching for answers; 53% say waiting on answers disrupts their flow ([Stack Overflow Developer Survey 2024](https://survey.stackoverflow.co/2024/professional-developers)).
+
+![The problem, in numbers](docs/images/problem-stats.png)
+
+## What it does
+
+Call it and ask, in Hindi, English or both. Three agents sit around you; a head turn (AirPods or webcam), a tap, or the **A** / **L** keys picks one:
+
+| | Agent | Answers | Never does |
+| --- | --- | --- | --- |
+| ← left | **Team Memory** | what was decided, by whom, with the exact meeting line (Wispr MCP) | guess — unknowns become a question for the lead |
+| ↑ front | **Leader Desk** | the lead's inbox of open questions; approvals are versioned and read back | open for anyone but the lead, on their own device, with Touch ID |
+| right → | **Code Navigator** | the exact file, function and lines at a pinned commit, from a graph of this repo, with the reasoning | edit, merge or deploy |
+
+| You ask | The agent answers |
+| --- | --- |
+| ![Asking](docs/images/hero-asking.png) | ![Answering](docs/images/hero-answer.png) |
+
+![How it hears: Wispr-style cleanup, meaning, evidence, answer](docs/images/how-it-hears.png)
+
+![The repo as a code graph, with an explained path](docs/images/code-graph.png)
+
+**Rules it won't break:** proposed is not accepted · an open PR is not merged · a test on an older commit is stale · "saved" only after the change is read back · a head turn only selects, it never proves who you are.
+
+Live site: <https://kaam-ki-baat-one.vercel.app/> · Demo meeting and three-call test plan: [docs/demo/meeting-notes.md](docs/demo/meeting-notes.md)
+
 ## Start here (plain version)
 
 1. Read [architecture.md](docs/architecture.md). It explains the problem, the direction, and the build order.
