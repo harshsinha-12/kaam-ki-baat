@@ -119,7 +119,8 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
     }
     case "get_task_evidence": {
       // Authorization first: naming a task you can't see is refused before any routing.
-      if ((body.task_id ?? body.taskId) && !pickTask(rt, caller, body.task_id ?? body.taskId))
+      const task = pickTask(rt, caller, body.task_id ?? body.taskId);
+      if ((body.task_id ?? body.taskId) && !task)
         return { status: 403, body: { ok: false, error: "task not authorized", speak: "That task isn't one I can share with you." } };
       // Understand the words first (clean fillers/self-corrections, resolve "woh"), then
       // pick the agent: explicit focus > what the words ask for > zone activated on screen.
