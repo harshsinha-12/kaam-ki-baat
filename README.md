@@ -4,6 +4,10 @@ A voice teammate that connects what a team agreed in a meeting with what its Git
 
 **Stage:** planning, handoff integration, and MCP setup. Application implementation is on hold while further context is being supplied.
 
+## Working with coding agents
+
+Start with [AGENTS.md](AGENTS.md) for the required instruction reads, implementation and Git checks, contributor coordination, and handoff workflow. [CLAUDE.md](CLAUDE.md) directs Claude clients to the same instructions. Keep [the plan](docs/plan.md) current as work progresses; verify its status against the checkout before acting.
+
 ## Project notes
 
 - [Context](docs/context.md): purpose, proposed MVP, and open decisions.
