@@ -1,4 +1,4 @@
-import { createHash, createPublicKey, randomBytes, verify as cryptoVerify } from "node:crypto";
+import { createHash, createPublicKey, randomBytes, verify as cryptoVerify, type JsonWebKey as NodeJwk } from "node:crypto";
 import type { EventStore } from "../store/event-store";
 import type { Actor } from "./identity";
 import { ev, zoneEvents } from "./state";
@@ -125,7 +125,7 @@ export async function assertPasskey(store: EventStore, actor: Actor, body: Recor
   const err = checkAuthData(ad, cfg);
   if (err) return { ok: false as const, reason: err };
   const signed = Buffer.concat([authData, sha256(clientData)]);
-  const key = createPublicKey({ key: cred.jwk, format: "jwk" });
+  const key = createPublicKey({ key: cred.jwk as NodeJwk, format: "jwk" });
   if (!cryptoVerify("sha256", signed, { key, dsaEncoding: "der" }, fromB64u(body.signature))) return { ok: false as const, reason: "signature invalid" };
   if (ad.signCount !== 0 && ad.signCount <= cred.signCount) return { ok: false as const, reason: "sign counter did not increase (possible cloned key)" };
   const expiresAt = new Date(Date.now() + 10 * 60_000).toISOString();
