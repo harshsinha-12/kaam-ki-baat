@@ -52,6 +52,10 @@ Wispr authorization is account-wide, with no per-meeting OAuth consent. Kaam Ki 
 
 ## Developer tools and telephone runtime
 
+### Graphify code context — 2026-11-15
+
+The user requested Graphify for codebase knowledge transfer and linking context. Graphify is an optional local build tool, not a registered MCP server or a telephone provider. Official documentation and export source were inspected, then Graphify **0.9.100** was run with an isolated Python 3.12 tool environment against the pinned fixture code: **147 usable nodes, 330 edges, 27 code files**. Import and Code Scout retrieval returned exact source locations and relationship confidence. Generated artifacts remain ignored under `data/private/`. No meeting was imported, external Graphify account connected or Bolna agent changed. Runtime setup and boundaries are in [code context](code-context.md). End-to-end voice latency remains unmeasured.
+
 ### Spatial browser compatibility — 2026-11-15
 
 Bolna MCP documentation reads and public SDK source inspection established a supported design path: `@bolna/web-call` for browser audio, custom HTTP functions for scoped page context and commands, and our own browser action/acknowledgement relay. The portfolio instead uses WebRTC with an OpenAI data channel for its direct tool loop. No equivalent direct function-call/context-update channel appears in Bolna's current public SDK surface. See [spatial browser implementation and setup](bolna/spatial-browser.md) for pinned sources, the session-endpoint documentation discrepancy, and exact verification limits. These were documentation/source reads, not provider session/call tests. No OpenAI runtime was added. AirPods head motion remains deferred as the user requested.

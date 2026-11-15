@@ -25,6 +25,7 @@ Demo script (≈90 s, must be >45 s on Bolna's own log):
 | `codex/demo-readiness` (**PR #8**) | Merged into `main` at `4d72575` on 2026-11-15. | User |
 | `docs/spatial-live-context-v2` (**PR #9**) | Merged into `main` at `c64d8bc` on 2026-11-15. Documentation only. | User |
 | `codex/spatial-website-agent` (**PR #10**) | Merged into `main` at `f7100a6` on 2026-11-15. | User |
+| `codex/graphify-context` ([PR #15](https://github.com/harshsinha-12/kaam-ki-baat/pull/15)) | G2: optional Graphify retrieval for code knowledge transfer, based on fetched `origin/main` `2dcbf07` after preserving PRs #11/#12/#14. | User |
 | `claude/<topic>` | Claude lane work → PR into `main` | — |
 | `codex/<topic>` | Codex lane work → PR into `main` | — |
 
@@ -54,7 +55,7 @@ Bolna call ──POST /api/tools/{tool} (Bearer KKB_TOOL_KEY, body.call_token)�
 Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 ```
 
-- **Code Scout** — keyword scan of snapshot files at the pinned SHA. `confirmed` only if the file is changed in the task's PR; otherwise `candidate`.
+- **Code Scout** — on G2, an optional Graphify index retrieves source symbols plus bounded one-hop dependencies; missing/stale/unmatched graphs fall back to the keyword scan. Direct matches are `confirmed` only if their file is changed in the task's PR. Graph-related matches stay `candidate`. See [code context](code-context.md).
 - **Fix Navigator** — target file + enclosing function + line + nearest test + `npm test -- <file>`; GitHub permalinks pinned to SHA. Never edits code.
 - **Evidence Verifier** — `lib/core/reconcile.ts` (deterministic): ownership state, PR open/merged, checks on the *current* SHA vs stale, last saved update. Never says "works in production".
 
@@ -100,6 +101,12 @@ User explicitly authorized conflict resolution and merge. Integrated incoming ma
 
 `npm ci`, 83/83 synthetic tests, full typecheck, production build and `npm run smoke:zones` pass locally. The HTTP smoke starts its own temporary production server/synthetic store, verifies leader gates and persisted read-back through a fresh store instance, and shuts it down; it does not touch the private live server or contact a provider. Install audit reports existing Next/PostCSS advisories whose suggested fix is a major Next upgrade; no forced framework upgrade was applied during this merge. Live microphone, provider calls, hardware gestures and passkeys remain unverified.
 
+## 3d. Graphify code context — 2026-11-15
+
+Implemented on `codex/graphify-context` (implementation `3ede500` and setup/device provenance `1df9e1f`, rebased onto fetched `origin/main` `2dcbf07`; follow-up grounding in `lib/evidence/code-graph.ts`, `tests/graphify-context.test.ts` and [setup](code-context.md)). This is branch evidence, not a merge or deployment claim. `context:build` verifies selected code against the pinned Git commit, stages only those files, runs local code-only Graphify extraction, and atomically writes an ignored graph. A repository/SHA/content-bound index supports bounded source/dependency retrieval with keyword fallback. A curated task term must match a source label/path before graph traversal; generic questions cannot create a code link for an unrelated task. Graph provenance reaches both phone-task evidence and the device Code Navigator. Meeting and task authorization remain in the existing server-owned tools.
+
+Verification: **95/95 tests pass**, full `npm run typecheck`, production `npm run build`, local documentation links and `git diff --check` pass. Real Graphify **0.9.100** extraction against the existing fixture snapshot at `63317bd` produced **147 nodes, 330 edges, 27 code files**; the task-linked query returned `persistVerifiedUpdate`, callers and helpers with pinned excerpts. The fixture demo passed with the graph enabled, including idempotent save/read-back in an in-memory store. A deliberate source-byte mismatch was rejected before extraction and preserved the prior output. Graph outputs are ignored and not committed. No live meeting import, agent change, provider call, browser visual QA, hardware gesture test or voice-latency measurement was run for G2. Enable `KKB_CODE_GRAPH` for the chosen snapshot and restart; rebuild whenever that snapshot changes.
+
 ## 4. Task board
 
 Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in place.
@@ -119,6 +126,7 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | code on `main` via PR #8 (`4d72575`); three-card visual QA not repeated at `f7100a6` | Screenshot in PR |
 | S1 | Bolna spatial browser workspace: meeting context on left, code on right, shared page state and validated browser actions; browser controls first, AirPods later | Codex | merged at `f7100a6` (PR #10). Connect form rendered locally; live validation pending B2/B3 | 50/50 tests this session. Optional six-function config supported; no agent changed or call started |
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
+| G2 | Optional Graphify code graph → bounded, SHA-pinned code retrieval for meeting/task knowledge transfer | Codex | implemented and pushed through `8dedcae`; [PR #15](https://github.com/harshsinha-12/kaam-ki-baat/pull/15) open, merge remains with user | 95/95 tests, full typecheck/build, real local fixture extraction/retrieval, graph-enabled dry run and setup docs; §3d |
 
 | Z1 | Zones backend: roles + step-up, focus/activation gate, Team Memory, tickets → leader resolve → delivery/ack, live utterances, code-location pinning, callback dedupe, `request_clarification` phone tool | Claude | done (`claude/leader-escalation-backend`) | 75/75 tests incl. acceptance flow |
 | Z2 | Run `npm ci && npm run typecheck && npm run build` + HTTP smoke for `/api/zones/*` on a machine with registry access | Codex | verified locally on PR #11 review: npm ci, 83/83 tests, full typecheck, build and isolated HTTP smoke pass; merged in PR #11 at `f4b1e71` | Results in §3 |
@@ -142,6 +150,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 
 - 2026-11-15 · Codex · Integrated incoming PR #14 documentation merge `99d0f78` during M12 review. Preserved its E1 task claim and evaluation checkpoint alongside the verified LIVE setup. No application files changed in this documentation merge; prior 86-test/typecheck/build/HTTP validation remains applicable. Calls remain held.
 
+- 2026-11-15 · Codex · G2 implemented: local Graphify build from selected pinned code, validated graph sidecar, cached bounded retrieval with keyword fallback, directed relationship confidence, phone/device provenance and a developer KT query. Preserved incoming leader/live-demo/evaluation changes when rebasing onto `2dcbf07`, kept D-038's call hold and assigned Graphify D-039. Extended the incoming curated-task grounding rule to graph retrieval. 95/95 tests, typecheck, production build, local links and whitespace pass. Actual Graphify 0.9.100 fixture extraction/retrieval and graph-enabled dry run passed. No approved meeting or provider call was used for G2. Setup and evidence in §3d and `docs/code-context.md`.
+
 - 2026-11-15 · E1 claimed · Codex is extending the existing recorder on `feat/post-call-evaluation` from `17de40b`. This planning checkpoint contains no new evaluator implementation. Parallel agents own evaluator/types, private storage/CLI, and tests; parent owns integration/docs. No real calls or provider changes authorized by this task.
 
 - 2026-11-15 · Codex · M12 integration validated: 86/86 tests, full typecheck, production build, isolated zones HTTP smoke, local documentation links and whitespace pass. Added a regression that retains the leader’s saved answer while asking only for a possible code match on an unlinked task. Main’s zone/backend fixes, blank-path helper/test and stable decision IDs remain intact. No private data imported, provider configuration changed, call started or deployment performed during merge review. Updated-head CI and merge remain pending.
@@ -153,6 +163,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 - 2026-11-15 · Codex · User explicitly authorized resolving and merging PR #11. Claimed Z2 and conflict/CI review on `codex/review-leader-backend`; fetched current main, inspected PR context, preserved the live-demo/readiness branches, and identified the callback test type errors. Reviewing authorization/source boundaries before merge. Calls remain held for one final specific participant confirmation.
 
 - 2026-11-15 ~15:00 · Claude · `claude/leader-escalation-backend` from `main` `f7100a6` (baseline 50/50 tests, core typecheck clean, demo:dry OK; `npm ci`/build not runnable in sandbox). Added `lib/zones/` (server-owned roles, device sessions, leader step-up, focus/activation gate where head turns only select, Team Memory with approved-only answers + Hinglish self-correction, clarification tickets with idempotency and a state machine, leader resolution with optimistic versioning + read-back + context version, delivery after reconnect, opt-in live-STT ingestion with consent/dedupe/seq/provisional/revocation, SHA-pinned code locations with range verification, Bolna callback dedupe), `lib/focus/selector.ts` (calibration, EMA, dwell, hysteresis, tracking loss, recentre), `EventStore.appendGuarded`, routes `/api/zones/[action]` and `/api/bolna/callback`, scripts `session:issue`/`leader:code`, and a 5th phone tool `request_clarification`. 75/75 tests (all synthetic).
+
+- 2026-11-15 · Codex · Claimed G2 on `codex/graphify-context` from fetched `origin/main` `016a313`. User requested Graphify for codebase knowledge transfer and clarified that “LinkedIn” meant linking context. Existing Code Scout is a keyword scan; no Graphify data or integration exists. Implement an opt-in graph over the configured snapshot files, preserving exact source/SHA and existing task authorization. Other worktrees and the unmerged leader backend stay untouched.
 
 - 2026-11-15 · status recheck · Checkpoint moved to `17de40b` (plan-only commit; stored `origin/main` matches; no fetch). Working tree still has the uncommitted blank `KKB_EVENTS_FILE` fix, generated `next-env.d.ts`, and this note. Ignored `data/runtime/events.jsonl` has one fixture `call_session` for `p_dev` and no task update. The evaluation worktree is clean at `17de40b`. Milestones 2, 3, 5, and 6 remain started; 1 and 4 have not reached their gates. Tests, typecheck, build, HTTP, MCP, live GitHub, and the public tunnel were not rerun.
 

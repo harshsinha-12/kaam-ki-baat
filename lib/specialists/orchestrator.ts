@@ -16,7 +16,7 @@ export interface Card {
   position: "left" | "center" | "right";
   status: CardStatus;
   summary: string;
-  evidence: Array<{ id: string; label: string; url?: string; match?: "candidate" | "confirmed" }>;
+  evidence: Array<{ id: string; label: string; url?: string; match?: "candidate" | "confirmed"; retrieval?: CodeFinding["retrieval"] }>;
 }
 
 export interface Conversation {
@@ -145,4 +145,5 @@ const cardEvidence = (f: CodeFinding) => ({
   label: `${f.path}:${f.lineStart}${f.symbol ? ` (${f.symbol})` : ""} @ ${f.commitSha.slice(0, 7)}`,
   url: f.url,
   match: f.match,
+  retrieval: f.retrieval,
 });
