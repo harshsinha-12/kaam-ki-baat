@@ -43,6 +43,10 @@ Wispr authorization is account-wide, with no per-meeting OAuth consent. Kaam Ki 
 
 ## Developer tools and telephone runtime
 
+### Spatial browser compatibility — 2026-11-15
+
+Bolna MCP documentation reads and public SDK source inspection established a supported design path: `@bolna/web-call` for browser audio, custom HTTP functions for scoped page context and commands, and our own browser action/acknowledgement relay. The portfolio instead uses WebRTC with an OpenAI data channel for its direct tool loop. No equivalent direct function-call/context-update channel appears in Bolna's current public SDK surface. See [spatial browser implementation and setup](bolna/spatial-browser.md) for pinned sources, the session-endpoint documentation discrepancy, and exact verification limits. These were documentation/source reads, not provider session/call tests. No OpenAI runtime was added. AirPods head motion remains deferred as the user requested.
+
 These MCP connections let the coding client inspect sources and configure/debug Bolna. They do not automatically make Wispr tools available inside a telephone call. The future runtime needs an authorized MCP client/session for selected source ingestion and narrow authenticated application endpoints exposed through Bolna custom function calls. Task writes belong in our own store.
 
 A fresh coding session may be needed to expose newly registered servers as native tools in the host. This session's Bolna and Wispr checks used the real remote MCP protocol directly with their saved credentials; no simulated catalogs were substituted. Do not interpret missing hot-reloaded tools as proof that server registration failed.
