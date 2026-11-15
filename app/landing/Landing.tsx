@@ -1,6 +1,9 @@
 "use client";
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import s from "./landing.module.css";
+import graphData from "../../data/demo/codegraph.json";
+import graphDemo from "../../data/demo/codegraph.demo.json";
+import { CodeGraphView, type ViewGraph } from "../components/CodeGraphView";
 
 // Kaam Ki Baat landing — the page explains the product by *doing* it:
 // turn left (Team Memory), face front (Leader Desk), turn right (Code Navigator).
@@ -392,6 +395,27 @@ function Architecture() {
   );
 }
 
+function GraphSection() {
+  const demos = graphDemo as { q: string; seed: { label: string; path: string; line: number } | null; nodes: string[]; explanation: string[] }[];
+  const [i, setI] = useState(0);
+  const [ref, inView] = useInView<HTMLDivElement>(0.25);
+  const [manual, setManual] = useState(false);
+  useEffect(() => { if (!inView || manual) return; const id = setInterval(() => setI((x) => (x + 1) % demos.length), 5200); return () => clearInterval(id); }, [inView, manual, demos.length]);
+  const d = demos[i];
+  const g = graphData as unknown as ViewGraph;
+  return (
+    <div ref={ref} className={s.graphBox}>
+      <div className={s.graphCanvas}><CodeGraphView graph={g} highlight={inView ? d.nodes : []} height={480} /></div>
+      <div className={s.graphSide}>
+        <div className={s.chips}>{demos.map((x, k) => <button key={x.q} type="button" className={`${s.chip} ${k === i ? s.chipOn : ""}`} onClick={() => { setManual(true); setI(k); }}>{x.q}</button>)}</div>
+        <div className={s.graphQ}>“{d.q}”</div>
+        <ol className={s.graphSteps}>{d.explanation.map((l, k) => <li key={`${i}-${k}`} style={{ "--i": k } as CSSProperties}>{l.replace(/^\d+\.\s*/, "")}</li>)}</ol>
+        <div className={s.cite}>{g.nodes.length} nodes · {g.edges.length} edges · built from {g.repository} @ {g.sha.slice(0, 7)} — answers computed by the graph engine, not written by hand</div>
+      </div>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ page */
 export default function Landing() {
   const [scrolled, setScrolled] = useState(false);
@@ -404,9 +428,9 @@ export default function Landing() {
       <nav className={s.nav} style={{ boxShadow: scrolled ? "0 10px 30px -20px #000" : "none" }}>
         <a href="#" className={s.brand}><span className={s.logo}>K</span>Kaam Ki Baat</a>
         <div className={s.navLinks}>
-          <a href="#problem">Problem</a><a href="#zones">Three zones</a><a href="#escalation">Escalation</a><a href="#guards">Guards</a><a href="#how">How it works</a>
+          <a href="#problem">Problem</a><a href="#zones">Three zones</a><a href="#escalation">Escalation</a><a href="#guards">Guards</a><a href="#graph">Code graph</a><a href="#how">How it works</a>
         </div>
-        <a href="/board" className={`${s.btn} ${s.primary}`}>Open workspace →</a>
+        <a href="/team" className={`${s.btn} ${s.primary}`}>Open workspace →</a>
       </nav>
 
       <main id="main">
@@ -462,6 +486,13 @@ export default function Landing() {
           <Reveal><div className={s.eyebrow}>Look right</div></Reveal>
           <Reveal i={1}><h2 className={s.h2}>The answer to “kahan hai?” is a <em>line number</em>.</h2></Reveal>
           <CodeNav />
+        </section>
+
+        <section id="graph" className={s.section}>
+          <Reveal><div className={s.eyebrow}>The codebase, as a graph</div></Reveal>
+          <Reveal i={1}><h2 className={s.h2}>It doesn't grep. It <em>follows the wiring</em>.</h2></Reveal>
+          <Reveal i={2}><p className={s.lede}>Every file, function and test in this repo is a node. Imports, calls and coverage are edges. A question lands on a function, then walks to its callers and its test, and it tells you each hop it took.</p></Reveal>
+          <GraphSection />
         </section>
 
         <section id="how" className={s.section}>

@@ -75,6 +75,25 @@ Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 | **Spatial zones backend** (LEFT Team Memory · CENTER Leader Desk · RIGHT Code Navigator), leader escalation, live-STT lane, FocusInput, Bolna callback dedupe | **Implemented on `claude/leader-escalation-backend`; 75/75 tests (synthetic)** | `lib/zones/**`, `lib/focus/selector.ts`, `app/api/zones/[action]`, `app/api/bolna/callback`; HTTP routes not yet exercised against a running server (Claude sandbox has no registry for `npm ci`). Leader step-up is a server one-time code, NOT a passkey |
 | Spatial browser workspace + Bolna relay | **Implemented; synthetic local checks pass** | `app/components/SpatialWorkspace.tsx`, `app/api/spatial/**`, `lib/spatial/**`; [setup and limits](bolna/spatial-browser.md). No browser visual/mic QA or provider call tested; Leader Desk locked, AirPods deferred |
 
+
+## 3a. Architecture stage audit — 2026-11-15 ~15:40 IST (Claude, from code + tests, not from docs)
+
+| Stage (architecture image) | Status | Evidence / gap |
+| --- | --- | --- |
+| 01 Role + consent gate | **Implemented** | Server-owned roles (`lib/zones/identity.ts`), device sessions, call tokens; consent per device (`live.ts`). Tests: `zones.test.ts` |
+| 01 Leader passkey | **Implemented, browser-untested** | WebAuthn ES256 verify with node:crypto (`lib/zones/webauthn.ts`), device-bound after enrolment; `/leader` page. Tests use a simulated authenticator with real P-256 signatures. **Needs:** one real Touch ID run on the lead's laptop over HTTPS (set `KKB_RP_ID`/`KKB_ORIGIN` to the tunnel host) |
+| 02 Spatial selector | **Backend + manual provider done** | Focus/activation gate, selector maths (`lib/focus/selector.ts`), keyboard ←↑→ on `/team`. **Missing:** MediaPipe webcam provider (needs `@mediapipe/tasks-vision` install), AirPods Swift companion (needs Mac + AirPods) |
+| 03a Live context (app STT) | **Ingestion API done; no capture UI** | `/api/zones/utterance` with consent/dedupe/seq/revocation. **Missing:** browser mic capture + STT provider choice |
+| 03b Verified sources | **GitHub live; Wispr blocked** | GitHub PR/files/checks read live. Wispr MCP returned **0 meetings and 0 notes** for this project (searched 15:02); MCP cannot read dictation history. Meeting is `data/demo/meeting.kkb.json`, **FIXTURE reconstructed from the lead's dictated instructions** |
+| 04 Reconcile + versioned memory | **Implemented** | Deterministic reconcile, append-only log, decision versions, context version, read-back |
+| LEFT/CENTER/RIGHT agents | **Implemented** | Team Memory + escalation; Leader Desk; Code Navigator **now backed by a code graph** (`lib/codegraph/`, 308 nodes/777 edges @ `f5960dd`) |
+| 05 Protected tools + 2 ledgers | **Implemented** | 5 Bolna tools, work ledger (`tool_call` events), communication ledger with interruption recovery |
+| Bolna voice runtime | **Prepared, not live** | Config generator exists (Codex). **Blocked on user:** permission to update the agent with the 5th tool and to place calls; consenting callees |
+| Supabase | **Not started (optional)** | JSONL baseline kept per mandate (no migration without parity tests) |
+| 0G Compute | **Not started (optional)** | — |
+
+**Code graph retrieval eval** (`npm run graph:eval`, 8 questions about this repo): first ranking 1/4 on the initial set → 4/4 after IDF + function bias + identifier-style phrases; extended set 5/8 hit@1 (3 misses land on adjacent correct-area functions).
+
 ## 4. Task board
 
 Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in place.
@@ -104,6 +123,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | L2 | Upgrade motion with GSAP ScrollTrigger / R3F head model once deps can be installed; add the product film (Remotion) | Codex | todo | No regressions in reduced-motion |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 ~15:40 · Claude · `claude/code-graph-leader-device`: reconstructed two-person meeting (FIXTURE, from dictated instructions; Wispr MCP had no matching meeting/notes), Graphify-style code graph + explainable queries + eval, device-bound WebAuthn leader passkey, `/team` and `/leader` pages, landing graph section. 89 tests pass (synthetic). Figma MCP: View seat on Starter plan, so no design files were created.
 
 - 2026-11-15 ~15:25 · Claude · `claude/landing-page`: story-driven landing at `/` (interactive spatial stage with ←/↑/→ and click, word-by-word spoken answers with sources, cited stats from Microsoft WTI 2023 / Atlassian×DX 2024 / Stack Overflow 2024, doubt-loop SVG, sticky scrollytelling of the three zones, animated 5-step escalation, flip-card guards, real SHA-pinned code excerpt @ `63317bd` L25–L41, architecture flow, honest works-now/next). Dependency-free motion (CSS/SVG/rAF; reduced-motion respected). Moved Codex's board page to `/board` unchanged except its import path. Verified by SSR + esbuild bundle + Playwright screenshots; Next build not run in sandbox.
 - 2026-11-15 ~15:00 · Claude · `claude/leader-escalation-backend` from `main` `f7100a6` (baseline 50/50 tests, core typecheck clean, demo:dry OK; `npm ci`/build not runnable in sandbox). Added `lib/zones/` (server-owned roles, device sessions, leader step-up, focus/activation gate where head turns only select, Team Memory with approved-only answers + Hinglish self-correction, clarification tickets with idempotency and a state machine, leader resolution with optimistic versioning + read-back + context version, delivery after reconnect, opt-in live-STT ingestion with consent/dedupe/seq/provisional/revocation, SHA-pinned code locations with range verification, Bolna callback dedupe), `lib/focus/selector.ts` (calibration, EMA, dwell, hysteresis, tracking loss, recentre), `EventStore.appendGuarded`, routes `/api/zones/[action]` and `/api/bolna/callback`, scripts `session:issue`/`leader:code`, and a 5th phone tool `request_clarification`. 75/75 tests (all synthetic).
