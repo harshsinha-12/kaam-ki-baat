@@ -133,7 +133,7 @@ function Listener({ zone, listening }: { zone: Zone; listening: boolean }) {
             <path d="M37 56 C36 26 56 16 72 17 C92 18 106 32 103 58 C99 44 88 36 76 35 C62 34 46 40 37 56 Z" fill="url(#kkbHair)" />
             <path d="M58 22 C66 18 80 18 88 24" stroke="#5a463b" strokeWidth="2" fill="none" strokeLinecap="round" opacity=".7" />
             {/* face: eyes follow the agent, blink; mouth moves while the agent is talking */}
-            <g style={{ transform: `translateX(${look * 6}px)`, transition: "transform .7s cubic-bezier(.16,1,.3,1)" }}>
+            <g style={{ transform: `translateX(${look * 6}px)`, transition: reduced ? "none" : "transform .7s cubic-bezier(.16,1,.3,1)" }}>
               <path d="M52 52 q5 -3 10 0 M78 52 q5 -3 10 0" stroke="#3a2a22" strokeWidth="2" fill="none" strokeLinecap="round" />
               {[57, 83].map((x) => (
                 <g key={x}>

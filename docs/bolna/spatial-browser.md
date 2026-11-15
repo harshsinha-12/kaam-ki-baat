@@ -35,6 +35,12 @@ This is a source-supported compatibility finding. Live provider behaviour is unv
 
 ## Implemented slice
 
+### Prepared entry links
+
+Participants can open an operator-prepared link to connect the existing board, device and call-session credentials automatically. The fragment is consumed once and removed from the address bar before sibling effects read the shared handoff. Call and board credentials stay in page memory; device-session persistence keeps its existing behavior. This does not start a Bolna call or replace server-side scope checks. Treat prepared links as private, short-lived capabilities.
+
+For the local **FIXTURE-only** preview, an operator builds the app, runs `node --import tsx scripts/prepare-browser-demo.ts`, starts Next with the generated `data/private/browser-demo/server.env` on loopback port 3135, and runs `node --import tsx scripts/serve-browser-demo.ts`. The user opens `http://localhost:3136`, clicks **Open demo**, then chooses **Webcam → Start camera → Calibrate**. No tokens need copying. The entry server binds loopback, serves only the prepared HTML, rejects foreign Hosts/other paths, and refuses a LIVE snapshot. Browser calling is disabled in this fixture. Generated HTML, capabilities and environment stay ignored/private; do not publish them.
+
 The page retains the existing operator board and adds a participant workspace. Connect with the board key in the existing page URL and a per-call token from the existing call-token script. The token stays in tab memory, is sent only in an authentication header to the application, and is not saved in local storage or echoed in context responses.
 
 - **Left: meeting context.** Only the current authorized task's passages from an approved meeting, retaining speaker, character span and source label. This is not a whole-transcript export.

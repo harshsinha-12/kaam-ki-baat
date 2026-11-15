@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { SpatialWorkspace } from "../components/SpatialWorkspace";
+import { browserHandoff } from "@/lib/auth/browser-handoff";
 
 // Three-card specialist board (left / center / right), Air Agents-style:
 // the active specialist lights up; each card shows the evidence it returned.
@@ -26,7 +27,7 @@ const ORDER = ["code_scout", "fix_navigator", "evidence_verifier"];
 export default function Home() {
   const [board, setBoard] = useState<Board | null>(null);
   useEffect(() => {
-    const key = new URLSearchParams(window.location.search).get("key") ?? "";
+    const key = browserHandoff().boardKey;
     let alive = true;
     const tick = async () => {
       try {
@@ -67,7 +68,7 @@ export default function Home() {
 
       <SpatialWorkspace />
 
-      {!board?.ok && <p style={{ marginTop: 32, opacity: 0.8 }}>{board?.error === "unauthorized" ? "Open this page with ?key=KKB_BOARD_KEY" : "Loading…"}</p>}
+      {!board?.ok && <p style={{ marginTop: 32, opacity: 0.8 }}>{board?.error === "unauthorized" ? "Open your prepared workspace link to connect." : "Loading…"}</p>}
       {board?.ok && !conv && <p style={{ marginTop: 32, opacity: 0.8 }}>Waiting for a call. The board lights up when Bolna calls get_my_brief.</p>}
 
       {conv && (
