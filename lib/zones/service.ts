@@ -6,6 +6,7 @@ import { activateZone, readFocusInput, recordFocus, recordFocusInputStatus, sele
 import { hmacCodeVerifier, resolveDeviceActor, stepUp, type StepUpVerifier } from "./identity";
 import { ingestUtterance, setConsent } from "./live";
 import { askTeamMemory, nameOf } from "./memory";
+import { meetingCatalog } from "./meeting-context";
 import { contextVersion, focusState, latestConsent } from "./state";
 import { assertPasskey, issueChallenge, registerPasskey } from "./webauthn";
 import { getCodeGraph } from "../codegraph/load";
@@ -26,7 +27,7 @@ export interface ZoneRuntime {
 }
 
 export const ZONE_ACTIONS = [
-  "me", "focus", "focus-input", "focus-input-status", "activate", "consent", "utterance", "memory_ask", "ticket_create", "ticket_withdraw", "ticket_call_leader",
+  "me", "focus", "focus-input", "focus-input-status", "activate", "consent", "utterance", "memory_sources", "memory_ask", "ticket_create", "ticket_withdraw", "ticket_call_leader",
   "deliveries", "delivery_seen", "delivery_ack", "code_navigate", "leader_step_up", "leader_presence", "leader_inbox", "leader_resolve",
   "passkey_options", "passkey_register", "passkey_assert", "code_graph_query", "code_focus", "code_files", "code_open", "understand",
 ] as const;
@@ -60,13 +61,14 @@ export async function runZoneAction(rt: ZoneRuntime, action: ZoneAction, token: 
     case "activate": { const x = await activateZone(rt.store, actor, body); return x.ok ? r(200, x) : fail(x); }
     case "consent": { const x = await setConsent(rt.store, actor, body); return x.ok ? r(200, x) : fail(x); }
     case "utterance": { const x = await ingestUtterance(rt.store, actor, body); return x.ok ? r(200, x) : fail(x); }
+    case "memory_sources": return r(200, { ok: true, meetings: meetingCatalog(rt.snapshot, actor) });
     case "memory_ask": {
       const events = await rt.store.all();
-      const a = askTeamMemory(rt.snapshot, events, actor, String(body.question ?? ""));
+      const a = askTeamMemory(rt.snapshot, events, actor, String(body.question ?? ""), typeof body.meeting_id === "string" ? body.meeting_id : undefined);
       return r(200, {
         ok: true, kind: a.kind, speak: a.speak, question: a.question, offerEscalation: a.offerEscalation,
         decision: "decision" in a ? { ...a.decision, approvedByName: a.decision.approvedBy ? nameOf(rt.snapshot, a.decision.approvedBy) : undefined } : null,
-        sources: a.sources, pendingTicket: "pendingTicket" in a ? a.pendingTicket ?? null : null,
+        sources: a.sources, meetings: a.meetings, passages: a.passages, pendingTicket: "pendingTicket" in a ? a.pendingTicket ?? null : null,
         provisional: a.provisional.map((u) => ({ text: u.text, status: u.status, source: u.source, speakerConfidence: u.speakerConfidence })),
         contextVersion: contextVersion(events), label: rt.snapshot.label,
       });

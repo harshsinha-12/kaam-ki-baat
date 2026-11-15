@@ -32,8 +32,10 @@ export async function createTicket(
   if (body.confirmed !== true && body.confirmed !== "true") return { ok: false, status: 400, reason: "the requester must approve sending this question to the leader" };
   if (question.length < 5 || question.length > 300) return { ok: false, status: 400, reason: "question must be 5–300 characters" };
   if (key.length < 8) return { ok: false, status: 400, reason: "idempotency_key (8+ chars) required" };
-  const meetingId = actor.meetingIds[0];
-  if (!meetingId) return { ok: false, status: 403, reason: "no approved meeting for this person" };
+  const selectedMeeting = typeof body.meeting_id === "string" ? body.meeting_id : undefined;
+  const meetingId = selectedMeeting ?? actor.meetingIds[0];
+  if (!meetingId || !actor.meetingIds.includes(meetingId) || !snapshot.meetings.some(m => m.id === meetingId && m.approvedBy.trim()))
+    return { ok: false, status: 403, reason: "no approved meeting for this person" };
 
   const normalizedQuestion = finalIntent(question).slice(0, 300);
   const result = await store.appendGuarded<{ ok: true; ticket: ClarificationTicket; replayed: boolean } | Fail>((log) => {
@@ -41,20 +43,21 @@ export async function createTicket(
     if (existing) {
       if (!actor.meetingIds.includes(existing.meetingId))
         return { reject: { ok: false, status: 403, reason: "ticket is outside the authorized meeting scope" } };
-      if (existing.question !== normalizedQuestion)
+      if (existing.question !== normalizedQuestion || (selectedMeeting && existing.meetingId !== selectedMeeting))
         return { reject: { ok: false, status: 409, reason: "idempotency key was already used for a different question" } };
       return { reject: { ok: true as const, ticket: existing, replayed: true } };
     }
     // A matching retry must succeed even if the leader answered meanwhile.
     // Check current memory only for a genuinely new ticket, under the write lock.
-    const mem = askTeamMemory(snapshot, log, actor, question);
+    const mem = askTeamMemory(snapshot, log, actor, question, selectedMeeting);
     if (mem.kind === "confirmed") return { reject: { ok: false, status: 409, reason: "that already has a confirmed answer" } };
     const decision = "decision" in mem ? mem.decision : undefined;
+    const sourceMeetingId = decision?.meetingId ?? mem.passages[0]?.meetingId ?? meetingId;
     const ticket: ClarificationTicket & { idempotencyKey: string } = {
       id: `clar_${randomBytes(5).toString("hex")}`,
       requesterId: actor.participant.id,
       question: mem.question.slice(0, 300),
-      meetingId: decision?.meetingId ?? meetingId,
+      meetingId: sourceMeetingId,
       contextRefs: (decision?.sources ?? []).map((s) => ({ ...s, label: s.label.slice(0, 120) })),
       decisionId: decision?.id,
       state: "pending",

@@ -205,6 +205,10 @@ Verification: **95/95 tests pass**, full `npm run typecheck`, production `npm ru
 
 - **Conflicts resolved and locally verified, Codex:** user explicitly authorizes resolving [PR #41](https://github.com/harshsinha-12/kaam-ki-baat/pull/41) and merging into main. Isolated `codex/pr41-conflict-resolution` integrates PR head `27d2add` with fetched main `0575ad0`; preserve both plan histories, hosted runtime changes, current webcam controls and unrelated dirty Team Memory work in the root checkout. Resolved the plan-only conflict by retaining both histories. Fixed the existing stale-flow review finding with request-scoped progress and stale-reply guards (`app/team/{page.tsx,FlowRail.tsx,flow-state.ts}`, `tests/workspace-flow.test.ts`). **207/207 tests**, full typecheck, production build, isolated FIXTURE production HTTP smoke, 25 local plan links and whitespace checks pass. Interactive browser, physical inputs and live speech were not rerun. Push to the PR branch and merge after exact-head checks; merge status remains pending. No provider changes or calls.
 
+### WM1 — Wispr meeting access for Team Memory — 2026-11-15
+
+- **Doing, Codex:** `codex/wispr-team-memory`, fetched `origin/main` `cdcc910`; clean checkout, existing worktrees preserved. User requests Wispr meeting access. Current memory derives decisions only from tasks; browser voice also returns the first 12 meeting passages without checking passage visibility. Add approved, participant-scoped meeting retrieval to text and voice, with exact source provenance, and a read-only selected-meeting import command. Preserve decision/ownership states and the existing server-owned access gates. No account-wide import, Bolna mutation, call, merge or deployment.
+
 Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in place.
 
 | ID | Task | Owner | Status | Done when |

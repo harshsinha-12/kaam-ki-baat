@@ -41,6 +41,8 @@ The public documentation shows different tool counts in different pages; use the
 
 ## Wispr Flow
 
+**Team Memory implementation (2026-11-15):** [selected-meeting import and access](wispr-meetings.md) now support multiple approved sources in one private snapshot, a permitted-meeting catalog/filter, and ranked exact-passage retrieval shared by typed and voice tools. The operator import validates provenance/spans/hashes and verifies persisted read-back; it does not perform OAuth or claim a new provider read. Private passage authorization applies to the browser voice route as well. Existing developer OAuth remains separate from the deployed application; there is no hosted account picker or automatic Wispr sync.
+
 - Official remote endpoint: `https://api.wisprflow.ai/connect/mcp` (no trailing slash).
 - Registered as `wispr-flow` in this Mac's user-level Codex configuration.
 - Uses browser OAuth with the correct personal/work account; no Wispr API key is required.

@@ -36,6 +36,14 @@ export interface SourceRef {
   id: string; // passage id, ticket id, utterance event id, or commit/PR ref
   label: string;
   meetingId?: string;
+  meetingTitle?: string;
+  speaker?: string;
+  charStart?: number;
+  charEnd?: number;
+  sourceVersion?: string;
+  fetchedAt?: string;
+  textHash?: string;
+  url?: string;
 }
 
 export interface Decision {

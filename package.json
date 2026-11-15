@@ -15,6 +15,7 @@
     "test": "tsx --test tests/*.test.ts",
     "snapshot": "tsx scripts/build-snapshot.ts",
     "snapshot:fixture": "tsx scripts/build-snapshot.ts --project data/demo/project.fixture.json",
+    "meeting:import": "tsx scripts/import-wispr-meeting.ts",
     "context:build": "tsx scripts/build-code-graph.ts",
     "context:code": "tsx scripts/query-code-context.ts",
     "call:token": "tsx scripts/create-call.ts",
