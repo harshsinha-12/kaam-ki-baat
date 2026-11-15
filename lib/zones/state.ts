@@ -24,7 +24,8 @@ export type ZoneKind =
   | "passkey_verified"
   | "webauthn_challenge"
   | "webauthn_used"
-  | "code_focus";
+  | "code_focus"
+  | "project_voice_binding";
 
 export const zoneEvents = (events: StoredEvent[], kind?: ZoneKind): ZoneEvent[] =>
   events.filter((e): e is ZoneEvent => e.type === "zone" && (!kind || e.kind === kind));
