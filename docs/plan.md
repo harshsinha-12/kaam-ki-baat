@@ -100,6 +100,12 @@ Checked against `f7100a6` on 2026-11-15. Milestones 2, 3, 5, and 6 have code on 
 
 The next product step is milestone 1: the user picks the one approved Wispr meeting. W1 stays blocked until that choice is recorded. Agent creation, a call, deployment, and merging still need their own instruction.
 
+## 3c. PR #11 merge review — 2026-11-15
+
+User explicitly authorized conflict resolution and merge. Codex preserved the incoming main status reconciliation, fixed callback-result typing and decision-ID collisions, and reproduced four failing regressions before fixing them: cross-meeting live remarks, narrowed-call clarification disclosure, missing expected decision versions and idempotency-key collisions. Further review added source-backed decision gating, participant-only passage filtering, one-use/rate-limited leader codes, sharing-withdrawal checks, session-scoped utterance revisions, a single durable decision/ticket resolution event, bounded JSON/method guards and finalizing-to-completed callback handling. Leader codes remain a demo verifier, not WebAuthn.
+
+`npm ci`, 81/81 synthetic tests, full typecheck, production build and `npm run smoke:zones` pass locally. The HTTP smoke starts its own temporary production server/synthetic store, verifies leader gates and persisted read-back through a fresh store instance, and shuts it down; it does not touch the private live server or contact a provider. Install audit reports existing Next/PostCSS advisories whose suggested fix is a major Next upgrade; no forced framework upgrade was applied during this merge. Live microphone, provider calls, hardware gestures and passkeys remain unverified.
+
 ## 4. Task board
 
 Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in place.
@@ -121,7 +127,7 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
 
 | Z1 | Zones backend: roles + step-up, focus/activation gate, Team Memory, tickets → leader resolve → delivery/ack, live utterances, code-location pinning, callback dedupe, `request_clarification` phone tool | Claude | done (`claude/leader-escalation-backend`) | 75/75 tests incl. acceptance flow |
-| Z2 | Run `npm ci && npm run typecheck && npm run build` + HTTP smoke for `/api/zones/*` on a machine with registry access | Codex | doing: PR #11 conflict/CI review on `codex/review-leader-backend`; merge explicitly authorized by user | Results in §3 |
+| Z2 | Run `npm ci && npm run typecheck && npm run build` + HTTP smoke for `/api/zones/*` on a machine with registry access | Codex | verified locally on PR #11 review: npm ci, 81/81 tests, full typecheck, production build and isolated HTTP smoke pass; CI/merge pending | Results in §3 |
 | Z3 | Replace demo leader one-time code with WebAuthn passkey verifier (`StepUpVerifier` interface in `lib/zones/identity.ts`) | Codex or Claude | todo | Passkey assertion verified server-side |
 | Z4 | Webcam provider: MediaPipe Face Landmarker yaw → `lib/focus/selector.ts` → `POST /api/zones/focus`; keyboard/tap fallback | Claude (frontend) | doing (claude) | Head turn selects; tap activates |
 | Z5 | Native AirPods companion (Swift, `CMHeadphoneMotionManager`) mirroring `selector.ts` and posting `focus` events | Codex | todo (needs Mac + AirPods) | Device test notes |

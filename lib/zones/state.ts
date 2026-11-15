@@ -7,10 +7,12 @@ import type { ClarificationTicket, Consent, Decision, DeviceSession, LiveUtteran
 export type ZoneKind =
   | "device_session"
   | "step_up"
+  | "step_up_attempt"
   | "consent"
   | "focus"
   | "activation"
   | "decision"
+  | "resolution"
   | "ticket"
   | "utterance"
   | "presence"
@@ -52,8 +54,8 @@ export function focusState(events: StoredEvent[], sessionId: string): { zone: Zo
 /** Latest version of each decision recorded in the log (leader resolutions). */
 export function loggedDecisions(events: StoredEvent[]): Map<string, Decision> {
   const m = new Map<string, Decision>();
-  for (const e of zoneEvents(events, "decision")) {
-    const d = e.data as unknown as Decision;
+  for (const e of zoneEvents(events).filter(e => e.kind === "decision" || e.kind === "resolution")) {
+    const d = (e.kind === "resolution" ? e.data.decision : e.data) as Decision;
     const prev = m.get(d.id);
     if (!prev || d.version > prev.version) m.set(d.id, d);
   }
@@ -63,7 +65,8 @@ export function loggedDecisions(events: StoredEvent[]): Map<string, Decision> {
 /** Tickets fold: latest record per ticket id wins (state machine enforced on write). */
 export function tickets(events: StoredEvent[]): Map<string, ClarificationTicket> {
   const m = new Map<string, ClarificationTicket>();
-  for (const e of zoneEvents(events, "ticket")) m.set(e.key, e.data as unknown as ClarificationTicket);
+  for (const e of zoneEvents(events).filter(e => e.kind === "ticket" || e.kind === "resolution"))
+    m.set(e.key, (e.kind === "resolution" ? e.data.ticket : e.data) as ClarificationTicket);
   return m;
 }
 
@@ -73,7 +76,7 @@ export function utterances(events: StoredEvent[]): LiveUtterance[] {
 
 /** Global context version: bumps whenever approved team memory changes. */
 export function contextVersion(events: StoredEvent[]): number {
-  return 1 + zoneEvents(events, "decision").length;
+  return 1 + zoneEvents(events).filter(e => e.kind === "decision" || e.kind === "resolution").length;
 }
 
 export function leaderPresence(events: StoredEvent[], participantId: string): { available: boolean; callConsent: boolean } {
