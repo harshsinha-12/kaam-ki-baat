@@ -11,6 +11,7 @@ Current instructions combine the user's requests with relevant principles from t
 - Commit and push completed, scoped changes to the existing repository as work progresses.
 - Use a separate branch and a concise PR when coordinating with the other contributor. Do not overwrite shared work or assume permission to merge.
 - Preserve call evaluations and agent versions so improvements between calls can be reviewed and demonstrated.
+- Voice conversations should hear the caller's specific problem, avoid repeated task lists, and answer project and general questions. Keep project answers grounded in permitted evidence and distinguish general knowledge from live verification. Suggesting a task does not establish ownership or persist a new assignment. The user authorized the reviewed voice-quality changes after the repository-context call on 2026-11-15; another call still needs an applicable request/consent.
 
 ## Constraints and working preferences
 
