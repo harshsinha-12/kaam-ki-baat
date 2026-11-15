@@ -4,7 +4,7 @@ import type { EventStore } from "../store/event-store";
 import type { ClarificationTicket, Decision, TicketState } from "./contracts";
 import { zoneAccess } from "./focus";
 import type { Actor } from "./identity";
-import { askTeamMemory, currentDecisions } from "./memory";
+import { askTeamMemory, currentDecisions, finalIntent } from "./memory";
 import { contextVersion, ev, leaderPresence, tickets } from "./state";
 
 // Unknown answer -> requester-approved ticket -> leader resolves (verified write)
@@ -35,14 +35,21 @@ export async function createTicket(
   const meetingId = actor.meetingIds[0];
   if (!meetingId) return { ok: false, status: 403, reason: "no approved meeting for this person" };
 
-  const events = await store.all();
-  const mem = askTeamMemory(snapshot, events, actor, question);
-  if (mem.kind === "confirmed") return { ok: false, status: 409, reason: "that already has a confirmed answer" };
-  const decision = "decision" in mem ? mem.decision : undefined;
-
-  return store.appendGuarded<{ ok: true; ticket: ClarificationTicket; replayed: boolean }>((log) => {
+  const normalizedQuestion = finalIntent(question).slice(0, 300);
+  const result = await store.appendGuarded<{ ok: true; ticket: ClarificationTicket; replayed: boolean } | Fail>((log) => {
     const existing = [...tickets(log).values()].find((t) => (t as ClarificationTicket & { idempotencyKey?: string }).idempotencyKey === key && t.requesterId === actor.participant.id);
-    if (existing) return { reject: { ok: true as const, ticket: existing, replayed: true } };
+    if (existing) {
+      if (!actor.meetingIds.includes(existing.meetingId))
+        return { reject: { ok: false, status: 403, reason: "ticket is outside the authorized meeting scope" } };
+      if (existing.question !== normalizedQuestion)
+        return { reject: { ok: false, status: 409, reason: "idempotency key was already used for a different question" } };
+      return { reject: { ok: true as const, ticket: existing, replayed: true } };
+    }
+    // A matching retry must succeed even if the leader answered meanwhile.
+    // Check current memory only for a genuinely new ticket, under the write lock.
+    const mem = askTeamMemory(snapshot, log, actor, question);
+    if (mem.kind === "confirmed") return { reject: { ok: false, status: 409, reason: "that already has a confirmed answer" } };
+    const decision = "decision" in mem ? mem.decision : undefined;
     const ticket: ClarificationTicket & { idempotencyKey: string } = {
       id: `clar_${randomBytes(5).toString("hex")}`,
       requesterId: actor.participant.id,
@@ -57,6 +64,11 @@ export async function createTicket(
     };
     return { append: ev("ticket", ticket.id, ticket), result: { ok: true as const, ticket, replayed: false } };
   });
+  if (!result.ok) return result;
+  const persisted = tickets(await store.all()).get(result.ticket.id);
+  if (!persisted || persisted.requesterId !== actor.participant.id || persisted.question !== normalizedQuestion || !actor.meetingIds.includes(persisted.meetingId))
+    return { ok: false, status: 409, reason: "ticket read-back failed; save was not confirmed" };
+  return { ...result, ticket: persisted };
 }
 
 export async function leaderInbox(store: EventStore, snapshot: EvidenceSnapshot, actor: Actor) {
@@ -86,6 +98,8 @@ export async function resolveTicket(store: EventStore, snapshot: EvidenceSnapsho
   const conditions = typeof body.conditions === "string" && body.conditions.trim() ? body.conditions.trim().slice(0, 300) : undefined;
   if (statement.length < 3 || statement.length > 400) return { ok: false, status: 400, reason: "statement must be 3–400 characters" };
   const expectedVersion = body.expected_version ?? body.expectedVersion;
+  if (typeof expectedVersion !== "number" || !Number.isSafeInteger(expectedVersion) || expectedVersion < 0)
+    return { ok: false, status: 400, reason: "expected_version must be the current nonnegative decision version" };
 
   const result = await store.appendGuarded<ResolveResult>((log) => {
     const t = tickets(log).get(ticketId);
@@ -94,7 +108,7 @@ export async function resolveTicket(store: EventStore, snapshot: EvidenceSnapsho
     const decisionId = t.decisionId ?? `dec:${t.id}`;
     const current = currentDecisions(snapshot, log).find((d) => d.id === decisionId);
     const currentVersion = current?.version ?? 0;
-    if (expectedVersion !== undefined && Number(expectedVersion) !== currentVersion)
+    if (expectedVersion !== currentVersion)
       return { reject: { ok: false, status: 409, reason: `decision changed (now v${currentVersion}); reload before approving` } };
     const at = new Date().toISOString();
     const decision: Decision = {
@@ -115,7 +129,9 @@ export async function resolveTicket(store: EventStore, snapshot: EvidenceSnapsho
       answer: { decisionId, decisionVersion: decision.version, statement, conditions, approvedBy: actor.participant.id, approvedAt: at },
     };
     return {
-      append: [ev("decision", decisionId, decision, at), ev("ticket", t.id, answered, at)],
+      // One durable log record keeps the decision and ticket together even if
+      // an append fails. Both projections read this same resolution event.
+      append: ev("resolution", t.id, { decision, ticket: answered }, at),
       result: { ok: true, decision, ticket: answered, contextVersion: 0, readBack: true },
     };
   });
@@ -134,7 +150,7 @@ type TransitionResult = { ok: true; ticket: ClarificationTicket; replayed: boole
 async function transition(store: EventStore, actor: Actor, ticketId: string, to: TicketState, ownerOnly = true): Promise<TransitionResult> {
   return store.appendGuarded<TransitionResult>((log) => {
     const t = tickets(log).get(ticketId);
-    if (!t || (ownerOnly && t.requesterId !== actor.participant.id)) return { reject: { ok: false as const, reason: "no such ticket" } };
+    if (!t || !actor.meetingIds.includes(t.meetingId) || (ownerOnly && t.requesterId !== actor.participant.id)) return { reject: { ok: false as const, reason: "no such ticket" } };
     if (t.state === to) return { reject: { ok: true as const, ticket: t, replayed: true } };
     if (!NEXT[t.state].includes(to)) return { reject: { ok: false as const, reason: `cannot go from ${t.state} to ${to}` } };
     const next = { ...t, state: to };
@@ -144,7 +160,7 @@ async function transition(store: EventStore, actor: Actor, ticketId: string, to:
 
 /** Answers waiting for the requester (works after reconnect: it's all in the log). */
 export async function deliveries(store: EventStore, actor: Actor) {
-  const ts = [...tickets(await store.all()).values()].filter((t) => t.requesterId === actor.participant.id);
+  const ts = [...tickets(await store.all()).values()].filter((t) => t.requesterId === actor.participant.id && actor.meetingIds.includes(t.meetingId));
   return { answered: ts.filter((t) => t.state === "answered" || t.state === "delivered"), pending: ts.filter((t) => t.state === "pending") };
 }
 export const markDelivered = (store: EventStore, actor: Actor, id: string) => transition(store, actor, id, "delivered");
@@ -161,7 +177,7 @@ export async function requestLeaderCall(store: EventStore, snapshot: EvidenceSna
   type CallResult = { ok: true; status: "unavailable" | "no_consent" | "requested"; ticket: ClarificationTicket } | { ok: false; reason: string };
   return store.appendGuarded<CallResult>((log) => {
     const t = tickets(log).get(ticketId);
-    if (!t || t.requesterId !== actor.participant.id) return { reject: { ok: false as const, reason: "no such ticket" } };
+    if (!t || t.requesterId !== actor.participant.id || !actor.meetingIds.includes(t.meetingId)) return { reject: { ok: false as const, reason: "no such ticket" } };
     if (t.state !== "pending") return { reject: { ok: false as const, reason: `ticket is ${t.state}` } };
     const presence = leader ? leaderPresence(log, leader.id) : { available: false, callConsent: false };
     const status: "unavailable" | "no_consent" | "requested" = !leader || !presence.available ? "unavailable" : !presence.callConsent ? "no_consent" : "requested";

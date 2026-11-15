@@ -15,10 +15,13 @@
     "test": "tsx --test tests/*.test.ts",
     "snapshot": "tsx scripts/build-snapshot.ts",
     "snapshot:fixture": "tsx scripts/build-snapshot.ts --project data/demo/project.fixture.json",
+    "context:build": "tsx scripts/build-code-graph.ts",
+    "context:code": "tsx scripts/query-code-context.ts",
     "call:token": "tsx scripts/create-call.ts",
     "demo:dry": "tsx scripts/demo-dry-run.ts",
     "session:issue": "tsx scripts/issue-session.ts",
     "leader:code": "tsx scripts/issue-session.ts",
+    "smoke:zones": "tsx scripts/smoke-zones.ts",
     "graph": "tsx scripts/build-codegraph.ts",
     "graph:eval": "tsx scripts/eval-codegraph.ts"
   },

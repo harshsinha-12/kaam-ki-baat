@@ -1,6 +1,6 @@
 # Project context
 
-Status: initial handoff reviewed on 2026-11-15. The architecture is converged in [architecture.md](architecture.md). Application implementation is authorized to start, carried out by Claude Opus on its own branch.
+Status: application core, spatial browser workspace, source import and Bolna configuration are implemented as tracked in [plan.md](plan.md). The user approved one Wispr source, this repository, Speaker 1 identity and agent setup/testing. Real voice/call behaviour remains unverified. All calls are held for one final user confirmation naming the specific consenting participant (D-038).
 
 ## Purpose and users
 
@@ -14,7 +14,7 @@ The handoff's proposed MVP is one specifically authorized meeting, one selected 
 
 Keep these states distinct: mentioned / proposed / accepted ownership; open / closed-unmerged / merged PR; pending / passed / failed checks for an exact SHA; user-reported completion / verified completion. Deployment needs its own evidence.
 
-The primary surface is a telephone call. An optional evidence board can show what was discussed, what code shows, what is verified, and the next action. No autonomous code repair, merging, deployment, broad repository indexing, or vector database is planned for the MVP.
+The primary surface is a telephone call. An optional evidence board can show what was discussed, what code shows, what is verified, and the next action. No autonomous code repair, merging, deployment, broad repository indexing, or vector database is planned for the MVP. On 2026-11-15 the user requested Graphify to retrieve codebase context for knowledge transfer and clarified that the request meant linking context. The optional [code-context path](code-context.md) indexes only the code files already selected in an evidence snapshot; meeting/task authorization and deterministic status rules still apply.
 
 On 2026-11-15 the user requested portfolio-style website context and DOM tool actions while retaining Bolna as the voice provider. Spatial browser controls come first: meeting context on the left and code on the right, with AirPods motion deferred. PR #9's broader [spatial live-context proposal](spatial-live-context-v2.md) reserves the center for a future authenticated Leader Desk. The first browser slice keeps that desk locked; camera selection, live STT and leader escalation remain proposed. See [Bolna browser integration](bolna/spatial-browser.md) for the implementation and verification boundary.
 
@@ -46,7 +46,7 @@ Proposed by the handoff, pending further context:
 
 Open decisions:
 
-- Which meeting, repository, and participants are authorized for the demo?
+- Meeting/repository selection is confirmed in D-031/D-032. The source has no confirmed code match here. Actual phone testers, consent and numbers remain pending.
 - What caller verification and participant disclosure rules will apply?
 - Which storage and hosting setup should support HTTPS callbacks?
 - What additional rules appear in the full participant guidelines, including call eligibility and pre-existing-code restrictions?

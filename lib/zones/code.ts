@@ -1,4 +1,4 @@
-import type { EvidenceSnapshot, Task } from "../contracts";
+import type { CodeFinding, EvidenceSnapshot, Task } from "../contracts";
 import { codeScout } from "../specialists/code-scout";
 import { fixNavigator } from "../specialists/fix-navigator";
 import { zoneAccess } from "./focus";
@@ -19,6 +19,7 @@ export interface CodeLocation {
   url: string;
   lines: string[]; // the exact highlighted lines at `sha`
   verified: boolean; // range exists at sha and url is the canonical permalink
+  retrieval?: CodeFinding["retrieval"];
 }
 
 export function navigateCode(snapshot: EvidenceSnapshot, actor: Actor, question: string, taskId?: string) {
@@ -30,7 +31,10 @@ export function navigateCode(snapshot: EvidenceSnapshot, actor: Actor, question:
   if (taskId && !task) return { ok: false as const, status: 403 as const, reason: "task not authorized" };
   const findings = codeScout(snapshot, task, question, 3);
   const plan = fixNavigator(snapshot, findings);
-  const locations = findings.map((f) => checkLocation(snapshot, f.path, f.lineStart, f.lineEnd, f.match, f.symbol, f.url));
+  const locations = findings.map((f) => ({
+    ...checkLocation(snapshot, f.path, f.lineStart, f.lineEnd, f.match, f.symbol, f.url),
+    retrieval: f.retrieval,
+  }));
   const test = plan.test ? checkLocation(snapshot, plan.test.path, plan.test.line, plan.test.line, "confirmed", undefined, plan.test.url) : null;
   return {
     ok: true as const,

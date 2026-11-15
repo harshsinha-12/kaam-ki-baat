@@ -34,7 +34,8 @@ async function main() {
   const cfgPath = arg("project") ?? "data/private/project.json";
   const cfg = JSON.parse(readFileSync(cfgPath, "utf8")) as ProjectConfig;
   const git = (...a: string[]) => execFileSync("git", a, { encoding: "utf8", maxBuffer: 32 * 1024 * 1024 });
-  const sha = (arg("sha") ?? cfg.sha ?? git("rev-parse", "HEAD")).trim();
+  const ref = (arg("sha") ?? cfg.sha ?? "HEAD").trim();
+  const sha = git("rev-parse", "--verify", "--end-of-options", `${ref}^{commit}`).trim();
 
   const files = git("ls-tree", "-r", "--name-only", sha, "--", ...cfg.paths)
     .split("\n")
@@ -50,7 +51,9 @@ async function main() {
   try {
     const gh = githubClient(cfg.repository);
     pullRequests = await Promise.all(prNumbers.map((n) => gh.pullRequest(n)));
-    const shas = [...new Set(pullRequests.flatMap((p) => [p.headSha, p.mergedSha].filter(Boolean) as string[]))];
+    // Always read the pinned commit, even when no task has a confirmed PR link.
+    // Otherwise an empty task/PR list would incorrectly count as a live GitHub read.
+    const shas = [...new Set([sha, ...pullRequests.flatMap((p) => [p.headSha, p.mergedSha].filter(Boolean) as string[])])];
     checks = (await Promise.all(shas.map((s) => gh.checksFor(s)))).flat();
     githubLive = true;
   } catch (e) {

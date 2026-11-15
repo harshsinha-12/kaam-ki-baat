@@ -53,6 +53,7 @@ What each part does:
 
 - **Wispr adapter:** finds the approved meeting, reads its summary and transcript pages, and stores each passage with its meeting ID, speaker, and character range. It runs on our server, never inside the phone call.
 - **GitHub adapter:** reads one repository's issues, pull requests, changed files, and check runs. It stores each result with the commit SHA it came from.
+- **Optional code graph:** local Graphify extraction over the snapshot's selected code files provides symbol and dependency context for knowledge transfer. Code Scout validates repository, SHA and file hashes, then uses a cached index with bounded one-hop expansion. Missing, stale or unmatched graphs fall back to keyword search. See [code context](code-context.md).
 - **Normalize:** turns raw source data into typed evidence records (see [integration-design.md](integration-design.md)).
 - **Reconcile:** applies fixed rules to decide status. It is the only place status is set. No language model runs here.
 - **Store:** holds evidence, tasks, call records, and evaluations. Every change is appended, never overwritten, so old values stay inspectable.
@@ -96,7 +97,7 @@ These are our endpoints. Bolna calls them during a call. They are not Bolna MCP 
 ## 8. What is out of scope for the MVP
 
 - Autonomous code changes, auto-merge, deployment.
-- Vector databases, embeddings, or indexing a whole repository.
+- Vector databases, embeddings, or indexing a whole repository. D-039 adds an optional Graphify index over the snapshot's selected code files only.
 - Team-wide transcript access. Each caller sees only what they are permitted to see.
 - Live Wispr speech streams, or reading ordinary dictation history.
 - Background or mass call scheduling.

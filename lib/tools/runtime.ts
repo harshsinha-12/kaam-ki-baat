@@ -95,7 +95,7 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       const facts = [
         { id: "decision", fact: `In "${meeting?.title ?? "the meeting"}", the team agreed: ${task.title}.` },
         { id: "status", fact: v.statements[0] ?? "There's no code evidence yet." },
-        { id: "next", fact: v.statements.slice(1, 3).join(" ") || "Next step: open the code and confirm it does what the meeting said." },
+        { id: "next", fact: v.statements.slice(1, 3).join(" ") || (task.prNumber == null ? "Next step: identify the matching repository or pull request before verifying this task." : "Next step: open the code and confirm it does what the meeting said.") },
       ];
       let conv = startConversation(callId, caller.participant.id, task.id, [...answerFacts, ...facts]);
       for (const f of answerFacts) conv.ledger = markAttempted(conv.ledger, f.id);
@@ -104,7 +104,7 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       conv.cards.evidence_verifier = { ...conv.cards.evidence_verifier, status: "has_reply", summary: v.statements.join(" ") };
       rt.conversations.set(callId, conv);
       return ok({
-        speak: `Hi ${caller.participant.name}. ${answerFacts.map((f) => f.fact).join(" ")} ${facts[0].fact} ${facts[1].fact} Want me to show you exactly where the code is?`.replace(/\s+/g, " "),
+        speak: `Hi ${caller.participant.name}. ${answerFacts.map((f) => f.fact).join(" ")} ${facts[0].fact} ${facts[1].fact} ${task.prNumber == null ? "Want me to check this repository for a possible code match?" : "Want me to show you exactly where the code is?"}`.replace(/\s+/g, " "),
         deliveredClarifications: waiting.map((t) => t.id),
         task: { id: task.id, title: task.title, ownership: v.reconciled.ownership, pr: v.reconciled.pr, checks: v.reconciled.checks, sha: short(v.reconciled.currentSha) },
         source: { meetingId: task.meetingId, passageId: passage?.id, speaker: passage?.speaker, label: rt.snapshot.label },
@@ -162,7 +162,10 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       if (!x.ok) return { status: x.status, body: { ok: false, error: x.reason, speak: `I didn't send it — ${x.reason}.` } };
       return ok({
         ticketId: x.ticket.id, replayed: x.replayed, state: x.ticket.state,
-        speak: "Done — I've sent that to the leader. I won't guess the answer; I'll tell you as soon as it's approved, even if you call back later.",
+        speak: x.ticket.answer
+          ? `That question was already saved and the leader has answered: ${x.ticket.answer.statement}${x.ticket.answer.conditions ? `, on condition that ${x.ticket.answer.conditions}` : ""}.`
+          : x.ticket.state === "withdrawn" ? "That question was previously saved and has been withdrawn. I haven't opened another ticket."
+          : "Saved and read back. Your question is pending for the leader. I won't guess the answer; ask for it again after it's approved.",
         evidenceIds: [x.ticket.id],
       });
     }
@@ -180,7 +183,7 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       const conv = rt.conversations.get(callId);
       if (!result.saved) {
         if (conv) conv.cards.evidence_verifier = { ...conv.cards.evidence_verifier, status: "error", summary: `Not saved: ${result.reason}` };
-        return { status: 409, body: { ok: false, saved: false, reason: result.reason, speak: `I couldn't save that — ${result.reason}. Nothing was changed.` } };
+        return { status: 409, body: { ok: false, saved: false, reason: result.reason, speak: `I couldn't save that — ${result.reason}. I don't have a verified saved update.` } };
       }
       if (conv) {
         conv.focus = { ...conv.focus, contextVersion: conv.focus.contextVersion + 1 };

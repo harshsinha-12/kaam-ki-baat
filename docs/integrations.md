@@ -2,6 +2,15 @@
 
 Checked on 2026-11-15. MCP registration, authentication, live tool discovery, and application integration are separate checkpoints.
 
+## Current live integration — 2026-11-15
+
+- User approved one shared Wispr note, this repository, and their Speaker 1 mapping. `resolve_share_link` returned the complete normalized transcript (explicit end marker). Five exact passages with speaker, offsets, hashes and source modification time were retained privately; the temporary full transcript response was removed after extraction.
+- The source describes a different product domain. The current LIVE snapshot has two tasks, no asserted PR link, and checks read from the repository's pinned commit. A LIVE label describes real source reads, not a confirmed meeting-to-code match.
+- Created the Kaam Ki Baat Bolna agent under the user's authorization. Persisted `get_agent` read-back verified all six function names, callback URLs, server-key authentication, call-token mapping, dynamic opening and spatial prompt. A redacted profile is in [agent-profile.redacted.json](bolna/agent-profile.redacted.json); the ID, keys and full payload/read-back stay in ignored private files.
+- Provider validation required Sarvam voice language in `provider_config`. MCP `update_agent` reported success for a tool change but read-back still showed four tools; the official v2 PUT then persisted all six. No management success was inferred without that read-back.
+- A nine-turn TEXT_PREVIEW against the real runtime passed, including a refused unconfirmed save, persisted isolated save/read-back, idempotent retry, proposed-ownership refusal and unauthorized-task refusal. Preview events are separate from live call events. This is not a Bolna conversation or telephone evidence.
+- LIVE HTTP preflight verified the owner brief, scoped meeting passages and rejection of a browser-session request without fresh recording consent. Browser calling is configured but disabled locally under the final named-participant call hold (D-038). The consent checkbox is an additional runtime gate after that confirmation. No provider audio session or telephone call has been started by this lane.
+
 ## Current-system reconnection — 2026-11-15
 
 The current Codex configuration initially had neither server registered. With the user's authorization, both were reconnected on this Mac:
@@ -20,7 +29,7 @@ The current Codex configuration initially had neither server registered. With th
 - The supplied key passed a live, read-only `get_user_info` call before further account operations. Private account output was withheld.
 - Live `tools/list` returned **121 tools**. Selected schemas were inspected, and `search_docs` was exercised for custom functions and multilingual voice behavior.
 - Credentials are outside this repository in user-only Codex configuration (mode `0600`). No key is included in project files.
-- No agent has been created or changed, and no telephone call has been placed.
+- At the initial connection check no agent had been created or changed. The current configured-agent evidence is recorded above; no telephone call has been placed.
 
 The public documentation shows different tool counts in different pages; use the actual discovered catalog for implementation. The full endpoint is the intended connection: Bolna's separate Claude directory connector has a smaller capability set.
 
@@ -43,6 +52,10 @@ Wispr authorization is account-wide, with no per-meeting OAuth consent. Kaam Ki 
 
 ## Developer tools and telephone runtime
 
+### Graphify code context — 2026-11-15
+
+The user requested Graphify for codebase knowledge transfer and linking context. Graphify is an optional local build tool, not a registered MCP server or a telephone provider. Official documentation and export source were inspected, then Graphify **0.9.100** was run with an isolated Python 3.12 tool environment against the pinned fixture code: **147 usable nodes, 330 edges, 27 code files**. Import and Code Scout retrieval returned exact source locations and relationship confidence. Generated artifacts remain ignored under `data/private/`. No meeting was imported, external Graphify account connected or Bolna agent changed. Runtime setup and boundaries are in [code context](code-context.md). End-to-end voice latency remains unmeasured.
+
 ### Spatial browser compatibility — 2026-11-15
 
 Bolna MCP documentation reads and public SDK source inspection established a supported design path: `@bolna/web-call` for browser audio, custom HTTP functions for scoped page context and commands, and our own browser action/acknowledgement relay. The portfolio instead uses WebRTC with an OpenAI data channel for its direct tool loop. No equivalent direct function-call/context-update channel appears in Bolna's current public SDK surface. See [spatial browser implementation and setup](bolna/spatial-browser.md) for pinned sources, the session-endpoint documentation discrepancy, and exact verification limits. These were documentation/source reads, not provider session/call tests. No OpenAI runtime was added. AirPods head motion remains deferred as the user requested.
@@ -58,3 +71,5 @@ A fresh coding session may be needed to expose newly registered servers as nativ
 - [Bolna custom functions](https://www.bolna.ai/docs/tool-calling/custom-function-calls)
 - [Wispr connection and access guide](https://docs.wisprflow.ai/articles/9551372685-connect-an-mcp-client-to-wispr-flow-remote-mcp-server)
 - [Official Wispr plugin](https://github.com/Wispr-AI/wispr-flow-plugin)
+
+Final startup validation (2026-11-15): after restarting the owned production service against the newly saved selected snapshot, both local and public HTTPS authenticated board metadata match the private LIVE snapshot exactly, including repository, SHA and `fetchedAt`. Unauthenticated evidence/spatial tool requests return 401. An authenticated browser start returns 503 under the call hold. No browser consent receipt or provider execution correlation exists. Earlier readiness preflight failure correctly detected the stale server snapshot before this restart.

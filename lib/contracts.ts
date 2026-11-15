@@ -19,6 +19,10 @@ export interface MeetingRecord {
   date?: string;
   source: SourceLabel; // LIVE = read through Wispr MCP for an approved meeting
   approvedBy: string; // who approved this meeting for the project
+  sourceVersion?: string; // provider modification timestamp or immutable source hash
+  sourceCreatedAt?: string; // provider record creation time, not an assumed meeting date
+  fetchedAt?: string;
+  transcriptHash?: string; // source transcript hash; full transcript stays private
 }
 
 export interface MeetingPassage {
@@ -30,6 +34,7 @@ export interface MeetingPassage {
   charEnd: number;
   text: string;
   visibility: "participant" | "team";
+  textHash?: string;
 }
 
 export interface RepoFile {
@@ -73,6 +78,12 @@ export interface CodeFinding {
   // confirmed = file is changed by the task's PR AND matches; otherwise candidate.
   match: "candidate" | "confirmed";
   url: string;
+  retrieval?: {
+    method: "graphify";
+    builtAt: string;
+    // Graph relationships suggest context; they do not prove task ownership or completion.
+    via?: { symbol: string; relation: string; confidence: "EXTRACTED" | "INFERRED"; direction: "outgoing" | "incoming" };
+  };
 }
 
 export interface Task {
@@ -108,6 +119,7 @@ export interface EvidenceSnapshot {
   checks: CheckRecord[];
   tasks: Task[];
   participants: Participant[];
+  codeGraph?: import("./evidence/code-graph").CodeGraph;
 }
 
 export interface TaskUpdateRequest {
