@@ -35,7 +35,8 @@
         "t_readback",
         "t_code_graph",
         "t_film",
-        "t_freeze"
+        "t_freeze",
+        "t_saved_bug"
       ],
       "role": "member",
       "repoAccess": true
@@ -47,7 +48,7 @@
       "title": "lock the Leader Desk to Charan's laptop with Touch ID",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#2"
+        "kkb#15"
       ],
       "assignment": {
         "state": "accepted",
@@ -63,7 +64,7 @@
       "title": "handle leader approvals during the demo",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#7"
+        "kkb#22"
       ],
       "assignment": {
         "state": "accepted",
@@ -78,7 +79,7 @@
       "title": "only say saved after the update is read back from the store",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#4"
+        "kkb#16"
       ],
       "assignment": {
         "state": "accepted",
@@ -95,8 +96,8 @@
       "title": "run three test calls over 45 seconds with an evaluation note after each",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#5",
-        "kkb#6"
+        "kkb#20",
+        "kkb#21"
       ],
       "assignment": {
         "state": "accepted",
@@ -113,8 +114,8 @@
       "title": "move the code graph agent to the left side",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#8",
-        "kkb#9"
+        "kkb#23",
+        "kkb#24"
       ],
       "assignment": {
         "state": "proposed",
@@ -130,7 +131,7 @@
       "title": "record the demo film before four",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#10"
+        "kkb#25"
       ],
       "assignment": {
         "state": "mentioned"
@@ -144,13 +145,34 @@
       "title": "decide the code freeze time, 3:30 or 3:45",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#11"
+        "kkb#26",
+        "kkb#27"
       ],
       "assignment": {
         "state": "unknown"
       },
       "searchTerms": [
         "freeze"
+      ]
+    },
+    {
+      "id": "t_saved_bug",
+      "title": "fix the bug where the agent said saved after a timed-out write",
+      "meetingId": "kkb-sync-2026-11-15",
+      "passageIds": [
+        "kkb#17",
+        "kkb#18",
+        "kkb#19"
+      ],
+      "assignment": {
+        "state": "accepted",
+        "ownerId": "p_dev"
+      },
+      "prNumber": 11,
+      "searchTerms": [
+        "persistverifiedupdate",
+        "withtimeout",
+        "read-back"
       ]
     }
   ]

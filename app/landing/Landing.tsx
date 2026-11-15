@@ -5,6 +5,8 @@ import graphData from "../../data/demo/codegraph.json";
 import graphDemo from "../../data/demo/codegraph.demo.json";
 import { CodeGraphView, type ViewGraph } from "../components/CodeGraphView";
 import { AgentGlyph } from "../components/AgentGlyph";
+import { arcLength, catmullRomToBezier, damp, toSvgPath, type V2 } from "../../lib/motion/curves";
+import { understand } from "../../lib/core/understand";
 
 // Kaam Ki Baat landing — the page explains the product by *doing* it:
 // turn left (Team Memory), face front (Leader Desk), turn right (Code Navigator).
@@ -13,7 +15,6 @@ import { AgentGlyph } from "../components/AgentGlyph";
 
 type Zone = "team_memory" | "leader_desk" | "code_navigator";
 const ZONES: Zone[] = ["team_memory", "leader_desk", "code_navigator"];
-const ANGLE: Record<Zone, number> = { team_memory: -38, leader_desk: 0, code_navigator: 38 };
 const REPO = "https://github.com/harshsinha-12/kaam-ki-baat";
 const ReducedMotion = createContext(true);
 
@@ -96,27 +97,45 @@ function useCountUp(target: number, run: boolean, ms = 1400) {
 }
 
 /* ------------------------------------------------------- spatial stage */
-function Head({ zone }: { zone: Zone }) {
-  const reduced = useContext(ReducedMotion);
-  // Top-down head: nose points where you're looking; AirPods glow on the ears.
-  const color = zone === "team_memory" ? "var(--left)" : zone === "leader_desk" ? "var(--center)" : "var(--right)";
+// "You", seen from the front, wearing AirPods. The head turns in 3D toward the
+// agent you select; a soft light cone lands on that agent.
+const TURN: Record<Zone, number> = { team_memory: -28, leader_desk: 0, code_navigator: 28 };
+function Listener({ zone }: { zone: Zone }) {
+  const color = ZONE_HEX[zone];
+  const look = zone === "team_memory" ? -1 : zone === "code_navigator" ? 1 : 0;
   return (
-    <div className={s.headWrap} aria-hidden>
-      <div className={s.beam} style={{ transform: `translateX(-50%) rotate(${ANGLE[zone]}deg)`, background: `linear-gradient(to top, ${color}, transparent)` }} />
-      <svg viewBox="0 0 120 120" className={s.head} style={{ transform: `rotate(${ANGLE[zone]}deg)` }}>
-        <defs>
-          <radialGradient id="hg" cx="50%" cy="40%" r="60%"><stop offset="0" stopColor="#2a2925" /><stop offset="1" stopColor="#151513" /></radialGradient>
-        </defs>
-        <ellipse cx="60" cy="66" rx="34" ry="38" fill="url(#hg)" stroke="#3a3832" />
-        <path d="M60 22 L67 34 L53 34 Z" fill="#3a3832" />
-        <circle cx="25" cy="66" r="7" fill="#f2efe6" />
-        <circle cx="95" cy="66" r="7" fill="#f2efe6" />
-        <circle cx="25" cy="66" r="11" fill="none" stroke={color} strokeOpacity=".5">{!reduced && <animate attributeName="r" values="8;14;8" dur="2.4s" repeatCount="indefinite" />}</circle>
-        <circle cx="95" cy="66" r="11" fill="none" stroke={color} strokeOpacity=".5">{!reduced && <animate attributeName="r" values="8;14;8" dur="2.4s" repeatCount="indefinite" />}</circle>
-      </svg>
+    <div className={s.listener} aria-hidden>
+      <div className={s.listenerHead} style={{ transform: `perspective(420px) rotateY(${TURN[zone]}deg) rotateX(${zone === "leader_desk" ? -6 : 0}deg)` }}>
+        <svg viewBox="0 0 120 130" width="100%" height="100%">
+          <defs>
+            <radialGradient id="kkbSkin" cx="45%" cy="35%" r="70%"><stop offset="0" stopColor="#5a5448" /><stop offset="1" stopColor="#2a2722" /></radialGradient>
+            <linearGradient id="kkbHair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2a2824" /><stop offset="1" stopColor="#141412" /></linearGradient>
+          </defs>
+          <path d="M18 128 C22 104 40 96 60 96 C80 96 98 104 102 128 Z" fill="#2a2823" stroke="#3a372f" />
+          <rect x="50" y="78" width="20" height="22" rx="8" fill="#38342d" />
+          <ellipse cx="60" cy="52" rx="31" ry="36" fill="url(#kkbSkin)" stroke="#34322c" />
+          <path d="M29 46 C30 20 50 13 62 14 C80 15 92 27 91 46 C84 34 72 29 60 30 C47 31 36 37 29 46 Z" fill="url(#kkbHair)" />
+          <g style={{ transform: `translateX(${look * 6}px)`, transition: "transform .7s cubic-bezier(.16,1,.3,1)" }}>
+            <ellipse cx="49" cy="55" rx="2.6" ry="3.2" fill="#f2efe6" /><ellipse cx="71" cy="55" rx="2.6" ry="3.2" fill="#f2efe6" />
+            <path d="M60 58 q-2 8 1 10" stroke="#4a473f" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+            <path d="M53 74 q7 4 14 0" stroke="#5a564c" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+          </g>
+          {[[27, 56], [93, 56]].map(([x, y]) => (
+            <g key={x}>
+              <rect x={x - 4} y={y - 6} width="8" height="12" rx="4" fill="#f2efe6" />
+              <rect x={x - 1.6} y={y + 4} width="3.2" height="10" rx="1.6" fill="#f2efe6" />
+              <circle cx={x} cy={y} r="9" fill="none" stroke={color} strokeOpacity=".55" strokeWidth="1.2"><animate attributeName="r" values="7;12;7" dur="2.4s" repeatCount="indefinite" /><animate attributeName="stroke-opacity" values=".6;0;.6" dur="2.4s" repeatCount="indefinite" /></circle>
+            </g>
+          ))}
+        </svg>
+      </div>
+      <div className={s.listenerLabel}>You · AirPods</div>
     </div>
   );
 }
+
+const ZONE_HEX: Record<Zone, string> = { team_memory: "#7cc4ff", leader_desk: "#f5c451", code_navigator: "#ff8a65" };
+const SPOT: Record<Zone, [number, number]> = { team_memory: [17, 30], leader_desk: [50, 17], code_navigator: [83, 30] };
 
 function Stage({ zone, onZone, autoplay }: { zone: Zone; onZone: (z: Zone) => void; autoplay: boolean }) {
   const reduced = useContext(ReducedMotion);
@@ -132,27 +151,38 @@ function Stage({ zone, onZone, autoplay }: { zone: Zone; onZone: (z: Zone) => vo
   const visibleWords = reduced ? words.length : n;
 
   const onKey = (e: KeyboardEvent) => {
-    if (e.key === "ArrowLeft") onZone("team_memory");
+    const k = e.key.toLowerCase();
+    if (e.key === "ArrowLeft" || k === "a") onZone("team_memory");
     else if (e.key === "ArrowUp") { e.preventDefault(); onZone("leader_desk"); }
-    else if (e.key === "ArrowRight") onZone("code_navigator");
+    else if (e.key === "ArrowRight" || k === "l") onZone("code_navigator");
   };
 
   return (
-    <div className={s.stage} tabIndex={0} onKeyDown={onKey} role="group" aria-label="Spatial agents demo. Use left, up and right arrow keys, or click a zone.">
-      <div className={s.arc}>
+    <div className={s.stage} tabIndex={0} onKeyDown={onKey} role="group" style={{ "--zc": ZONE_HEX[zone] } as CSSProperties}
+      aria-label="Spatial agents demo. Use A or left arrow, up arrow, L or right arrow, or click an agent.">
+      <svg className={s.cones} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+        <defs>{ZONES.map((z) => (
+          <linearGradient key={z} id={`cone-${z}`} x1={SPOT[z][0] / 100} y1={SPOT[z][1] / 100} x2=".5" y2=".62" gradientUnits="objectBoundingBox">
+            <stop offset="0" stopColor={ZONE_HEX[z]} stopOpacity=".32" /><stop offset="1" stopColor={ZONE_HEX[z]} stopOpacity="0" />
+          </linearGradient>))}</defs>
         {ZONES.map((z) => (
-          <button key={z} type="button" className={s.zone} data-z={z} data-on={zone === z} onClick={() => onZone(z)} aria-pressed={zone === z}>
-            <div className={s.zoneTop}><AgentGlyph zone={z} reduced={reduced} size={26} active={zone === z} look={zone === "team_memory" ? -1 : zone === "code_navigator" ? 1 : 0} /><span>{SCRIPT[z].side}</span>{z === "leader_desk" && <span className={s.lock}>leader only</span>}</div>
-            <div className={s.zoneName}>{SCRIPT[z].label}</div>
-            <div className={s.zoneSub}>{SCRIPT[z].sub}</div>
-          </button>
+          <polygon key={z} points={`50,58 ${SPOT[z][0] - 9},${SPOT[z][1] + 2} ${SPOT[z][0] + 9},${SPOT[z][1] + 2}`} fill={`url(#cone-${z})`}
+            style={{ opacity: zone === z ? 1 : 0, transition: "opacity .6s cubic-bezier(.16,1,.3,1)" }} />
         ))}
-      </div>
-      <Head zone={zone} />
+      </svg>
+      {ZONES.map((z) => (
+        <button key={z} type="button" className={s.agent} data-z={z} data-on={zone === z} onClick={() => onZone(z)} aria-pressed={zone === z}
+          style={{ left: `${SPOT[z][0]}%`, top: `${SPOT[z][1]}%`, "--c": ZONE_HEX[z] } as CSSProperties}>
+          <AgentGlyph zone={z} reduced={reduced} size={zone === z ? 72 : 56} active={zone === z} look={z === "team_memory" ? 1 : z === "code_navigator" ? -1 : 0} />
+          <span className={s.agentName}>{SCRIPT[z].label}</span>
+          <span className={s.agentKey}>{z === "team_memory" ? "A · look left" : z === "code_navigator" ? "L · look right" : "↑ · face front"}{z === "leader_desk" ? " · leader only" : ""}</span>
+        </button>
+      ))}
+      <Listener zone={zone} />
       <div className={s.transcript} aria-live="polite">
-        <div className={s.who}><span>{zone === "leader_desk" ? "Leader inbox" : "You"}</span><span>{autoplay ? "demo · fictional team" : "interactive demo · fictional team"}</span></div>
-        <div style={{ color: "var(--mute)", marginBottom: 6 }}>“{script.ask}”</div>
-        <div>
+        <div className={s.who}><span style={{ color: "var(--zc)" }}>● {SCRIPT[zone].label}</span><span>{autoplay ? "demo · fictional team" : "you're driving"}</span></div>
+        <div className={s.ask}>“{script.ask}”</div>
+        <div className={s.say}>
           {words.map((w, i) => <span key={`${zone}-${i}`} className={`${s.word} ${i < visibleWords ? s.wordOn : ""}`}>{w} </span>)}
         </div>
         <div className={`${s.src} ${visibleWords >= words.length ? s.srcOn : ""}`}>
@@ -190,22 +220,33 @@ function Stats() {
   }, [inView, reduced]);
   return (
     <div ref={ref} className={s.stats}>
-      <div className={s.stat}>
-        <div className={s.big}>{a}%</div>
-        <div className={s.dots} aria-hidden>{Array.from({ length: 100 }, (_, i) => <span key={i} className={`${s.dot} ${i < (reduced ? 55 : lit) ? s.dotOn : ""}`} />)}</div>
-        <div className={s.statText}>of people say <b style={{ color: "var(--ink)" }}>next steps are unclear</b> when a meeting ends.</div>
+      <div className={s.stat} data-spot style={{ "--spot": "#f5c451" } as CSSProperties}>
+        <span className={s.statTag} style={{ color: "#f5c451", borderColor: "rgba(245,196,81,.35)" }}>unclear after meetings</span>
+        <div className={s.big}>{a}<span className={s.pct}>%</span></div>
+        <div className={s.dots} aria-hidden>{Array.from({ length: 100 }, (_, i) => <span key={i} style={{ "--i": i } as CSSProperties} className={`${s.dot} ${i < (reduced ? 55 : lit) ? s.dotOn : ""}`} />)}</div>
+        <div className={s.statText}>of people say <b>next steps are unclear</b> when a meeting ends.</div>
         <div className={s.cite}>Microsoft Work Trend Index 2023 · 31,000 workers · <a href="https://www.microsoft.com/en-us/worklab/work-trend-index/will-ai-fix-work" target="_blank" rel="noreferrer">source</a></div>
       </div>
-      <div className={s.stat}>
-        <div className={s.big}>{b}%</div>
-        <div className={s.bar}><div className={s.barFill} style={{ width: inView ? "20%" : 0 }} /></div>
-        <div className={s.statText}>of developers lose <b style={{ color: "var(--ink)" }}>8+ hours a week</b> to inefficiencies. That's a working day, about 20% of their time.</div>
+      <div className={s.stat} data-spot style={{ "--spot": "#ff8a65" } as CSSProperties}>
+        <span className={s.statTag} style={{ color: "#ff8a65", borderColor: "rgba(255,138,101,.35)" }}>time lost</span>
+        <div className={s.big}>{b}<span className={s.pct}>%</span></div>
+        <div className={s.week} aria-hidden>{["Mon", "Tue", "Wed", "Thu", "Fri"].map((d, i) => (
+          <div key={d} className={`${s.day} ${i === 4 && inView ? s.dayLost : ""}`}><span>{d}</span></div>
+        ))}</div>
+        <div className={s.statText}>of developers lose <b>8+ hours a week</b> to inefficiencies. That's a whole working day.</div>
         <div className={s.cite}>Atlassian × DX, State of DevEx 2024 · <a href="https://www.atlassian.com/blog/development/developer-experience-report-2024" target="_blank" rel="noreferrer">source</a></div>
       </div>
-      <div className={s.stat}>
-        <div className={s.big}>{c}%</div>
-        <div className={s.bar}><div className={s.barFill} style={{ width: inView ? "61%" : 0 }} /></div>
-        <div className={s.statText}>of developers spend <b style={{ color: "var(--ink)" }}>30+ minutes a day</b> searching for answers. 53% say waiting on answers disrupts their flow.</div>
+      <div className={s.stat} data-spot style={{ "--spot": "#7cc4ff" } as CSSProperties}>
+        <span className={s.statTag} style={{ color: "#7cc4ff", borderColor: "rgba(124,196,255,.35)" }}>waiting for answers</span>
+        <div className={s.big}>{c}<span className={s.pct}>%</span></div>
+        <svg className={s.clock} viewBox="0 0 120 120" aria-hidden>
+          {Array.from({ length: 60 }, (_, i) => { const ang = (i / 60) * Math.PI * 2 - Math.PI / 2; const on = inView && i < 30;
+            return <line key={i} x1={60 + 44 * Math.cos(ang)} y1={60 + 44 * Math.sin(ang)} x2={60 + (i % 5 ? 50 : 53) * Math.cos(ang)} y2={60 + (i % 5 ? 50 : 53) * Math.sin(ang)}
+              stroke={on ? "#7cc4ff" : "#2a2925"} strokeWidth={i % 5 ? 2 : 3} strokeLinecap="round" style={{ transition: `stroke .3s ${i * 25}ms` }} />; })}
+          <text x="60" y="58" textAnchor="middle" className={s.clockBig}>30+</text>
+          <text x="60" y="74" textAnchor="middle" className={s.clockSmall}>min / day</text>
+        </svg>
+        <div className={s.statText}>of developers spend <b>30+ minutes a day</b> searching for answers. 53% say waiting disrupts their flow.</div>
         <div className={s.cite}>Stack Overflow Developer Survey 2024 · <a href="https://survey.stackoverflow.co/2024/professional-developers" target="_blank" rel="noreferrer">source</a></div>
       </div>
     </div>
@@ -291,6 +332,58 @@ const PIPE = [
   { t: "Requester gets source", d: "Now, or on the next call.", say: "> “Approved by Charan: …”" },
 ];
 
+// A C1 Catmull-Rom spline through the step badges; the packet travels it at
+// constant speed (arc-length) and eases with frame-rate independent decay.
+function SplinePacket({ container, step, count }: { container: RefObject<HTMLDivElement | null>; step: number; count: number }) {
+  const [geo, setGeo] = useState<{ d: string; w: number; h: number; pts: V2[] } | null>(null);
+  const dot = useRef<SVGCircleElement>(null);
+  const trail = useRef<SVGPathElement>(null);
+  useEffect(() => {
+    const el = container.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      const badges = [...el.querySelectorAll("[data-badge]")].map((b) => { const q = b.getBoundingClientRect(); return { x: q.left - r.left + q.width / 2, y: q.top - r.top + q.height / 2 }; });
+      if (badges.length < 2) return;
+      // lift the curve between badges so it reads as a path, not a line
+      const pts: V2[] = [];
+      badges.forEach((b, i) => { pts.push(b); if (i < badges.length - 1) pts.push({ x: (b.x + badges[i + 1].x) / 2, y: b.y - (i % 2 ? -18 : 18) }); });
+      setGeo({ d: toSvgPath(catmullRomToBezier(pts)), w: r.width, h: r.height, pts });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [container]);
+  useEffect(() => {
+    if (!geo) return;
+    const curve = arcLength(catmullRomToBezier(geo.pts), 48);
+    const target = step / (count - 1);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let u = reduce ? target : (dot.current?.dataset.u ? Number(dot.current.dataset.u) : 0);
+    let last = performance.now(), raf = 0;
+    const frame = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      u = reduce ? target : damp(u, target, 5, dt);
+      const p = curve.at(u);
+      if (dot.current) { dot.current.setAttribute("cx", String(p.x)); dot.current.setAttribute("cy", String(p.y)); dot.current.dataset.u = String(u); }
+      if (trail.current) trail.current.style.strokeDashoffset = String(curve.total * (1 - u));
+      if (Math.abs(u - target) > 0.0005) raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, [geo, step, count]);
+  if (!geo) return null;
+  const total = arcLength(catmullRomToBezier(geo.pts), 48).total;
+  return (
+    <svg className={s.splineSvg} width={geo.w} height={geo.h} aria-hidden>
+      <path d={geo.d} fill="none" stroke="#2c2a24" strokeWidth="2" strokeDasharray="5 7" />
+      <path ref={trail} d={geo.d} fill="none" stroke="url(#kkbTrail)" strokeWidth="2.5" strokeLinecap="round" style={{ strokeDasharray: total, strokeDashoffset: total }} />
+      <defs><linearGradient id="kkbTrail" x1="0" x2="1"><stop offset="0" stopColor="#7cc4ff" /><stop offset=".5" stopColor="#f5c451" /><stop offset="1" stopColor="#6fdc8c" /></linearGradient></defs>
+      <circle ref={dot} r="7" fill="#f2efe6" style={{ filter: "drop-shadow(0 0 10px rgba(245,196,81,.9))" }} />
+    </svg>
+  );
+}
+
 function Escalation() {
   const reduced = useContext(ReducedMotion);
   const [ref, inView] = useInView<HTMLDivElement>(0.4);
@@ -304,10 +397,10 @@ function Escalation() {
   const pct = (step / (PIPE.length - 1)) * 100;
   return (
     <div ref={ref} className={s.pipe}>
-      <div className={s.pipeLine} aria-hidden><div className={s.pipeFill} style={{ width: `${pct}%` }} /><div className={s.packet} style={{ left: `${pct}%` }} /></div>
+      <SplinePacket container={ref} step={step} count={PIPE.length} />
       {PIPE.map((p, i) => (
-        <button key={p.t} type="button" className={`${s.pStep} ${i <= step ? s.pOn : ""}`} onClick={() => { setManual(true); setStep(i); }}>
-          <div className={s.pBadge}>{i + 1}</div>
+        <button key={p.t} type="button" data-spot className={`${s.pStep} ${i <= step ? s.pOn : ""}`} onClick={() => { setManual(true); setStep(i); }}>
+          <div className={s.pBadge} data-badge>{i + 1}</div>
           <div className={s.pTitle}>{p.t}</div>
           <div className={s.pText}>{p.d}</div>
           <div className={s.pSay}>{p.say}</div>
@@ -334,8 +427,8 @@ function Guards() {
         <button key={i} type="button" className={`${s.guard} ${flip.has(i) ? s.flipped : ""}`} aria-pressed={flip.has(i)}
           onClick={() => setFlip((f) => { const n = new Set(f); n.has(i) ? n.delete(i) : n.add(i); return n; })}>
           <div className={s.guardInner}>
-            <div className={s.face}>{g.front}<div className={s.flipHint}>what a chatbot says · tap to see ours →</div></div>
-            <div className={`${s.face} ${s.back}`}>{g.back}<div className={s.flipHint}>what Kaam Ki Baat says</div></div>
+            <div className={s.face} data-spot style={{ "--spot": "#ff6b6b" } as CSSProperties}>{g.front}<div className={s.flipHint}>what a chatbot says · tap to see ours →</div></div>
+            <div className={`${s.face} ${s.back}`} data-spot style={{ "--spot": "#6fdc8c" } as CSSProperties}>{g.back}<div className={s.flipHint}>what Kaam Ki Baat says</div></div>
           </div>
         </button>
       ))}
@@ -444,6 +537,7 @@ function GraphSection() {
   );
 }
 
+const HEARD_SAMPLE = "umm, code freeze 3:30, nahi matlab, final time kab hai?";
 const HEARS = [
   { k: "HEARD", t: "Wispr hears it", b: "Meeting notes come from Wispr Flow, and live speech from an app you opt into. Fillers and “no, sorry” self-corrections are cleaned up.",
     ui: "heard" },
@@ -454,14 +548,18 @@ const HEARS = [
 
 function HearsUI({ ui, on }: { ui: string; on: boolean }) {
   const reduced = useContext(ReducedMotion);
-  if (ui === "heard") return (
-    <div className={`${s.hUi} ${s.hDark}`}>
-      <div className={s.hTop}><span className={s.live}>● LISTENING</span><span className={s.tagPill}>EN</span><span className={s.tagPill}>हिं</span><span className={`${s.tagPill} ${s.tagHot}`}>Hinglish</span></div>
-      <div className={s.wave} aria-hidden>{Array.from({ length: 14 }, (_, i) => <i key={i} style={{ "--i": i } as CSSProperties} className={on ? s.waveOn : ""} />)}</div>
-      <div className={s.hText}><span className={s.strike}>umm,</span> code freeze <span className={s.strike}>3:30</span> <span style={{ color: "var(--mute)" }}>nahi matlab</span> kab hai?</div>
-      <div className={s.hChip}>code freeze kab hai?</div>
-    </div>
-  );
+  if (ui === "heard") {
+    const u = understand(HEARD_SAMPLE);
+    return (
+      <div className={`${s.hUi} ${s.hDark}`}>
+        <div className={s.hTop}><span className={s.live}>● LISTENING</span><span className={s.tagPill}>EN</span><span className={s.tagPill}>हिं</span><span className={`${s.tagPill} ${s.tagHot}`}>Hinglish</span></div>
+        <div className={s.wave} aria-hidden>{Array.from({ length: 14 }, (_, i) => <i key={i} style={{ "--i": i } as CSSProperties} className={on ? s.waveOn : ""} />)}</div>
+        <div className={s.hText}>{u.heard}</div>
+        <div className={s.editTags}>{u.edits.map((e, i) => <span key={i} className={s.editTag} style={{ "--i": i } as CSSProperties}>{e.kind === "filler" ? `filler · ${e.text}` : e.kind === "correction" ? `correction · ${e.text.replace(/^umm,?\s*/i, "")}` : e.kind}</span>)}</div>
+        <div className={s.hChip}>{u.cleaned}</div>
+      </div>
+    );
+  }
   if (ui === "mean") return (
     <div className={`${s.hUi} ${s.hDashed}`}>
       {[["freeze kab hai", "dec:t_freeze"], ["woh code", "persistVerifiedUpdate()"], ["mera kaam", "Harsh · 3 calls"], ["ho gaya?", "PR #11 · merged"]].map(([a, b], i) => (
@@ -502,7 +600,7 @@ function Hears() {
       <div className={s.hGrid}>
         {HEARS.map((h, k) => (
           <button key={h.k} type="button" className={`${s.hCol} ${k === i ? s.hOn : ""}`} onClick={() => { setManual(true); setI(k); }}>
-            <HearsUI ui={h.ui} on={k === i} />
+            <div data-spot style={{ borderRadius: 18, "--spot": ["#b48cff", "#f5c451", "#6fdc8c", "#7cc4ff"][k] } as CSSProperties}><HearsUI ui={h.ui} on={k === i} /></div>
             <div className={s.hNum}>0{k + 1}</div>
             <div className={s.hTitle}>{h.t}</div>
             <div className={s.hBody}>{h.b}</div>
@@ -526,7 +624,22 @@ function BrandMark() {
 }
 
 /* ------------------------------------------------------------------ page */
+function useSpotlight() {
+  useEffect(() => {
+    const move = (e: PointerEvent) => {
+      const el = (e.target as Element | null)?.closest?.("[data-spot]") as HTMLElement | null;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+      el.style.setProperty("--my", `${e.clientY - r.top}px`);
+    };
+    document.addEventListener("pointermove", move, { passive: true });
+    return () => document.removeEventListener("pointermove", move);
+  }, []);
+}
+
 export default function Landing() {
+  useSpotlight();
   const reduced = useMotionPreference();
   const [scrolled, setScrolled] = useState(false);
   const onScroll = useCallback(() => setScrolled(window.scrollY > 8), []);

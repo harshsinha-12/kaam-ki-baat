@@ -1,8 +1,8 @@
 {
-  "_label": "FIXTURE: hypothetical demo meeting written from the team's real build decisions on 2026-11-15. Not a Wispr Notetaker record. Participants consented to its use.",
+  "_label": "FIXTURE: hypothetical demo meeting between Charan Rathore (lead) and Harsh Sinha (teammate), written from the team's real build decisions on 2026-11-15. Both consented. Not a Wispr Notetaker record.",
   "meeting": {
     "id": "kkb-sync-2026-11-15",
-    "title": "Kaam Ki Baat \u2014 demo sync",
+    "title": "Kaam Ki Baat \u2014 kickoff and architecture",
     "date": "2026-11-15",
     "source": "FIXTURE",
     "approvedBy": "p_lead"
@@ -14,38 +14,38 @@
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Charan",
       "charStart": 0,
-      "charEnd": 69,
-      "text": "Agenda: Kaam Ki Baat demo at 4. Who owns what, and what's still open.",
+      "charEnd": 119,
+      "text": "Okay Harsh, we have three hours. Before we touch code, let's agree what we start with: one problem, one user, one demo.",
       "visibility": "participant"
     },
     {
       "kind": "meeting",
       "id": "kkb#2",
       "meetingId": "kkb-sync-2026-11-15",
-      "speaker": "Charan",
-      "charStart": 70,
-      "charEnd": 210,
-      "text": "Decision: the Leader Desk opens only on my laptop, with Touch ID. A head turn or the camera only selects an agent, it never proves who I am.",
+      "speaker": "Harsh",
+      "charStart": 120,
+      "charEnd": 159,
+      "text": "Agreed. So what exactly is the problem?",
       "visibility": "participant"
     },
     {
       "kind": "meeting",
       "id": "kkb#3",
       "meetingId": "kkb-sync-2026-11-15",
-      "speaker": "Harsh",
-      "charStart": 211,
-      "charEnd": 276,
-      "text": "Agreed. I'll use Team Memory and the Code Navigator from my side.",
+      "speaker": "Charan",
+      "charStart": 160,
+      "charEnd": 353,
+      "text": "Teams decide things in meetings and then lose them. A week later nobody can say who owns it, whether the code exists, whether the PR is merged, or whether the tests passed on the latest commit.",
       "visibility": "participant"
     },
     {
       "kind": "meeting",
       "id": "kkb#4",
       "meetingId": "kkb-sync-2026-11-15",
-      "speaker": "Charan",
-      "charStart": 277,
-      "charEnd": 382,
-      "text": "Decision: the agent says saved only after the update is read back from the store. A timeout is a failure.",
+      "speaker": "Harsh",
+      "charStart": 354,
+      "charEnd": 396,
+      "text": "And then someone pings the lead and waits.",
       "visibility": "participant"
     },
     {
@@ -53,9 +53,9 @@
       "id": "kkb#5",
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Charan",
-      "charStart": 383,
-      "charEnd": 491,
-      "text": "Harsh, can you run the three test calls, each over 45 seconds, and write the evaluation note after each one?",
+      "charStart": 397,
+      "charEnd": 582,
+      "text": "Exactly. The user is an engineer on a small team, like you, sitting on a doubt that blocks the task. The other user is the lead, like me, answering the same question for the fifth time.",
       "visibility": "participant"
     },
     {
@@ -63,9 +63,9 @@
       "id": "kkb#6",
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Harsh",
-      "charStart": 492,
-      "charEnd": 548,
-      "text": "Yes, I'll take the three calls and the evaluation notes.",
+      "charStart": 583,
+      "charEnd": 623,
+      "text": "Is this really common, or is it just us?",
       "visibility": "participant"
     },
     {
@@ -73,9 +73,9 @@
       "id": "kkb#7",
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Charan",
-      "charStart": 549,
-      "charEnd": 598,
-      "text": "I'll handle the leader approvals during the demo.",
+      "charStart": 624,
+      "charEnd": 838,
+      "text": "It's common. Microsoft's Work Trend Index says 55% of people find next steps unclear after meetings. Atlassian's developer experience report says 69% of developers lose eight or more hours a week to inefficiencies.",
       "visibility": "participant"
     },
     {
@@ -83,9 +83,9 @@
       "id": "kkb#8",
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Harsh",
-      "charStart": 599,
-      "charEnd": 683,
-      "text": "Should the code graph agent sit on the left side? It explains how it found the code.",
+      "charStart": 839,
+      "charEnd": 971,
+      "text": "And Stack Overflow's survey says 61% spend more than half an hour a day just searching for answers. So the waiting is the real cost.",
       "visibility": "participant"
     },
     {
@@ -93,29 +93,199 @@
       "id": "kkb#9",
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Charan",
-      "charStart": 684,
-      "charEnd": 725,
-      "text": "Maybe. Let's decide after the first call.",
+      "charStart": 972,
+      "charEnd": 1133,
+      "text": "Right. So the solution: a voice teammate. Wispr Flow gives us what was said in the meeting, GitHub gives us what was built, and Bolna lets you just call and ask.",
       "visibility": "participant"
     },
     {
       "kind": "meeting",
       "id": "kkb#10",
       "meetingId": "kkb-sync-2026-11-15",
-      "speaker": "Charan",
-      "charStart": 726,
-      "charEnd": 792,
-      "text": "Someone should record the demo film before four. Not sure who yet.",
+      "speaker": "Harsh",
+      "charStart": 1134,
+      "charEnd": 1174,
+      "text": "How do we stop it from making things up?",
       "visibility": "participant"
     },
     {
       "kind": "meeting",
       "id": "kkb#11",
       "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 1175,
+      "charEnd": 1369,
+      "text": "Fixed rules decide status, not the model. Proposed is not accepted, an open PR is not merged, and a check on an older commit is stale. If it doesn't know, it asks the leader instead of guessing.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#12",
+      "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Harsh",
-      "charStart": 793,
-      "charEnd": 846,
-      "text": "Open question: do we freeze the code at 3:30 or 3:45?",
+      "charStart": 1370,
+      "charEnd": 1391,
+      "text": "And the three agents?",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#13",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 1392,
+      "charEnd": 1619,
+      "text": "Left is Team Memory, for what we decided. Front is the Leader Desk, which only I can open, from my laptop with Touch ID. Right is the Code Navigator, which uses a graph of the repo to point at the exact file, function and line.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#14",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 1620,
+      "charEnd": 1691,
+      "text": "A head turn picks one, and I can also press A for left and L for right?",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#15",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 1692,
+      "charEnd": 1770,
+      "text": "Yes. But turning your head only selects an agent. It never proves who you are.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#16",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 1771,
+      "charEnd": 1881,
+      "text": "One more rule: the agent says saved only after the update is read back from the store. A timeout is a failure.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#17",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 1882,
+      "charEnd": 1974,
+      "text": "That reminds me, on yesterday's test call it said saved even though the write had timed out.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#18",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 1975,
+      "charEnd": 2094,
+      "text": "Then that's your first task. You own the fix. Start from persistVerifiedUpdate and check the timeout and the read-back.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#19",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 2095,
+      "charEnd": 2139,
+      "text": "Okay, I'll take the saved-after-timeout bug.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#20",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 2140,
+      "charEnd": 2247,
+      "text": "Can you also run the three test calls, each longer than 45 seconds, with an evaluation note after each one?",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#21",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 2248,
+      "charEnd": 2298,
+      "text": "Yes, I'll run the three calls and write the notes.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#22",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 2299,
+      "charEnd": 2348,
+      "text": "I'll handle the leader approvals during the demo.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#23",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 2349,
+      "charEnd": 2399,
+      "text": "Should the code graph agent move to the left side?",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#24",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 2400,
+      "charEnd": 2441,
+      "text": "Maybe. Let's decide after the first call.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#25",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 2442,
+      "charEnd": 2508,
+      "text": "Someone should record the demo film before four. Not sure who yet.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#26",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 2509,
+      "charEnd": 2559,
+      "text": "Last thing: do we freeze the code at 3:30 or 3:45?",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#27",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 2560,
+      "charEnd": 2638,
+      "text": "Let's not decide that now. Ask me through the agent later, that's a good test.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#28",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 2639,
+      "charEnd": 2732,
+      "text": "Okay. I'm on board with the whole plan. Let's test it now and see what I actually understood.",
       "visibility": "participant"
     }
   ]

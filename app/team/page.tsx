@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CodeGraphView, type ViewGraph } from "../components/CodeGraphView";
+import { CodeFocus } from "../components/CodeFocus";
 import { key, zone } from "../zones/client";
 import s from "../zones/zones.module.css";
 
@@ -36,6 +37,9 @@ export default function Team() {
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === "INPUT") return;
+      // A / L = select AND activate (explicit keyboard activation, the fallback when no camera or AirPods)
+      if (e.key === "a" || e.key === "A") { select("team_memory"); zone("activate", { zone: "team_memory", method: "keyboard" }); }
+      if (e.key === "l" || e.key === "L") { select("code_navigator"); zone("activate", { zone: "code_navigator", method: "keyboard" }); }
       if (e.key === "ArrowLeft") select("team_memory");
       if (e.key === "ArrowRight") select("code_navigator");
       if (e.key === "ArrowUp") select("leader_desk");
@@ -85,9 +89,9 @@ export default function Team() {
       </div>
       {error && <p className={s.bad} role="alert">{error}</p>}
       <div className={s.zones} role="tablist" aria-label="Agents (← ↑ →)">
-        <button className={`${s.zbtn} ${focus === "team_memory" ? s.zbtnOn : ""}`} onClick={() => select("team_memory")}><div className={s.label}>← left</div>Team Memory</button>
+        <button className={`${s.zbtn} ${focus === "team_memory" ? s.zbtnOn : ""}`} onClick={() => select("team_memory")}><div className={s.label}>← left · press A</div>Team Memory</button>
         <button className={`${s.zbtn} ${s.lock}`} onClick={() => select("leader_desk")} title={me?.zones?.leader_desk?.reason}><div className={s.label}>↑ front · locked</div>Leader Desk</button>
-        <button className={`${s.zbtn} ${focus === "code_navigator" ? s.zbtnOn : ""}`} onClick={() => select("code_navigator")}><div className={s.label}>right →</div>Code Navigator</button>
+        <button className={`${s.zbtn} ${focus === "code_navigator" ? s.zbtnOn : ""}`} onClick={() => select("code_navigator")}><div className={s.label}>right → · press L</div>Code Navigator</button>
       </div>
 
       <div className={s.grid}>
@@ -133,6 +137,7 @@ export default function Team() {
               <ol className={s.steps}>{ga.explanation.map((l, i) => <li key={i}>{l.replace(/^\d+\.\s*/, "")}</li>)}</ol>
             </>
           )}
+          <CodeFocus />
         </section>
       </div>
     </main>

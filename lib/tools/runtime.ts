@@ -14,6 +14,9 @@ import { askTeamMemory, nameOf } from "../zones/memory";
 import { contextVersion, latestActivatedZone } from "../zones/state";
 import { getCodeGraph } from "../codegraph/load";
 import { queryGraph } from "../codegraph/graph";
+import { explainFirstPrinciples } from "../codegraph/explain";
+import { understand } from "../core/understand";
+import { ev } from "../zones/state";
 
 // The four runtime tools Bolna calls during a phone call (D-013). Framework-free:
 // app/api/tools/[tool]/route.ts is a thin HTTP wrapper around these.
@@ -115,13 +118,21 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       });
     }
     case "get_task_evidence": {
+      // Authorization first: naming a task you can't see is refused before any routing.
       const task = pickTask(rt, caller, body.task_id ?? body.taskId);
-      if ((body.task_id ?? body.taskId) && !task) return { status: 403, body: { ok: false, error: "task not authorized", speak: "That task isn't one I can share with you." } };
-      // No explicit focus? Follow the zone the caller activated on screen (camera/keyboard selection).
+      if ((body.task_id ?? body.taskId) && !task)
+        return { status: 403, body: { ok: false, error: "task not authorized", speak: "That task isn't one I can share with you." } };
+      // Understand the words first (clean fillers/self-corrections, resolve "woh"), then
+      // pick the agent: explicit focus > what the words ask for > zone activated on screen.
+      const focusTask = pickTask(rt, caller);
+      const understood = understand(String(body.question ?? body.utterance ?? ""), { focusTaskTitle: focusTask?.title });
+      body = { ...body, question: understood.normalized, understood };
       if (body.focus === undefined || body.focus === "") {
         const z = latestActivatedZone(await rt.store.all(), caller.participant.id);
-        if (z === "team_memory") body = { ...body, focus: "memory", focusSource: "screen" };
-        else if (z === "code_navigator") body = { ...body, focus: "code", focusSource: "screen" };
+        const screen = z === "team_memory" ? "memory" : z === "code_navigator" ? "code" : null;
+        // Spoken code/verify questions stay on the conversation flow (which keeps
+        // interruption recovery); the code graph answers when the screen says so.
+        if (screen && !(understood.intent === "verify")) body = { ...body, focus: screen, focusSource: "screen" };
       }
       if (body.focus === "code" || body.focus === "graph") {
         const actor = callActor(caller);
@@ -132,12 +143,17 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
         const file = a.seed ? a.seed.path.split("/").pop() : "";
         const caller2 = a.path.find((p) => p.via === "uses");
         const test = a.path.find((p) => p.via === "tests");
-        const speak = a.seed
+        // First-principles explanation + lines to box in the caller's browser.
+        const ruleTask = rt.snapshot.tasks.find((t) => caller.taskIds.has(t.id) && a.seed && t.searchTerms.includes(a.seed.label.toLowerCase()));
+        const rulePassage = ruleTask ? rt.snapshot.passages.find((p) => ruleTask.passageIds.includes(p.id)) : undefined;
+        const fp = explainFirstPrinciples(rt.snapshot, a, rulePassage ? `${rulePassage.text} (${rulePassage.speaker}, ${rulePassage.id})` : undefined);
+        if (fp) await rt.store.append(ev("code_focus", caller.participant.id, { ...fp, from: "call", callId: caller.session.callId }));
+        const speak = fp ? `${fp.speak} This is my best match from the code graph, not confirmed yet.` : a.seed
           ? `Open ${file}, the ${a.seed.label} ${a.seed.kind}, line ${a.seed.line}.${caller2 ? ` A static link suggests a caller in ${caller2.node.path.split("/").pop()}.` : ""}${test ? ` A related test file is ${test.node.path.split("/").pop()}; its execution is unverified.` : ""} That's my best match, not confirmed yet.`
           : "I couldn't find that in the code at this commit. Tell me a function or file name.";
         return ok({
           speak, specialist: "code_navigator", focusSource: body.focusSource ?? "caller",
-          match: a.match, explanation: a.explanation, sha: g.sha,
+          match: a.match, explanation: a.explanation, sha: g.sha, firstPrinciples: fp?.steps, highlights: fp?.highlights, understood,
           location: a.seed ? { path: a.seed.path, line: a.seed.line, url: `https://github.com/${g.repository}/blob/${g.sha}/${a.seed.path}#L${a.seed.line}` } : null,
           evidenceIds: a.subgraph.nodes,
         });
@@ -146,7 +162,7 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
         const events = await rt.store.all();
         const a = askTeamMemory(rt.snapshot, events, callActor(caller), String(body.question ?? body.utterance ?? ""));
         return ok({
-          speak: a.speak, specialist: "team_memory", kind: a.kind, focusSource: body.focusSource ?? "caller", offerEscalation: a.offerEscalation,
+          speak: a.speak, specialist: "team_memory", kind: a.kind, focusSource: body.focusSource ?? "caller", understood, offerEscalation: a.offerEscalation,
           sources: a.sources, contextVersion: contextVersion(events), pendingTicket: "pendingTicket" in a ? a.pendingTicket?.id ?? null : null,
           evidenceIds: a.sources.map((x) => x.id),
         });

@@ -10,7 +10,7 @@ export function testSnapshot(): EvidenceSnapshot {
     meetings: [{ id: "m1", title: "Sync", source: "FIXTURE", approvedBy: "test" }, { id: "m2", title: "Private", source: "FIXTURE", approvedBy: "test" }],
     passages: [{ kind: "meeting", id: "m1#1", meetingId: "m1", speaker: "Lead", charStart: 0, charEnd: 40, text: "Only say saved after read-back.", visibility: "participant" }],
     files: [
-      { path: "lib/core/persist-update.ts", content: "import x from 'y';\n\nexport async function persistVerifiedUpdate(args) {\n  // read-back before success\n  const actual = await read();\n}\n" },
+      { path: "lib/core/persist-update.ts", content: "import x from 'y';\n\nexport async function persistVerifiedUpdate(args) {\n  // read-back before success\n  const written = await withTimeout(write(), 3000);\n  const actual = await withTimeout(repository.read(written.id), 3000);\n  if (!actual) return { saved: false, reason: \"read-back failed\" };\n  return { saved: true };\n}\n" },
       { path: "lib/other.ts", content: "// mentions read-back in passing\nexport const other = 1;\n" },
       { path: "tests/persist-update.test.ts", content: "import { persistVerifiedUpdate } from \"../lib/core/persist-update\";\nit('requires read-back', () => {});\n" },
     ],
