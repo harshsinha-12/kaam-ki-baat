@@ -109,4 +109,16 @@ describe("browser input ordering (simulated transports, real focus handlers)", (
     assert.equal(seen.length, before);
     assert.equal(calls.filter(x => x === "focus").length, 0);
   });
+
+  it("requires a fresh selection from a new provider before browser activation", async () => {
+    const { controller, calls } = await setup();
+    await controller.switchInput("manual");
+    await controller.select("code_navigator");
+    await controller.switchInput("webcam");
+    await controller.activate();
+    assert.equal(calls.filter(x => x === "activate").length, 0);
+    await controller.select("team_memory");
+    await controller.activate();
+    assert.equal(controller.snapshot?.focus.activeZone, "team_memory");
+  });
 });
