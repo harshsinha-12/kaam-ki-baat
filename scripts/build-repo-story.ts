@@ -68,6 +68,19 @@ const NOTES: Record<number, { title: string; what: string; chapter: string; area
   32: { title: "Visible voice start", what: "The voice start button and microphone state stay visible while head tracking is on.", chapter: "demo", areas: ["voice", "focus"] },
 };
 
+// For a PR without a curated note: tag areas from the paths it touched.
+const PATH_AREAS: [RegExp, string][] = [
+  [/^lib\/zones|leader|passkey/, "leader"], [/^lib\/(focus|spatial)|^native\/|webcam/, "focus"], [/bolna|voice|call/, "voice"],
+  [/^lib\/(specialists|codegraph|evidence)|graph/, "code"], [/^lib\/adapters|^lib\/core\/reconcile/, "evidence"], [/meeting|wispr/, "memory"],
+  [/^app\/|^\.github\/workflows\/deploy/, "site"], [/^tests\/|^lib\/eval/, "quality"], [/^docs\/|AGENTS\.md|README/, "plan"],
+];
+function areasFromFiles(files: string[]): string[] {
+  const hits = new Map<string, number>();
+  for (const f of files) for (const [re, id] of PATH_AREAS) if (re.test(f)) { hits.set(id, (hits.get(id) ?? 0) + 1); break; }
+  const ranked = [...hits.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id).slice(0, 3);
+  return ranked.length ? ranked : ["plan"];
+}
+
 const repository = "harshsinha-12/kaam-ki-baat";
 const head = git("rev-parse", "HEAD");
 const [firstSha, firstAt, firstAuthor, ...firstSubject] = git("log", "--reverse", "--format=%h%x09%aI%x09%an%x09%s", "main").split("\n")[0].split("\t");
@@ -85,7 +98,7 @@ for (const line of merges) {
   const folders = new Map<string, number>();
   for (const f of files) { const d = f.includes("/") ? f.split("/").slice(0, 2).join("/").replace(/\/[^/]*\.[a-z]+$/, "") : "root"; folders.set(d, (folders.get(d) ?? 0) + 1); }
   const authors = [...new Set(git("log", "--no-merges", "--format=%an", `${sha}^1..${sha}^2`).split("\n").filter(Boolean))];
-  const note = NOTES[number] ?? { title: branch, what: `Merged branch ${branch}.`, chapter: CHAPTERS[CHAPTERS.length - 1].id, areas: [] };
+  const note = NOTES[number] ?? { title: branch, what: `Merged branch ${branch}.`, chapter: CHAPTERS[CHAPTERS.length - 1].id, areas: areasFromFiles(files) };
   prs.push({
     number, branch, title: note.title, what: note.what, chapter: note.chapter, areas: note.areas,
     authors, mergedAt: new Date(at).toISOString(), mergeSha: sha.slice(0, 7), filesChanged: files.length,

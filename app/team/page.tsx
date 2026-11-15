@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { CodeGraphView, type ViewGraph, type ViewNode } from "../components/CodeGraphView";
 import { ProjectConnection, type ConnectedProject } from "../components/ProjectConnection";
 import { FocusInputControls } from "../components/FocusInputControls";
@@ -9,6 +9,8 @@ import { CodeFocus, type CodeSourceRequest } from "../components/CodeFocus";
 import type { CodeSourceFocus } from "@/lib/codegraph/source";
 import { key, sessionToken, zone } from "../zones/client";
 import s from "../zones/zones.module.css";
+import { FlowRail } from "./FlowRail";
+import { flowReducer, initialFlow } from "./flow-state";
 
 // Teammate workspace: LEFT Team Memory (doubts + escalation) and RIGHT Code
 // Navigator (graph). CENTER is visible but locked unless the server says otherwise.
@@ -20,6 +22,8 @@ type GA = { explanation: string[]; match: string; seed: { label: string; path: s
 type Ticket = { id: string; question: string; state: string; answer?: { statement: string; conditions?: string; approvedBy: string; decisionVersion: number } };
 
 export default function Team() {
+  const [flow, dispatchFlow] = useReducer(flowReducer, initialFlow);
+  const flowRequestId = useRef(0);
   const [expanded, setExpanded] = useState(false);
   const [sessionLink, setSessionLink] = useState("");
   const [connecting, setConnecting] = useState(true);
@@ -94,37 +98,46 @@ export default function Team() {
 
   const ask = async () => {
     if (!connected || asking || !q.trim()) return;
+    const requestId = ++flowRequestId.current;
+    dispatchFlow({ type: "start", requestId, destination: "memory" });
     setAsking(true); setSent(null); setError(""); setMem(null);
     try { const r = await zone<Mem>("memory_ask", { question: q });
       if (r.status !== 200 || !r.data.kind) throw new Error(r.data.error ?? "Memory unavailable");
       setMem(r.data);
-    } catch (e) { setError((e as Error).message); }
+      dispatchFlow({ type: "finish", requestId, success: true });
+    } catch (e) { setError((e as Error).message); dispatchFlow({ type: "finish", requestId, success: false }); }
     finally { setAsking(false); }
   };
   const escalate = async () => {
     const question = mem?.question ?? q;
     if (escalation.current?.pending) return;
+    const requestId = ++flowRequestId.current;
+    dispatchFlow({ type: "start", requestId, destination: "leader" });
     if (escalation.current?.question !== question) escalation.current = { question, id: key(), pending: false };
     const attempt = escalation.current!;
     attempt.pending = true; setSending(true);
     try { const r = await zone<{ ticket: Ticket }>("ticket_create", { question, confirmed: true, idempotency_key: attempt.id });
       setSent(r.data.ticket ? `Sent to the leader as ${r.data.ticket.id}. I won't guess; you'll see the answer here.` : r.data.error ?? "not sent");
-    } catch { setError("Question could not be sent. Try again."); }
+      dispatchFlow({ type: "finish", requestId, success: Boolean(r.data.ticket) });
+    } catch { setError("Question could not be sent. Try again."); dispatchFlow({ type: "finish", requestId, success: false }); }
     finally { attempt.pending = false; setSending(false); }
   };
   const navigate = async () => {
     if (!connected || finding || !cq.trim()) return;
+    const requestId = ++flowRequestId.current;
+    dispatchFlow({ type: "start", requestId, destination: "code" });
     setFinding(true); setError(""); setGa(null);
     try { const r = await zone<GA>("code_graph_query", { question: cq });
       if (r.status !== 200 || !r.data.graph || !r.data.subgraph) throw new Error(r.data.error ?? "Code graph unavailable");
       setGa(r.data);
       setSourceRefresh(n => n + 1);
-    } catch (e) { setError((e as Error).message); }
+      dispatchFlow({ type: "finish", requestId, success: true });
+    } catch (e) { setError((e as Error).message); dispatchFlow({ type: "finish", requestId, success: false }); }
     finally { setFinding(false); }
   };
 
   return (
-    <main className={`${s.page} ${s.teamPage}`} data-expanded={expanded}>
+    <main className={`${s.page} ${s.teamPage}`} data-expanded={expanded} data-focus={focus}>
       <div className={s.workspaceShell}>
       <div className={s.top}>
         <h1 className={s.title}>Kaam Ki Baat <span className={s.workspaceName}>/ Workspace</span></h1>
@@ -138,6 +151,7 @@ export default function Team() {
         </div>
         <div className={s.connection} role="status"><span className={connected ? s.ok : s.warn}>●</span> {connecting ? "Checking your session…" : connected ? `Connected as ${me!.participant!.name}` : "Connect your personal session"}</div>
       </section>
+      <FlowRail stage={flow.stage} busy={flow.busy} branch={flow.branch} />
       {!connected && !connecting && <section className={s.connectCard} aria-label="Connect to workspace">
         <div><h2>Your workspace starts with a personal link</h2><p>Your team lead shares a link that gives you access to your permitted meetings and repository. Paste it here to connect.</p></div>
         <form className={s.row} onSubmit={e => { e.preventDefault(); void connect(); }}>

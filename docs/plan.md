@@ -201,6 +201,10 @@ Verification: **95/95 tests pass**, full `npm run typecheck`, production `npm ru
 
 ## 4. Task board
 
+### M41 — resolve and merge workspace motion — 2026-11-15
+
+- **Conflicts resolved and locally verified, Codex:** user explicitly authorizes resolving [PR #41](https://github.com/harshsinha-12/kaam-ki-baat/pull/41) and merging into main. Isolated `codex/pr41-conflict-resolution` integrates PR head `27d2add` with fetched main `0575ad0`; preserve both plan histories, hosted runtime changes, current webcam controls and unrelated dirty Team Memory work in the root checkout. Resolved the plan-only conflict by retaining both histories. Fixed the existing stale-flow review finding with request-scoped progress and stale-reply guards (`app/team/{page.tsx,FlowRail.tsx,flow-state.ts}`, `tests/workspace-flow.test.ts`). **207/207 tests**, full typecheck, production build, isolated FIXTURE production HTTP smoke, 25 local plan links and whitespace checks pass. Interactive browser, physical inputs and live speech were not rerun. Push to the PR branch and merge after exact-head checks; merge status remains pending. No provider changes or calls.
+
 Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in place.
 
 | ID | Task | Owner | Status | Done when |
@@ -270,6 +274,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | GH2 | Private repository connection and lifecycle | Unclaimed | todo, user requested 2026-11-15; server `GITHUB_TOKEN` transport exists, no private end-to-end verification | Add GitHub App install/repository picker, read-only Contents/Pull requests/Checks permissions, encrypted server credentials, short-lived token refresh, revocation/disconnect and denial/expiry tests. Verify source/PR/check access and participant scopes before saying connected. [Setup and API requirements](workspace-setup.md). |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 · Claude · Workspace motion (`claude/workspace-motion`): `/team` gains a live **flow rail** (You ask → Wispr Flow → Kaam Ki Baat → Leader Desk | Code Navigator) driven by real state (asking/answer/escalation/graph result), pitch-black aurora backdrop, staggered entrances, rotating gradient ring + floating glyph on the selected agent, zone-coloured focus rings and card sweep, answer reveal, shimmer on idle labels; all motion off under reduced-motion. Files: `app/team/FlowRail.tsx`, `app/team/page.tsx` (3 derived values + one element), `app/zones/zones.module.css` (appended, `.teamPage`-scoped). Static mock screenshotted; CI is the gate (no local npm).
 
 - 2026-11-15 · Codex · OG1 implemented on `codex/open-graph`, fetched main `87db744`: landing-page-style 1200×630 PNG share card with headline, three zone cards and voice waveform; automatic Open Graph/Twitter image tags, alt text and large-image card metadata. Files: `app/layout.tsx`, `app/opengraph-image.tsx`, `app/twitter-image.tsx`, `.env.example`. `NEXT_PUBLIC_SITE_URL` overrides the Vercel production/deployment host; local fallback is localhost. **193/193 tests**, full typecheck, isolated production build, final production HTTP crawler metadata/absolute-origin/OG URL checks, both PNG endpoints/dimensions, visual PNG inspection, 24 local plan links and whitespace pass. Initial root build collided with the existing development server’s `.next`; isolated verification passed without changing that server. Ready for user review/merge/deployment; social-platform cache refresh and deployed unfurls were not tested. No provider changes, call, merge or deployment.
 
