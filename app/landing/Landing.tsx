@@ -100,37 +100,69 @@ function useCountUp(target: number, run: boolean, ms = 1400) {
 // "You", seen from the front, wearing AirPods. The head turns in 3D toward the
 // agent you select; a soft light cone lands on that agent.
 const TURN: Record<Zone, number> = { team_memory: -28, leader_desk: 0, code_navigator: 28 };
-function Listener({ zone }: { zone: Zone }) {
+function Listener({ zone, listening }: { zone: Zone; listening: boolean }) {
   const reduced = useContext(ReducedMotion);
   const color = ZONE_HEX[zone];
   const look = zone === "team_memory" ? -1 : zone === "code_navigator" ? 1 : 0;
+  const anim = !reduced;
   return (
     <div className={s.listener} aria-hidden>
-      <div className={s.listenerHead} style={{ transform: `perspective(420px) rotateY(${TURN[zone]}deg) rotateX(${zone === "leader_desk" ? -6 : 0}deg)` }}>
-        <svg viewBox="0 0 120 130" width="100%" height="100%">
+      <div className={s.listenerHead} style={{ transform: `perspective(480px) rotateY(${TURN[zone]}deg) rotateX(${zone === "leader_desk" ? -5 : 0}deg) rotateZ(${look * -2}deg)` }}>
+        <svg viewBox="0 0 140 150" width="100%" height="100%">
           <defs>
-            <radialGradient id="kkbSkin" cx="45%" cy="35%" r="70%"><stop offset="0" stopColor="#5a5448" /><stop offset="1" stopColor="#2a2722" /></radialGradient>
-            <linearGradient id="kkbHair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2a2824" /><stop offset="1" stopColor="#141412" /></linearGradient>
+            <radialGradient id="kkbSkin" cx="42%" cy="32%" r="75%"><stop offset="0" stopColor="#e7b48c" /><stop offset=".6" stopColor="#c98c63" /><stop offset="1" stopColor="#9c6644" /></radialGradient>
+            <linearGradient id="kkbHair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3a2a22" /><stop offset="1" stopColor="#1c1411" /></linearGradient>
+            <linearGradient id="kkbHoodie" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2b2a30" /><stop offset="1" stopColor="#17161a" /></linearGradient>
           </defs>
-          <path d="M18 128 C22 104 40 96 60 96 C80 96 98 104 102 128 Z" fill="#2a2823" stroke="#3a372f" />
-          <rect x="50" y="78" width="20" height="22" rx="8" fill="#38342d" />
-          <ellipse cx="60" cy="52" rx="31" ry="36" fill="url(#kkbSkin)" stroke="#34322c" />
-          <path d="M29 46 C30 20 50 13 62 14 C80 15 92 27 91 46 C84 34 72 29 60 30 C47 31 36 37 29 46 Z" fill="url(#kkbHair)" />
-          <g style={{ transform: `translateX(${look * 6}px)`, transition: "transform .7s cubic-bezier(.16,1,.3,1)" }}>
-            <ellipse cx="49" cy="55" rx="2.6" ry="3.2" fill="#f2efe6" /><ellipse cx="71" cy="55" rx="2.6" ry="3.2" fill="#f2efe6" />
-            <path d="M60 58 q-2 8 1 10" stroke="#4a473f" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-            <path d="M53 74 q7 4 14 0" stroke="#5a564c" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-          </g>
-          {[[27, 56], [93, 56]].map(([x, y]) => (
-            <g key={x}>
-              <rect x={x - 4} y={y - 6} width="8" height="12" rx="4" fill="#f2efe6" />
-              <rect x={x - 1.6} y={y + 4} width="3.2" height="10" rx="1.6" fill="#f2efe6" />
-              <circle cx={x} cy={y} r="9" fill="none" stroke={color} strokeOpacity=".55" strokeWidth="1.2">{!reduced && <><animate attributeName="r" values="7;12;7" dur="2.4s" repeatCount="indefinite" /><animate attributeName="stroke-opacity" values=".6;0;.6" dur="2.4s" repeatCount="indefinite" /></>}</circle>
-            </g>
+          {/* sound arcs travel from the agent's side into the ear facing it */}
+          {anim && [0, 1, 2].map((i) => (
+            <path key={i} d={look >= 0 ? "M124 54 q10 12 0 24" : "M16 54 q-10 12 0 24"} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" opacity="0"
+              transform={`translate(${(look >= 0 ? 1 : -1) * i * 7} 0)`}>
+              <animate attributeName="opacity" values="0;.8;0" dur="1.6s" begin={`${i * 0.25}s`} repeatCount="indefinite" />
+            </path>
           ))}
+          <g>
+            {anim && <animateTransform attributeName="transform" type="translate" values="0 0;0 -1.4;0 0" dur="4s" repeatCount="indefinite" />}
+            {/* shoulders + hoodie with a zone-coloured drawstring */}
+            <path d="M14 150 C18 120 42 108 70 108 C98 108 122 120 126 150 Z" fill="url(#kkbHoodie)" stroke="#34323a" />
+            <path d="M52 110 C58 124 82 124 88 110" fill="none" stroke="#3b3942" strokeWidth="2" />
+            <path d="M62 118 v14 M78 118 v14" stroke={color} strokeWidth="2" strokeLinecap="round" style={{ transition: "stroke .5s" }} />
+            <rect x="59" y="88" width="22" height="24" rx="9" fill="#b97d56" />
+            {/* head */}
+            <ellipse cx="70" cy="60" rx="33" ry="38" fill="url(#kkbSkin)" />
+            <path d="M37 56 C36 26 56 16 72 17 C92 18 106 32 103 58 C99 44 88 36 76 35 C62 34 46 40 37 56 Z" fill="url(#kkbHair)" />
+            <path d="M58 22 C66 18 80 18 88 24" stroke="#5a463b" strokeWidth="2" fill="none" strokeLinecap="round" opacity=".7" />
+            {/* face: eyes follow the agent, blink; mouth moves while the agent is talking */}
+            <g style={{ transform: `translateX(${look * 6}px)`, transition: "transform .7s cubic-bezier(.16,1,.3,1)" }}>
+              <path d="M52 52 q5 -3 10 0 M78 52 q5 -3 10 0" stroke="#3a2a22" strokeWidth="2" fill="none" strokeLinecap="round" />
+              {[57, 83].map((x) => (
+                <g key={x}>
+                  <ellipse cx={x} cy="61" rx="4.2" ry="4.8" fill="#fff" />
+                  <circle cx={x + look * 1.4} cy="61.5" r="2.7" fill="#2a1d17" />
+                  <circle cx={x + look * 1.4 + 0.9} cy="60.4" r=".9" fill="#fff" />
+                  <rect x={x - 5} y="55" width="10" height="0" fill="#c98c63">
+                    {anim && <animate attributeName="height" values="0;0;12;0" keyTimes="0;.94;.97;1" dur="4.6s" repeatCount="indefinite" />}
+                  </rect>
+                </g>
+              ))}
+              <path d="M70 64 q-2.5 7 1.5 8.5" stroke="#9c6644" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+              <ellipse cx="71" cy="82" rx="6" ry="2" fill="#7a3f30">
+                {anim && listening && <animate attributeName="ry" values="1.5;3.6;1.2;3;1.5" dur=".9s" repeatCount="indefinite" />}
+              </ellipse>
+              <circle cx="52" cy="74" r="4" fill="#e58f7a" opacity=".25" /><circle cx="90" cy="74" r="4" fill="#e58f7a" opacity=".25" />
+            </g>
+            {/* AirPods glow in the active agent's colour */}
+            {[[37, 64], [103, 64]].map(([x, y]) => (
+              <g key={x}>
+                <circle cx={x} cy={y} r="8" fill={color} opacity=".22" style={{ transition: "fill .5s" }} />
+                <rect x={x - 3.6} y={y - 6} width="7.2" height="11" rx="3.6" fill="#f7f5ef" />
+                <rect x={x - 1.4} y={y + 3} width="2.8" height="9" rx="1.4" fill="#f7f5ef" />
+              </g>
+            ))}
+          </g>
         </svg>
       </div>
-      <div className={s.listenerLabel}>You · AirPods</div>
+      <div className={s.listenerLabel} style={{ color }}>{listening ? "listening…" : "you · airpods"}</div>
     </div>
   );
 }
@@ -179,7 +211,7 @@ function Stage({ zone, onZone, autoplay }: { zone: Zone; onZone: (z: Zone) => vo
           <span className={s.agentKey}>{z === "team_memory" ? "A · look left" : z === "code_navigator" ? "L · look right" : "↑ · face front"}{z === "leader_desk" ? " · leader only" : ""}</span>
         </button>
       ))}
-      <Listener zone={zone} />
+      <Listener zone={zone} listening={visibleWords < words.length} />
       <div className={s.transcript} aria-live="polite">
         <div className={s.who}><span style={{ color: "var(--zc)" }}>● {SCRIPT[zone].label}</span><span>{autoplay ? "demo · fictional team" : "you're driving"}</span></div>
         <div className={s.ask}>“{script.ask}”</div>

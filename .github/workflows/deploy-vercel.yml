@@ -1,0 +1,38 @@
+name: deploy-vercel
+# Keeps https://kaam-ki-baat-one.vercel.app in sync with main.
+# One-time setup by the Vercel project owner (Settings → Secrets → Actions):
+#   VERCEL_TOKEN       — a Vercel access token with access to the project
+#   VERCEL_ORG_ID      — the team/user id   (from `vercel link` → .vercel/project.json)
+#   VERCEL_PROJECT_ID  — the project id     (same file)
+# Without the secrets this job is skipped, so CI never fails because of it.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Check deploy secrets
+        id: gate
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "Vercel secrets are not set; skipping deploy."; echo "go=false" >> "$GITHUB_OUTPUT"
+          else echo "go=true" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.gate.outputs.go == 'true'
+        uses: actions/checkout@v4
+      - if: steps.gate.outputs.go == 'true'
+        uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - if: steps.gate.outputs.go == 'true'
+        run: npm i -g vercel@latest
+      - if: steps.gate.outputs.go == 'true'
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - if: steps.gate.outputs.go == 'true'
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+      - if: steps.gate.outputs.go == 'true'
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
