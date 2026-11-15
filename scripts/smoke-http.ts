@@ -1,10 +1,9 @@
 // Run against the local server with FIXTURE data only; never places a call.
 // node --env-file=.env.local --import tsx scripts/smoke-http.ts
 import assert from "node:assert/strict";
-import path from "node:path";
 import { issueCallSession } from "../lib/auth/call-session";
 import { loadSnapshot } from "../lib/evidence/load";
-import { EventStore } from "../lib/store/event-store";
+import { EventStore, eventsLogPath } from "../lib/store/event-store";
 
 const snapshot = loadSnapshot();
 assert.equal(snapshot.label, "FIXTURE", "HTTP smoke creates synthetic writes and requires a FIXTURE snapshot");
@@ -36,7 +35,7 @@ assert.equal(before.body.snapshot.pinnedSha, snapshot.pinnedSha, "Server snapsho
 const participant = snapshot.participants.find(p => p.taskIds.some(id => snapshot.tasks.some(t => t.id === id && t.assignment.state === "accepted" && t.assignment.ownerId === p.id)));
 assert.ok(participant, "Fixture needs an accepted task");
 const task = snapshot.tasks.find(t => participant.taskIds.includes(t.id) && t.assignment.state === "accepted" && t.assignment.ownerId === participant.id)!;
-const store = new EventStore(path.resolve(process.env.KKB_EVENTS_FILE ?? "data/runtime/events.jsonl"));
+const store = new EventStore(eventsLogPath());
 const { token, session } = await issueCallSession(store, {
   participantId: participant.id, meetingIds: participant.meetingIds, repository: snapshot.repository,
   consentRecordedBy: "synthetic HTTP smoke; no telephone call", scenario: "synthetic-http-smoke", ttlMinutes: 5,

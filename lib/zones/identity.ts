@@ -3,7 +3,7 @@ import { hashToken } from "../auth/call-session";
 import type { EvidenceSnapshot, Participant } from "../contracts";
 import type { EventStore } from "../store/event-store";
 import type { DeviceSession, Role } from "./contracts";
-import { deviceSessionByHash, ev, latestStepUp } from "./state";
+import { deviceSessionByHash, ev, latestStepUp, zoneEvents } from "./state";
 
 // Server-owned identity for the spatial zones. A client may present an opaque
 // session token; role, repo access and leader step-up are derived here only.
@@ -95,8 +95,16 @@ export function hmacCodeVerifier(secret: string | undefined): StepUpVerifier {
 export async function stepUp(store: EventStore, actor: Actor, verifier: StepUpVerifier, proof: unknown, now = new Date()) {
   if (actor.role !== "leader") return { ok: false as const, reason: "only the verified leader can unlock the Leader Desk" };
   if (actor.channel !== "device") return { ok: false as const, reason: "step-up must happen on an authenticated device" };
-  if (!verifier.verify(actor.sessionId, proof, now)) return { ok: false as const, reason: "verification failed" };
   const expiresAt = new Date(now.getTime() + STEP_UP_MINUTES * 60_000).toISOString();
-  await store.append(ev("step_up", actor.sessionId, { method: verifier.method, expiresAt }));
-  return { ok: true as const, expiresAt };
+  type Result = { ok: true; expiresAt: string } | { ok: false; reason: string };
+  return store.appendGuarded<Result>((events) => {
+    const proofHash = verifier.method === "server_otp" && typeof proof === "string" ? hashToken(`${actor.sessionId}:${proof}`) : undefined;
+    if (proofHash && zoneEvents(events, "step_up").some(e => e.key === actor.sessionId && e.data.proofHash === proofHash))
+      return { reject: { ok: false, reason: "one-time proof has already been used" } };
+    const attempts = zoneEvents(events, "step_up_attempt").filter(e => e.data.participantId === actor.participant.id && Date.parse(e.at) > now.getTime() - 600_000);
+    if (attempts.length >= 5) return { reject: { ok: false, reason: "too many verification attempts; retry after ten minutes" } };
+    if (!verifier.verify(actor.sessionId, proof, now))
+      return { append: ev("step_up_attempt", actor.sessionId, { participantId: actor.participant.id }, now.toISOString()), result: { ok: false, reason: "verification failed" } };
+    return { append: ev("step_up", actor.sessionId, { method: verifier.method, expiresAt, proofHash }, now.toISOString()), result: { ok: true, expiresAt } };
+  });
 }

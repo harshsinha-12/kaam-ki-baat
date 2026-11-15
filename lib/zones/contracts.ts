@@ -72,6 +72,7 @@ export interface LiveUtterance {
   utteranceId: string; // stable across provisional -> final revisions
   sessionId: string;
   participantId: string; // set by the server from the session, never the client
+  meetingId?: string; // authorized capture scope; legacy unscoped remarks are never shared
   seq: number; // per-session sequence for ordering / dedupe
   text: string;
   isFinal: boolean;

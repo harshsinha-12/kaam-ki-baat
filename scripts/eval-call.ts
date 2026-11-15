@@ -2,7 +2,7 @@
 // Or --input data/private/execution.json (raw get_execution JSON saved privately).
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { executionId, evaluationMarkdown } from "../lib/eval/recorder";
-import type { StoredEvent } from "../lib/store/event-store";
+import { eventsLogPath, type StoredEvent } from "../lib/store/event-store";
 const arg = (name: string) => { const i = process.argv.indexOf(`--${name}`); return i >= 0 ? process.argv[i + 1] : undefined; };
 async function main() {
   const callId = arg("call-id");
@@ -18,7 +18,7 @@ async function main() {
     if (raw.id !== id) throw new Error("Execution ID mismatch");
   }
   let events: StoredEvent[] = [];
-  try { events = (await readFile(process.env.KKB_EVENTS_FILE ?? "data/runtime/events.jsonl", "utf8")).split("\n").filter(Boolean).map(l => JSON.parse(l)); }
+  try { events = (await readFile(eventsLogPath(), "utf8")).split("\n").filter(Boolean).map(l => JSON.parse(l)); }
   catch (e) { if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e; }
   const id = executionId(raw.id);
   await mkdir("docs/evals", { recursive: true });

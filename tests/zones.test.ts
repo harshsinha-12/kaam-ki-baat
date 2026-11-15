@@ -79,8 +79,8 @@ describe("Leader Desk is server-gated", () => {
     const id = (t.body.ticket as { id: string }).id;
     await z.unlockLeader();
     const [a, b] = await Promise.all([
-      z.act(z.lead, "leader_resolve", { ticket_id: id, statement: "Freeze at 3:30 PM", confirmed: true }),
-      z.act(z.lead, "leader_resolve", { ticket_id: id, statement: "Freeze at 3:45 PM", confirmed: true }),
+      z.act(z.lead, "leader_resolve", { ticket_id: id, statement: "Freeze at 3:30 PM", confirmed: true, expected_version: 0 }),
+      z.act(z.lead, "leader_resolve", { ticket_id: id, statement: "Freeze at 3:45 PM", confirmed: true, expected_version: 0 }),
     ]);
     assert.deepEqual([a.status, b.status].sort(), [200, 409]);
   });
@@ -98,13 +98,14 @@ describe("Team Memory honesty", () => {
     const z = await zoneSetup();
     const t = await z.act(z.dev, "ticket_create", { question: "Who owns the specialist board?", confirmed: true, idempotency_key: "cond-key-1" });
     await z.unlockLeader();
-    await z.act(z.lead, "leader_resolve", { ticket_id: (t.body.ticket as { id: string }).id, statement: "Dev owns the specialist board", conditions: "the read-back fix merges first", confirmed: true });
+    await z.act(z.lead, "leader_resolve", { ticket_id: (t.body.ticket as { id: string }).id, statement: "Dev owns the specialist board", conditions: "the read-back fix merges first", confirmed: true, expected_version: 1 });
     const a = await z.act(z.mate, "memory_ask", { question: "who owns the specialist board" });
     assert.equal(a.body.kind, "conditional");
     assert.match(String(a.body.speak), /conditionally approved.*not unconditional/i);
   });
   it("retrieved malicious text is quoted as data and changes nothing", async () => {
     const z = await zoneSetup();
+    z.snapshot.participants.find(p => p.id === "dev")!.taskIds.push("t_evil");
     const a = await z.act(z.dev, "memory_ask", { question: "release checklist review" });
     assert.equal(a.body.kind, "not_confirmed");
     const me = await z.act(z.dev, "me");
@@ -188,10 +189,17 @@ describe("code navigator pinning", () => {
 describe("Bolna callbacks", () => {
   it("duplicate, late and out-of-order callbacks are recorded once or ignored", async () => {
     const z = await zoneSetup();
-    assert.equal((await recordExecutionCallback(z.store, { id: "exec_123456", status: "in-progress" })).recorded, true);
-    assert.equal((await recordExecutionCallback(z.store, { id: "exec_123456", status: "in-progress" })).recorded, false);
-    assert.equal((await recordExecutionCallback(z.store, { id: "exec_123456", status: "completed", conversation_duration: 61 })).recorded, true);
-    assert.equal((await recordExecutionCallback(z.store, { id: "exec_123456", status: "ringing" })).recorded, false);
+    const callback = async (body: Record<string, unknown>) => {
+      const result = await recordExecutionCallback(z.store, body);
+      assert.ok(result.ok);
+      return result.recorded;
+    };
+    assert.equal(await callback({ id: "exec_123456", status: "in-progress" }), true);
+    assert.equal(await callback({ id: "exec_123456", status: "in-progress" }), false);
+    assert.equal(await callback({ id: "exec_123456", status: "completed", conversation_duration: 61 }), true);
+    assert.equal(await callback({ id: "exec_123456", status: "ringing" }), false);
+    assert.equal(await callback({ id: "exec_finalizing", status: "call-disconnected" }), true);
+    assert.equal(await callback({ id: "exec_finalizing", status: "completed", conversation_duration: 62 }), true);
   });
 });
 

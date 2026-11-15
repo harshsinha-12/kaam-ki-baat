@@ -30,6 +30,8 @@ export async function ingestUtterance(store: EventStore, actor: Actor, body: Rec
   const utteranceId = String(body.utterance_id ?? "");
   const seq = Number(body.seq);
   const text = typeof body.text === "string" ? body.text.trim() : "";
+  const meetingId = typeof body.meeting_id === "string" ? body.meeting_id : actor.meetingIds.length === 1 ? actor.meetingIds[0] : undefined;
+  if (!meetingId || !actor.meetingIds.includes(meetingId)) return { ok: false, status: 403, reason: "select an authorized meeting for this utterance" };
   if (!/^[A-Za-z0-9_-]{8,64}$/.test(eventId) || !/^[A-Za-z0-9_-]{4,64}$/.test(utteranceId)) return { ok: false, status: 400, reason: "event_id and utterance_id required" };
   if (!Number.isInteger(seq) || seq < 1) return { ok: false, status: 400, reason: "seq must be a positive integer" };
   if (!text || text.length > 2000) return { ok: false, status: 400, reason: "text must be 1–2000 characters" };
@@ -47,6 +49,7 @@ export async function ingestUtterance(store: EventStore, actor: Actor, body: Rec
       eventId, utteranceId, seq, text,
       sessionId: actor.sessionId,
       participantId: actor.participant.id, // from the server session, never the client
+      meetingId,
       isFinal: body.is_final === true,
       speakerConfidence: clamp(Number(body.speaker_confidence ?? 1)),
       language: typeof body.language === "string" ? body.language.slice(0, 12) : undefined,

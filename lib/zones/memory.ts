@@ -2,7 +2,7 @@ import type { EvidenceSnapshot } from "../contracts";
 import type { StoredEvent } from "../store/event-store";
 import type { ClarificationTicket, Decision, LiveUtterance, SourceRef } from "./contracts";
 import type { Actor } from "./identity";
-import { loggedDecisions, tickets, utterances, zoneEvents } from "./state";
+import { latestConsent, loggedDecisions, tickets, utterances } from "./state";
 
 // LEFT — Team Memory. Answers only from APPROVED, authorized context. Anything
 // else is said to be unconfirmed and offered as a leader clarification.
@@ -10,19 +10,22 @@ import { loggedDecisions, tickets, utterances, zoneEvents } from "./state";
 
 /** Base decisions derived from the approved meeting snapshot (Wispr lane). */
 export function baseDecisions(snapshot: EvidenceSnapshot): Decision[] {
-  return snapshot.tasks.map((t) => ({
+  return snapshot.tasks.map((t) => {
+    const approvedMeeting = snapshot.meetings.some(m => m.id === t.meetingId && m.approvedBy.trim());
+    const passages = snapshot.passages.filter(p => t.passageIds.includes(p.id) && p.meetingId === t.meetingId);
+    return {
     id: `dec:${t.id}`,
     topic: t.title,
     statement: t.title,
-    state: t.assignment.state === "accepted" ? "approved" : t.assignment.state === "disputed" ? "disputed" : "proposed",
+    state: t.assignment.state === "accepted" && approvedMeeting && passages.length > 0 ? "approved" : t.assignment.state === "disputed" ? "disputed" : "proposed",
     ownerId: t.assignment.ownerId,
     version: 1,
     meetingId: t.meetingId,
-    sources: t.passageIds.map((pid) => {
-      const p = snapshot.passages.find((x) => x.id === pid);
-      return { kind: "wispr_meeting" as const, id: pid, meetingId: t.meetingId, label: p ? `${p.speaker ?? "speaker"}: "${p.text.slice(0, 160)}"` : pid };
+    sources: passages.map((p) => {
+      return { kind: "wispr_meeting" as const, id: p.id, meetingId: t.meetingId, label: `${p.speaker ?? "speaker"}: "${p.text.slice(0, 160)}"` };
     }),
-  }));
+  } as Decision;
+  });
 }
 
 /** Current decision memory: snapshot base overlaid by verified leader resolutions. */
@@ -34,7 +37,14 @@ export function currentDecisions(snapshot: EvidenceSnapshot, events: StoredEvent
 }
 
 export const visibleDecisions = (snapshot: EvidenceSnapshot, events: StoredEvent[], actor: Actor) =>
-  currentDecisions(snapshot, events).filter((d) => actor.meetingIds.includes(d.meetingId));
+  currentDecisions(snapshot, events).filter((d) => actor.meetingIds.includes(d.meetingId)).flatMap(d => {
+    const sources = d.sources.filter(ref => {
+      if (ref.kind !== "wispr_meeting") return true;
+      const passage = snapshot.passages.find(p => p.id === ref.id && p.meetingId === d.meetingId);
+      return passage && (passage.visibility === "team" || snapshot.tasks.some(t => actor.participant.taskIds.includes(t.id) && t.passageIds.includes(passage.id)));
+    });
+    return d.sources.length > 0 && sources.length === 0 ? [] : [{ ...d, sources }];
+  });
 
 const STOP = new Set("the a an is are was it to of and or for in on at by be do does did what when who whom which where how why we our us you your i me my this that with from have has will would should can could kya kab kaun kis hai tha ka ki ke ko se mein aur ya bhi agar wait sorry matlab actually umm uh hmm".split(" "));
 export const terms = (s: string) =>
@@ -68,7 +78,7 @@ export function askTeamMemory(snapshot: EvidenceSnapshot, events: StoredEvent[],
     .sort((a, b) => b.score - a.score || stateRank(b.d) - stateRank(a.d));
 
   const myOpen = [...tickets(events).values()].find(
-    (t) => t.requesterId === actor.participant.id && t.state === "pending" && terms(t.question).filter((x) => q.includes(x)).length >= Math.min(2, q.length),
+    (t) => t.requesterId === actor.participant.id && actor.meetingIds.includes(t.meetingId) && t.state === "pending" && q.length > 0 && terms(t.question).filter((x) => q.includes(x)).length >= Math.min(2, q.length),
   );
   const provisional = visibleUtterances(events, actor).filter((u) => terms(u.text).filter((x) => q.includes(x)).length >= 2).slice(-2);
   const live = provisional.length ? ` There's also an unreviewed live remark on this, which is provisional and not a decision.` : "";
@@ -98,15 +108,18 @@ export const nameOf = (s: EvidenceSnapshot, id: string) => s.participants.find((
 
 // ---- live utterances visible to an actor ------------------------------------
 export function visibleUtterances(events: StoredEvent[], actor: Actor): LiveUtterance[] {
-  const revoked = new Set(
-    zoneEvents(events, "consent").filter((e) => (e.data as { microphone: boolean }).microphone === false).map((e) => e.key),
-  );
-  const all = utterances(events).filter((u) => u.participantId === actor.participant.id || (u.visibility === "team" && !revoked.has(u.sessionId)));
+  const all = utterances(events).filter((u) => {
+    if (!u.meetingId || !actor.meetingIds.includes(u.meetingId)) return false;
+    if (u.participantId === actor.participant.id) return true;
+    const consent = latestConsent(events, u.sessionId);
+    return u.visibility === "team" && consent?.microphone === true && consent.shareWithTeam === true;
+  });
   // Final supersedes provisional for the same utteranceId; order by session seq (not device clock).
   const byUtt = new Map<string, LiveUtterance>();
   for (const u of all) {
-    const prev = byUtt.get(u.utteranceId);
-    if (!prev || (u.isFinal && !prev.isFinal) || (u.isFinal === prev.isFinal && u.seq > prev.seq)) byUtt.set(u.utteranceId, u);
+    const key = JSON.stringify([u.sessionId, u.utteranceId]);
+    const prev = byUtt.get(key);
+    if (!prev || (u.isFinal && !prev.isFinal) || (u.isFinal === prev.isFinal && u.seq > prev.seq)) byUtt.set(key, u);
   }
   return [...byUtt.values()].sort((a, b) => a.sessionId.localeCompare(b.sessionId) || a.seq - b.seq);
 }
