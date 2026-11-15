@@ -101,6 +101,7 @@ async function synchronize(): Promise<EvaluationDashboard> {
     const extraReview = reviews[id];
     if (typeof extraReview === "string") review += `\n\n${extraReview}`;
     else if (Array.isArray(extraReview) && extraReview.every(v => typeof v === "string")) review += `\n\n${extraReview.join("\n\n")}`;
+    if (!review.trim()) review = calls.get(id)?.review ?? "";
     const evaluation = evaluateCall(raw, debug, events, review, [key, process.env.KKB_TOOL_KEY ?? "", process.env.KKB_BOARD_KEY ?? "", process.env.KKB_CALLBACK_KEY ?? ""]);
     calls.set(id, evaluation);
     if (Array.isArray(debug.unavailable) && debug.unavailable.length) warnings.push(`Provider reports unavailable debug sections for ${id}.`);

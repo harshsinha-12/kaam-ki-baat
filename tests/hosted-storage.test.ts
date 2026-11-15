@@ -182,5 +182,8 @@ test("hosted evaluations persist without writing the Mac-only evaluation directo
     assert.deepEqual(await readDashboard(),dashboard);
     assert.ok(fixture.values.has("test:eval:latest"));
     assert.doesNotMatch(fixture.values.get("test:eval:latest")!,/synthetic-bolna-key/);
+    const historical=structuredClone(dashboard);historical.syncedAt=new Date(Date.now()-120000).toISOString();historical.calls[0].review="Previously authored review retained after migration.";
+    fixture.values.set("test:eval:latest",JSON.stringify(historical));
+    assert.equal((await syncDashboard()).calls[0].review,historical.calls[0].review);
   } finally {globalThis.fetch=transport;keys.forEach((key,i)=>saved[i]===undefined?delete process.env[key]:process.env[key]=saved[i]);}
 });
