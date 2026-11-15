@@ -59,6 +59,20 @@ it("a lost ticket response can be retried after the leader has already answered"
   assert.match(String(phoneRetry.body.speak), /already saved.*answered: Friday/);
 });
 
+it("the opening brief retains leader answers while keeping unlinked-code claims uncertain", async () => {
+  const z = await zoneSetup();
+  z.snapshot.tasks.find(t => t.id === "t1")!.prNumber = undefined;
+  const ticket = await z.act(z.dev, "ticket_create", { question: "When is the demo freeze?", confirmed: true, idempotency_key: "merged-opening-brief" });
+  await z.unlockLeader();
+  await z.act(z.lead, "leader_resolve", { ticket_id: (ticket.body.ticket as { id: string }).id, statement: "Friday", confirmed: true, expected_version: 0 });
+  const brief = await runTool({ store: z.store, snapshot: z.snapshot, conversations: new Map() }, "get_my_brief", { call_token: z.devCall.token });
+  assert.equal(brief.status, 200);
+  assert.match(String(brief.body.speak), /leader answered.*Friday/);
+  assert.match(String(brief.body.speak), /possible code match/);
+  assert.doesNotMatch(String(brief.body.speak), /show you exactly where the code is/);
+  assert.equal((brief.body.deliveredClarifications as string[]).length, 1);
+});
+
 it("leader step-up proofs are one-time and failed guesses are bounded", async () => {
   const z = await zoneSetup();
   assert.equal((await z.unlockLeader()).status, 200);

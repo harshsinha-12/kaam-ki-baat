@@ -65,10 +65,10 @@ Baseline now includes merged PR #11 (`f4b1e71`), preserving PR #10 and main’s 
 | Thing | State | Evidence |
 | --- | --- | --- |
 | Domain core + 4 runtime tools + 3 specialists | **Implemented** | `lib/**`, commit on PR #2 |
-| Unit + vertical-slice tests | **52/52 pass** (`tsx --test`, Node 20.20.0 locally) | Prior 41 tests plus 9 spatial context, action/receipt, DOM executor, configuration and HTTP authentication tests |
+| Unit + vertical-slice tests | **86/86 pass** after PR #12/main integration (`tsx --test`, Node 20.20.0) | Includes the opening-brief merge regression, browser-start mock and all PR #11 scope/retry regressions |
 | Core typecheck (`tsconfig.core.json`) | **Pass** | local `npm run typecheck`, TypeScript 5.9 |
 | Install, full typecheck, production build locally | **Pass**: `npm install`, `npm ci`, `npm run typecheck`, `npm run build` | Node 20.20.0; `package-lock.json` pins dependencies; Next.js 15.5.29 |
-| CI workflow | **Passed** on PR #5 head `b63f4a8`; user merged it at `e005380`. PR #7 and main `6a5b2a3` CI passed; recovery PR CI pending | CI now uses `npm ci`, full typecheck, tests, Next build |
+| CI workflow | **Passed** on merged PR #11 head `0adfd8e`; PR #12 updated-head CI pending | Local 86 tests, full typecheck, production build and isolated HTTP smoke pass |
 | GitHub adapter (live) | **Verified live read** on G1 branch: PR #2 merged, with head and merge-SHA checks | Fixture snapshot at `3795e28`: 28 files, 1 PR, 3 checks; meeting remains synthetic |
 | Demo dry run (real tool handlers, no Bolna) | Works; output reviewed | `npm run demo:dry` — NOT call evidence |
 | Developer MCP connections | **Reconnected and catalogs verified live**: Bolna 121 tools; Wispr 16 tools | Codex configuration + remote MCP initialize/tools-list; Bolna account read passed. See [integrations.md](integrations.md) |
@@ -126,9 +126,23 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | Z4 | Webcam provider: MediaPipe Face Landmarker yaw → `lib/focus/selector.ts` → `POST /api/zones/focus`; keyboard/tap fallback | Claude (frontend) | doing (claude) | Head turn selects; tap activates |
 | Z5 | Native AirPods companion (Swift, `CMHeadphoneMotionManager`) mirroring `selector.ts` and posting `focus` events | Codex | todo (needs Mac + AirPods) | Device test notes |
 | Z6 | Add `request_clarification` (5th tool) to the Bolna agent config; get_task_evidence `focus:"memory"` for Team Memory | Codex | todo (agent change gated) | Config regenerated |
-| M12 | Resolve PR #12 against merged PR #11 and the event-log path fix, preserve LIVE setup/call hold, validate and merge | Codex | doing on `codex/review-live-demo` in isolated PR #12 worktree; user explicitly authorized merge | Updated head passes unit/integration tests, full typecheck, build and CI; merge read back |
+| M12 | Resolve PR #12 against merged PR #11 and the event-log path fix, preserve LIVE setup/call hold, validate and merge | Codex | conflicts resolved on `codex/review-live-demo`; 86 tests, typecheck, build and HTTP smoke pass; updated-head CI/merge pending | Updated head passes unit/integration tests, full typecheck, build and CI; merge read back |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 · Codex · M12 integration validated: 86/86 tests, full typecheck, production build, isolated zones HTTP smoke, local documentation links and whitespace pass. Added a regression that retains the leader’s saved answer while asking only for a possible code match on an unlinked task. Main’s zone/backend fixes, blank-path helper/test and stable decision IDs remain intact. No private data imported, provider configuration changed, call started or deployment performed during merge review. Updated-head CI and merge remain pending.
+
+- 2026-11-15 · E1 claimed · Codex is extending the existing recorder on `feat/post-call-evaluation` from `17de40b`. This planning checkpoint contains no new evaluator implementation. Parallel agents own evaluator/types, private storage/CLI, and tests; parent owns integration/docs. No real calls or provider changes authorized by this task.
+
+- 2026-11-15 · Codex · Resumed the authorized PR #11 merge after both checks passed on `7700dad`. Incoming main `016a313` changed the plan and centralized event-log paths. Preserved both sides in an isolated PR-review worktree because the shared root now has active Graphify work; no shared dirty files were switched or overwritten. CodeRabbit’s new comment only reports skipped automatic review, not a code finding. Calls remain held.
+
+- 2026-11-15 · Codex · User explicitly authorized resolving and merging PR #11. Claimed Z2 and conflict/CI review on `codex/review-leader-backend`; fetched current main, inspected PR context, preserved the live-demo/readiness branches, and identified the callback test type errors. Reviewing authorization/source boundaries before merge. Calls remain held for one final specific participant confirmation.
+
+- 2026-11-15 ~15:00 · Claude · `claude/leader-escalation-backend` from `main` `f7100a6` (baseline 50/50 tests, core typecheck clean, demo:dry OK; `npm ci`/build not runnable in sandbox). Added `lib/zones/` (server-owned roles, device sessions, leader step-up, focus/activation gate where head turns only select, Team Memory with approved-only answers + Hinglish self-correction, clarification tickets with idempotency and a state machine, leader resolution with optimistic versioning + read-back + context version, delivery after reconnect, opt-in live-STT ingestion with consent/dedupe/seq/provisional/revocation, SHA-pinned code locations with range verification, Bolna callback dedupe), `lib/focus/selector.ts` (calibration, EMA, dwell, hysteresis, tracking loss, recentre), `EventStore.appendGuarded`, routes `/api/zones/[action]` and `/api/bolna/callback`, scripts `session:issue`/`leader:code`, and a 5th phone tool `request_clarification`. 75/75 tests (all synthetic).
+
+- 2026-11-15 · status recheck · Checkpoint moved to `17de40b` (plan-only commit; stored `origin/main` matches; no fetch). Working tree still has the uncommitted blank `KKB_EVENTS_FILE` fix, generated `next-env.d.ts`, and this note. Ignored `data/runtime/events.jsonl` has one fixture `call_session` for `p_dev` and no task update. The evaluation worktree is clean at `17de40b`. Milestones 2, 3, 5, and 6 remain started; 1 and 4 have not reached their gates. Tests, typecheck, build, HTTP, MCP, live GitHub, and the public tunnel were not rerun.
+
+- 2026-11-15 · local test · A blank `KKB_EVENTS_FILE` in `.env.local` made `POST /api/spatial/browser` return 500 (`EISDIR` while reading the project directory). `eventsLogPath()` now treats a blank setting as `data/runtime/events.jsonl`. 51/51 tests pass. A fixture participant session then loaded meeting passages and switched to the codebase panel. Leader Desk stayed locked. No Bolna call. This fix is not committed.
 
 - 2026-11-15 · Codex · Claimed M12 after explicit user authorization to review, resolve and merge PR #12. Current main includes merged PR #11 at `f4b1e71` and the shared blank-event-log-path helper. Preserving both leader clarification delivery and truthful unlinked-code invitations, both event unions/projections, source provenance and server-side call gates. Main decision IDs 034–037 stay stable; the call hold becomes D-038. Shared dirty Graphify and running live-demo checkouts remain untouched.
 
