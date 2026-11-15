@@ -55,12 +55,12 @@ Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 - **Fix Navigator** — target file + enclosing function + line + nearest test + `npm test -- <file>`; GitHub permalinks pinned to SHA. Never edits code.
 - **Evidence Verifier** — `lib/core/reconcile.ts` (deterministic): ownership state, PR open/merged, checks on the *current* SHA vs stale, last saved update. Never says "works in production".
 
-## 3. Current status — last verified 2026-11-15 ~14:20 IST (Claude, sandbox)
+## 3. Current status — last verified 2026-11-15 (Codex local; earlier Claude evidence retained)
 
 | Thing | State | Evidence |
 | UI1 board | PASS | Prominent source badge, active glow + reduced motion, responsive layout, timestamped evidence-tool timeline; Chromium desktop/mobile checks, no page errors; .github/screenshots/board.png uses mocked synthetic data |
 | E1 synthetic checks | PASS (33/33 total tests + full typecheck) | Real-call report remains blocked; no call or agent changes authorized |
-| E1 recorder | Implemented; real-call acceptance blocked | scripts/eval-call.ts fetches execution or reads private get_execution JSON; allowlisted metadata report, exclusive writes, pending duration handling; synthetic privacy tests |
+| E1 recorder | Implemented (5b31693); real-call acceptance blocked | scripts/eval-call.ts fetches execution or reads private get_execution JSON; allowlisted metadata report, exclusive writes, pending duration handling; synthetic privacy tests |
 | B1 temporary tunnel | PASS | Public HTTPS POST get_my_brief without key returned 401 unauthorized; URL only in ignored .env.local; dev/tunnel process must remain running |
 | G1 adapter | PASS | Pagination + rate-limit + partial failure tests; 31/31 tests, full typecheck; ignored FIXTURE snapshot has successful checks at PR #2 head 8767273 |
 | X1 local validation | PASS | 2026-11-15: npm install, npm run typecheck, npm test (28/28), npm run build; Node 25.9.0, Next 15.5.29 |
@@ -68,7 +68,7 @@ Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 | Domain core + 4 runtime tools + 3 specialists | **Implemented** | `lib/**`, commit on PR #2 |
 | Unit + vertical-slice tests | **28/28 pass** (`tsx --test`, Node 22) | run in Claude sandbox |
 | Core typecheck (`tsconfig.core.json`) | **Pass** | tsc 6.0 in sandbox |
-| Full `npm run typecheck` (Next types) locally | Not run in sandbox (no registry access); CI ran install + build green on `63317bd` | task X1 re-checks locally |
+| Full `npm run typecheck` (Next types) locally | PASS | X1 local run; production build rechecked after UI1 |
 | CI workflow (install, core typecheck, tests, Next build) | **Passed** on `63317bd` (2 runs: `check` success; CodeRabbit skipped) | GitHub check-runs API |
 | GitHub adapter (live) | **Works**: read real PR #2 (open, head `63317bd`), changed files, check runs | `npm run snapshot:fixture` → 27 files, 1 PR, 2 checks |
 | Demo dry run (real tool handlers, no Bolna) | Works; output reviewed | `npm run demo:dry` — NOT call evidence |
@@ -92,10 +92,12 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | B3 | **Needs user go-ahead (AGENTS.md gate).** First real call (V1): `npm run call:token -- --participant <id> --consent "<who/when>"` → Bolna call with `user_data.call_token` | User + Codex | blocked on U2, B2 | Execution ID, duration >45 s, tool calls in `data/runtime/events.jsonl` |
 | E1 | Evaluation recorder: pull Bolna `get_execution` → `docs/evals/<callId>.md` (ID, agent version, duration, tool results, what was communicated, failures) | Codex | blocked (recorder implemented; real call awaits B2/B3 approval and U2) | 1 eval file per real call |
 | F1 | V1 failure → **dictate fix requirement with Wispr Flow** → implement → V2 replay of same scenario | Claude + user | todo | V1 vs V2 table in `docs/evals/` |
-| UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | done (UI1 polish commit) | Screenshot in PR |
+| UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | done (cc20aa6) | Screenshot in PR |
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 · Codex · Final verification: full typecheck, 33/33 tests, production build and diff whitespace checks pass; no private call imported, no agent created or changed. Removed session-generated lock/Next declaration changes outside lane.
 
 - 2026-11-15 · Codex · UI1: source badge, animated active card, reduced motion, mobile layout and evidence-tool timeline; synthetic screenshot committed for PR. Timeline only includes successful get_task_evidence turns exposed by the existing board API.
 
