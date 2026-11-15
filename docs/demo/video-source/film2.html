@@ -1,0 +1,174 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+:root{--bg:#000;--ink:#f2efe6;--mut:#8a877e;--dim:#4a4843;--line:#1d1d1b;--L:#7cc4ff;--C:#f5c451;--R:#ff8a65;--ok:#6fdc8c;--card:#0b0b0a}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;background:#000;overflow:hidden}
+body{font-family:Inter,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;background:#000}
+.serif{font-family:Lora,serif;font-style:italic;font-weight:500}
+.mono{font-family:"DejaVu Sans Mono",monospace}
+.deva{font-family:FreeSans,sans-serif}
+.a,.scene{position:absolute;will-change:transform,opacity}
+.scene{inset:0}
+.glow{position:absolute;border-radius:50%;filter:blur(120px);opacity:.0}
+.chip{display:inline-flex;align-items:center;gap:10px;font-size:20px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);border:1px solid #2a2925;border-radius:999px;padding:8px 18px;background:rgba(10,10,10,.7)}
+.dot{width:10px;height:10px;border-radius:10px;display:inline-block}
+.card{background:var(--card);border:1px solid #232220;border-radius:28px}
+.h1{font-weight:800;letter-spacing:-.035em;line-height:.95}
+.big{font-size:150px}
+.sub{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);max-width:1500px;text-align:center;font-size:38px;font-weight:600;line-height:1.25;padding:12px 26px;border-radius:16px;background:rgba(0,0,0,.62);letter-spacing:-.01em;text-shadow:0 2px 10px #000}
+.q{font-size:96px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.stat{position:absolute;top:290px;width:520px;height:560px;padding:38px}
+.stat .n{font-size:150px;font-weight:800;letter-spacing:-.05em;line-height:1}
+.stat .n small{font-size:70px;vertical-align:top;margin-left:4px}
+.stat .lab{font-size:28px;line-height:1.35;color:#d9d4c7;margin-top:24px}
+.stat .src{position:absolute;left:40px;bottom:30px;font-size:17px;color:var(--mut)}
+.tag{display:inline-block;font-size:18px;letter-spacing:.14em;text-transform:uppercase;border-radius:999px;padding:6px 14px;border:1px solid currentColor}
+.node{position:absolute;width:380px;padding:26px 30px;border-radius:26px;background:var(--card);border:1px solid #2a2925}
+.node .t{font-size:40px;font-weight:750;letter-spacing:-.02em}
+.node .d{font-size:24px;color:var(--mut);margin-top:6px}
+.agent{position:absolute;width:150px;height:150px;transform:translate(-50%,-50%)}
+.hex{width:150px;height:150px;clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);display:flex;align-items:center;justify-content:center;gap:22px}
+.eye{width:16px;height:22px;border-radius:10px;background:#111}
+.alab{position:absolute;left:50%;top:160px;transform:translateX(-50%);white-space:nowrap;text-align:center;font-size:32px;font-weight:700}
+.alab span{display:block;font-size:19px;font-weight:500;color:var(--mut);letter-spacing:.12em;text-transform:uppercase;margin-top:4px;font-family:"DejaVu Sans Mono",monospace}
+.rule{font-size:40px;font-weight:650;letter-spacing:-.01em;display:flex;align-items:center;gap:22px}
+.rule b{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:26px;flex:none}
+.ws{position:absolute;left:150px;top:120px;width:1620px;height:780px;border-radius:30px;background:#060606;border:1px solid #232220;overflow:hidden}
+.col{position:absolute;top:110px;bottom:30px;border-radius:22px;border:1px solid #1f1e1c;background:#0a0a09;padding:26px}
+.col h3{font-size:30px;font-weight:750;display:flex;align-items:center;gap:12px}
+.col h3 small{font-size:17px;font-weight:500;color:var(--mut);letter-spacing:.12em;text-transform:uppercase;margin-left:auto;font-family:"DejaVu Sans Mono",monospace}
+.bubble{border-radius:20px;padding:18px 22px;font-size:25px;line-height:1.35}
+.code{font-family:"DejaVu Sans Mono",monospace;font-size:21px;line-height:1.62;white-space:pre}
+.cl{position:relative;padding-left:64px}
+.cl i{position:absolute;left:0;width:46px;text-align:right;color:#4a4843;font-style:normal}
+.hl{position:absolute;left:-12px;right:-12px;top:0;bottom:0;background:rgba(255,138,101,.13);border-left:3px solid var(--R);transform-origin:left}
+.pill{display:inline-flex;align-items:center;gap:8px;font-family:"DejaVu Sans Mono",monospace;font-size:18px;border-radius:10px;padding:6px 12px;border:1px solid #2f2e2a;color:#cfcabe;background:#0e0e0d}
+.imp{position:absolute;width:820px;padding:30px 34px}
+.imp .k{font-size:19px;letter-spacing:.14em;text-transform:uppercase}
+.imp .v{font-size:40px;font-weight:750;letter-spacing:-.02em;margin-top:8px;line-height:1.15}
+.imp .s{font-size:22px;color:var(--mut);margin-top:10px;line-height:1.4}
+#prog{position:absolute;left:0;bottom:0;height:4px;background:linear-gradient(90deg,var(--L),var(--C),var(--R))}
+#brand{position:absolute;left:56px;top:44px;display:flex;align-items:center;gap:14px;font-size:24px;font-weight:700}
+#brand .logo{width:38px;height:38px;border-radius:10px;background:var(--ink);color:#000;display:grid;place-items:center;font-size:20px;font-weight:900}
+#section{position:absolute;right:56px;top:44px}
+#grain{position:absolute;inset:0;pointer-events:none;opacity:.06;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+#vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(0,0,0,.85))}
+.fnode{position:absolute;padding:24px 28px;border-radius:26px;background:var(--card);border:1px solid #2a2925}
+.fnode .t{font-size:38px;font-weight:750;letter-spacing:-.02em}.fnode .d{font-size:22px;color:var(--mut);margin-top:6px}
+.bar2{display:flex;align-items:center;gap:14px;font-size:22px;color:var(--mut);margin-top:10px}.bar2 span{width:110px}.bar2 i{flex:1;height:22px;border-radius:11px;background:#141413;overflow:hidden;display:block}.bar2 i b{display:block;height:100%;width:0;border-radius:11px}.bar2 em{font-style:normal;font-size:30px;font-weight:800;color:var(--ink);width:56px;text-align:right}
+.ck{width:90px;height:90px;border-radius:24px;display:grid;place-items:center;font-size:52px}
+</style></head>
+<body><div id="stage">
+<div class="glow" id="g1" style="width:900px;height:700px;left:-200px;top:-150px;background:#7cc4ff"></div>
+<div class="glow" id="g2" style="width:900px;height:700px;right:-250px;bottom:-200px;background:#ff8a65"></div>
+<div class="glow" id="g3" style="width:800px;height:600px;left:560px;top:-300px;background:#f5c451"></div>
+
+<!-- OPEN 0–2.4 -->
+<div class="scene" data-in="0" data-out="2.45" data-fx="fade" data-dur="0.01">
+  <img class="a" src="assets/bol.png" data-in="0.05" data-out="2.4" data-fx="pop" data-dur="0.6" data-ofx="blur" style="left:330px;top:250px;width:520px;border-radius:32px;box-shadow:0 40px 120px rgba(0,0,0,.6)">
+  <div class="a" data-in="0.45" data-out="2.4" data-fx="right" data-ofx="blur" style="left:960px;top:300px">
+    <div class="h1" style="font-size:92px;color:#b9b2ff">Don't type.</div><div class="h1" style="font-size:110px">Just speak.</div>
+    <div style="margin-top:34px;display:flex;align-items:center;gap:22px"><img src="assets/wispr.png" style="height:74px;border-radius:14px"><span style="font-size:38px;color:var(--mut)">×</span><img src="assets/bolna.png" style="height:74px;border-radius:14px"><span class="deva" style="font-size:54px;color:#d9d4c7">बोलना</span></div>
+  </div>
+</div>
+
+<!-- C1 PROBLEM 2.4–16.75 -->
+<div class="scene" data-in="2.4" data-out="16.8" data-fx="fade" data-dur="0.25">
+  <div class="a" data-in="2.5" data-out="10.6" data-fx="scale" data-ofx="fade" style="left:260px;top:170px;width:1400px;height:620px">
+    <div class="card" style="position:absolute;inset:0;background:#070707"></div>
+    <div style="position:absolute;left:40px;top:30px" class="chip"><span class="dot" style="background:#e5484d"></span>Sprint sync · recorded by Wispr Flow</div>
+    <div id="people"></div>
+  </div>
+  <div class="a" data-in="6.65" data-out="10.6" data-fx="pop" style="left:1380px;top:110px"><span class="chip" style="color:var(--ink);font-size:24px">⏱ 4 hours later</span></div>
+  <div class="a q" data-in="10.65" data-out="16.7" data-fx="left" data-dur="0.5" style="left:160px;top:250px;color:var(--L)">What did we actually decide?</div>
+  <div class="a q" data-in="12.65" data-out="16.7" data-fx="left" data-dur="0.5" style="left:160px;top:400px;color:var(--C)">Who's responsible?</div>
+  <div class="a q" data-in="14.05" data-out="16.7" data-fx="left" data-dur="0.5" style="left:160px;top:550px;color:var(--R)">Did it ever make it into the code?</div>
+</div>
+
+<!-- STATS 16.75–20.6 -->
+<div class="scene" data-in="16.75" data-out="20.65" data-fx="fade" data-dur="0.15">
+  <div class="a h1" data-in="16.8" data-out="20.55" data-fx="up" style="left:150px;top:150px;font-size:96px">Meetings end. <span class="serif" style="font-weight:500;color:var(--C)">Doubt doesn't.</span></div>
+  <div class="a card stat" data-in="17.0" data-out="20.55" data-fx="pop" style="left:150px"><span class="tag" style="color:var(--C)">Unclear after meetings</span><div class="n" style="margin-top:26px"><span data-count="0,55,17.1,0.9">0</span><small>%</small></div><div id="dots" style="display:grid;grid-template-columns:repeat(20,1fr);gap:6px;margin-top:20px;width:420px"></div><div class="lab">say <b>next steps are unclear</b> when a meeting ends.</div><div class="src">Microsoft Work Trend Index 2023 · 31,000 people</div></div>
+  <div class="a card stat" data-in="17.7" data-out="20.55" data-fx="pop" style="left:700px"><span class="tag" style="color:var(--R)">Time lost</span><div class="n" style="margin-top:26px"><span data-count="0,69,17.8,0.9">0</span><small>%</small></div><div style="display:flex;gap:10px;margin-top:20px"><div class="pill">Mon</div><div class="pill">Tue</div><div class="pill">Wed</div><div class="pill">Thu</div><div class="pill" style="color:var(--R);border-color:var(--R);text-decoration:line-through;background:rgba(255,138,101,.12)">Fri</div></div><div class="lab">of developers lose <b>8+ hours a week</b> — a whole day.</div><div class="src">DX × Atlassian · State of DevEx 2024</div></div>
+  <div class="a card stat" data-in="18.4" data-out="20.55" data-fx="pop" style="left:1250px"><span class="tag" style="color:var(--L)">Waiting for answers</span><div class="n" style="margin-top:26px"><span data-count="0,61,18.5,0.9">0</span><small>%</small></div><div class="lab" style="margin-top:40px">spend <b>30+ minutes a day</b> searching for answers.</div><div class="src">Stack Overflow Developer Survey 2024</div></div>
+</div>
+
+<!-- C2 VOICE FLOW 20.6–31.15 -->
+<div class="scene" data-in="20.6" data-out="31.2" data-fx="fade" data-dur="0.2">
+  <div class="a" data-in="20.7" data-out="22.6" data-fx="pop" data-ofx="up" style="left:0;width:1920px;top:330px;text-align:center"><div style="font-size:40px;color:var(--mut)">That's why we built</div><div class="h1" style="font-size:170px;margin-top:10px">Kaam Ki Baat</div></div>
+  <div class="a" data-in="22.7" data-out="31.1" data-fx="fade" style="left:56px;top:110px;font-size:26px;color:var(--mut)">How a question flows</div>
+  <svg class="a" id="flow" data-in="22.7" data-out="31.1" data-fx="fade" style="left:0;top:0" width="1920" height="1080"></svg>
+  <div class="a fnode" data-in="22.75" data-out="31.1" data-fx="pop" style="left:110px;top:300px;width:260px;text-align:center"><svg id="mic" width="120" height="120"></svg><div class="t">You speak</div><div class="d">Hinglish, half-sentences</div></div>
+  <div class="a fnode" data-in="24.4" data-out="31.1" data-fx="pop" style="left:500px;top:250px;width:420px;border-color:rgba(124,196,255,.5)"><img src="assets/wispr.png" style="height:56px;border-radius:10px"><div class="d" style="margin-top:12px">transcribes &amp; cleans up</div><div id="tx" class="mono" style="margin-top:14px;font-size:21px;line-height:1.5;color:#cfcabe;min-height:96px"></div></div>
+  <div class="a fnode" data-in="25.2" data-out="31.1" data-fx="pop" style="left:1060px;top:250px;width:330px;text-align:center;border-color:rgba(245,196,81,.6);background:#0f0e0a"><div class="d">evidence core</div><div class="t">Kaam Ki Baat</div><div class="d">decision · owner · code · test</div></div>
+  <div class="a fnode" data-in="26.05" data-out="31.1" data-fx="pop" style="left:1520px;top:250px;width:300px;text-align:center;border-color:rgba(111,220,140,.5)"><div class="t" style="color:var(--ok)">GitHub</div><div class="d">files · PRs · CI at a commit</div></div>
+  <div class="a fnode" data-in="27.9" data-out="31.1" data-fx="pop" style="left:1060px;top:610px;width:330px;text-align:center;border-color:rgba(180,140,255,.6)"><img src="assets/bolna.png" style="height:60px;border-radius:10px"><div class="d" style="margin-top:8px">speaks the answer back</div><svg id="bw" width="280" height="56"></svg></div>
+  <div class="a" data-in="29.4" data-out="31.1" data-fx="up" style="left:120px;top:660px;width:780px"><div class="bubble card" style="border-color:rgba(180,140,255,.5)">“Freeze abhi decide nahi hua. Main Charan se puchhun?”<br><span style="color:var(--mut);font-size:20px">one sentence, with its source</span></div></div>
+</div>
+
+<!-- WORKSPACE 31.15–57.05 -->
+<div class="scene" data-in="31.15" data-out="57.1" data-fx="fade" data-dur="0.3">
+  <div class="a ws" id="ws" data-in="31.2" data-out="57.0" data-fx="zoom" data-dur="0.8">
+    <div style="position:absolute;left:0;right:0;top:0;height:64px;border-bottom:1px solid #1d1d1b;display:flex;align-items:center;gap:10px;padding:0 24px"><span class="dot" style="background:#3a3832"></span><span class="dot" style="background:#3a3832"></span><span class="dot" style="background:#3a3832"></span><span class="mono" style="margin-left:18px;font-size:19px;color:var(--mut)">kaam-ki-baat · team workspace</span><span id="micpill" class="pill" style="margin-left:auto;color:var(--ok);border-color:rgba(111,220,140,.4)">● voice on · listening</span></div>
+    <div style="position:absolute;left:24px;top:84px;width:260px;height:150px;border-radius:16px;border:1px solid #1f1e1c;background:#090909;overflow:hidden"><svg id="head2" width="260" height="150"></svg><div class="mono" style="position:absolute;left:12px;bottom:8px;font-size:15px;color:var(--mut)">webcam · head turn</div></div>
+    <div style="position:absolute;left:310px;top:150px;width:1280px;height:6px;border-radius:6px;background:#141413"><div id="yawdot" style="position:absolute;top:-7px;width:20px;height:20px;border-radius:20px;background:var(--ink);box-shadow:0 0 18px rgba(242,239,230,.6)"></div></div>
+    <div class="mono" style="position:absolute;left:310px;top:100px;font-size:17px;color:var(--mut)">← team memory</div><div class="mono" style="position:absolute;left:880px;top:100px;font-size:17px;color:var(--mut)">leader desk</div><div class="mono" style="position:absolute;right:30px;top:100px;font-size:17px;color:var(--mut)">code navigator →</div>
+    <div class="col" id="colL" style="left:24px;top:250px;width:510px"><h3><span class="dot" style="background:var(--L)"></span>Team Memory<small>left</small></h3><div id="Lbody" style="position:relative;margin-top:18px"></div></div>
+    <div class="col" id="colC" style="left:555px;top:250px;width:510px"><h3><span class="dot" style="background:var(--C)"></span>Leader Desk<small>lead only</small></h3><div id="Cbody" style="position:relative;margin-top:18px"></div></div>
+    <div class="col" id="colR" style="left:1086px;top:250px;width:510px"><h3><span class="dot" style="background:var(--R)"></span>Code Navigator<small>right</small></h3><div id="Rbody" style="position:relative;margin-top:18px"></div></div>
+    <svg id="esc" style="position:absolute;left:0;top:0;pointer-events:none" width="1620" height="780"></svg>
+  </div>
+</div>
+<!-- LEADER 45.6–48.6 -->
+<div class="scene" data-in="45.6" data-out="48.65" data-fx="fade" data-dur="0.2">
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,.82)"></div>
+  <div class="a card" data-in="45.65" data-out="48.55" data-fx="pop" style="left:460px;top:130px;width:1000px;padding:44px;border-color:rgba(245,196,81,.5);background:#0d0c08">
+    <div style="display:flex;align-items:center;gap:14px"><span class="tag" style="color:var(--C)">Leader Desk</span><span class="pill">Charan · lead only · this laptop</span></div>
+    <div style="font-size:26px;color:var(--mut);margin-top:26px">Harsh is asking</div>
+    <div style="font-size:52px;font-weight:750;letter-spacing:-.02em;margin-top:6px">Code freeze — 3:30 or 3:45?</div>
+    <div style="margin-top:30px;display:flex;gap:16px"><div id="approve" style="font-size:30px;font-weight:700;padding:18px 28px;border-radius:16px;background:var(--C);color:#000">Approve: 3:45, if CI is green</div></div>
+    <div class="a" data-in="46.6" data-out="48.55" data-fx="pop" style="position:relative;margin-top:30px;display:flex;align-items:center;gap:22px"><svg width="80" height="80" viewBox="0 0 86 86"><circle cx="43" cy="43" r="40" fill="rgba(111,220,140,.12)" stroke="#6fdc8c" stroke-width="2"/><g fill="none" stroke="#6fdc8c" stroke-width="3" stroke-linecap="round"><path d="M28 50c0-10 6-17 15-17s15 7 15 17"/><path d="M34 56c0-8 4-13 9-13s9 5 9 13"/><path d="M43 50v12"/><path d="M22 42c2-12 11-20 21-20s19 8 21 20"/></g></svg><div style="font-size:34px;font-weight:750;color:var(--ok)">Touch ID verified</div></div>
+    <div class="a" data-in="47.4" data-out="48.55" data-fx="right" style="position:relative;margin-top:26px;font-size:26px;padding:18px 22px;border-radius:16px;background:rgba(111,220,140,.08);border:1px solid rgba(111,220,140,.35)">↩ Back to Harsh: <b>“3:45, if CI is green.”</b> <span style="color:var(--ok)">Saved · read back ✓</span></div>
+  </div>
+  <svg class="a" id="cursor" data-in="45.9" data-out="46.7" data-fx="fade" style="left:0;top:0" width="60" height="60"><path d="M8 4l0 38 10-10 8 18 7-3-8-17 14 0z" fill="#fff" stroke="#000" stroke-width="2"/></svg>
+</div>
+
+<!-- EVALS 57.05–64.6 -->
+<div class="scene" data-in="57.05" data-out="64.65" data-fx="fade" data-dur="0.2">
+  <div class="a h1" data-in="57.15" data-out="64.5" data-fx="up" style="left:150px;top:110px;font-size:86px">Measured, <span class="serif" style="font-weight:500;color:var(--ok)">not guessed.</span></div>
+  <div class="a card imp" data-in="57.5" data-out="64.5" data-fx="pop" style="left:150px;top:260px;height:300px;border-color:rgba(255,138,101,.45)"><div class="k" style="color:var(--R)">Code Navigator · 28 questions</div><div class="v">Right function in the top 3</div>
+    <div class="bar2" style="margin-top:22px"><span>keyword</span><i><b id="b1" style="background:#5a5852"></b></i><em data-count="0,46,57.8,1.2">0</em>%</div>
+    <div class="bar2"><span>graph</span><i><b id="b2" style="background:var(--R)"></b></i><em data-count="0,93,58.1,1.4">0</em>%</div>
+    <div class="s">12 unseen questions: 17% → 33% · MRR 0.40 → 0.80</div></div>
+  <div class="a card imp" data-in="58.6" data-out="64.5" data-fx="pop" style="left:950px;top:260px;height:300px;border-color:rgba(180,140,255,.45)"><div class="k" style="color:#b48cff">Real Bolna call · reviewed</div><div class="v">48 s call → 1 grounding gap found</div>
+    <div style="display:flex;gap:10px;margin-top:22px;align-items:center;flex-wrap:wrap"><span class="pill" style="color:#e5484d;border-color:#e5484d">regression: fail before</span><span style="font-size:28px">→</span><span class="pill" id="fixpill" style="color:var(--ok);border-color:var(--ok)">pass after fix</span></div>
+    <div class="s">Exact task ID now carries into every call (PR #19)</div></div>
+  <div class="a card imp" data-in="59.7" data-out="64.5" data-fx="pop" style="left:150px;top:590px;height:240px;border-color:rgba(94,227,209,.45)"><div class="k" style="color:#5ee3d1">Head-turn device check</div><div class="v" style="display:flex;gap:18px"><span id="d1">← left ✓</span><span id="d2">center ✓</span><span id="d3">right ✓</span></div><div class="s">Webcam tracking verified on a real laptop</div></div>
+  <div class="a card imp" data-in="60.8" data-out="64.5" data-fx="pop" style="left:950px;top:590px;height:240px;border-color:rgba(111,220,140,.45)"><div class="k" style="color:var(--ok)">Automated tests</div><div class="v"><span data-count="0,164,61,1.3">0</span> / 164 passing</div><div class="s">Every “saved” is written once and read back</div></div>
+</div>
+
+<!-- PAYOFF 64.6–68.3 -->
+<div class="scene" data-in="64.6" data-out="68.35" data-fx="fade" data-dur="0.2">
+  <div class="a" data-in="65.6" data-out="68.25" data-fx="up" style="left:200px;top:260px;display:flex;align-items:center;gap:30px"><b class="ck" style="background:rgba(124,196,255,.15);color:var(--L)">✓</b><span class="q" style="font-size:84px">what was <span style="color:var(--L)">decided</span></span></div>
+  <div class="a" data-in="66.6" data-out="68.25" data-fx="up" style="left:200px;top:420px;display:flex;align-items:center;gap:30px"><b class="ck" style="background:rgba(255,138,101,.15);color:var(--R)">✓</b><span class="q" style="font-size:84px">where to <span style="color:var(--R)">look</span></span></div>
+  <div class="a" data-in="67.6" data-out="68.25" data-fx="up" style="left:200px;top:580px;display:flex;align-items:center;gap:30px"><b class="ck" style="background:rgba(111,220,140,.15);color:var(--ok)">✓</b><span class="q" style="font-size:84px">what to do <span style="color:var(--ok)">next</span></span></div>
+</div>
+
+<!-- END 68.3–74.5 -->
+<div class="scene" data-in="68.3" data-out="74.5" data-fx="fade" data-dur="0.3">
+  <div class="a" data-in="68.4" data-out="74.3" data-fx="pop" data-dur="0.8" style="left:0;width:1920px;top:170px;text-align:center"><div class="h1" style="font-size:170px">Kaam Ki Baat</div><div class="deva" style="font-size:56px;color:var(--C);margin-top:6px">काम की बात</div></div>
+  <div class="a" data-in="69.75" data-out="74.3" data-fx="up" style="left:0;width:1920px;top:470px;text-align:center;font-size:62px;font-weight:700">Meeting mein bola. <span class="serif" style="color:var(--R)">Repo mein bana.</span></div>
+  <div class="a" data-in="71.4" data-out="74.3" data-fx="up" style="left:0;width:1920px;top:620px;display:flex;justify-content:center;align-items:center;gap:30px">
+    <img src="assets/bol.png" style="height:200px;border-radius:24px"><div style="text-align:left"><div style="font-size:26px;color:var(--mut)">Built out loud at</div><div style="display:flex;align-items:center;gap:16px;margin-top:10px"><img src="assets/wispr.png" style="height:64px;border-radius:12px"><span style="font-size:32px;color:var(--mut)">×</span><img src="assets/bolna.png" style="height:64px;border-radius:12px"><span class="deva" style="font-size:46px">बोलना</span></div><div class="mono" style="font-size:21px;color:#cfcabe;margin-top:14px">github.com/harshsinha-12/kaam-ki-baat</div></div></div>
+</div>
+
+<div id="brand" class="a"><div class="logo">K</div>Kaam Ki Baat</div>
+<div id="section"><span class="chip" id="secchip"></span></div>
+<div class="sub" id="sub"></div>
+<div id="grain"></div><div id="vig"></div><div id="prog"></div>
+<div id="fade" style="position:absolute;inset:0;background:#000;pointer-events:none;opacity:0"></div>
+</div>
+<script src="film2.js"></script>
+</body></html>
