@@ -25,7 +25,7 @@ Use a normal member device session. Record local time, device/browser, tested co
 | --- | --- | --- | --- |
 | D1 calibrate | Explicitly select/start provider, grant requested permission, look comfortably forward and calibrate/recenter. Ready/calibrated status must be visible; no activation or call starts. | passed, preliminary component check W1 | unverified |
 | D2 left | Turn to the user's left and hold beyond dwell. Team Memory selects once; no activation. Verify physical yaw sign, not just injected values. | passed, preliminary component check W1 | unverified |
-| D3 center | Return to neutral and hold. Leader Desk selects; member remains locked. | selection passed W1; integrated authorization unverified | unverified |
+| D3 center | Return to neutral and hold. Leader Desk selects without activation; member authorization is checked separately in D5. | passed, preliminary component check W1 | unverified |
 | D4 right | Turn right and hold. Code Navigator selects once; no activation. | passed, preliminary component check W1 | unverified |
 | D5 explicit activation | Before an explicit gesture, selected zone stays inactive. Click/keyboard activation opens only an authorized zone. Center activation remains refused for a member. | unverified | unverified |
 | D6 loss/disconnect | Cover/leave camera or remove/disconnect AirPods. Visible lost/disconnected status; no stale selection or activation. Recovery requires fresh samples/dwell and calibration if requested. | unverified | unverified |
@@ -43,6 +43,19 @@ Transcript review: the opening passes for useful source context and one invitati
 
 R2 fix commit `6dd6411` preloads the exact authorized `current_task_id` and tells the agent to use exact IDs or refresh its brief. E1 independently ran R2's exact browser regression against the unfixed and fixed checkouts: **failed before, passed after**. It also tests that a client task-ID override is ignored. This is an agent code/regression review, not human organizer approval or a voice replay. Private review and TAP evidence are in `data/private/e1-review/` in the evaluation worktree. A later comparable consenting call remains necessary to verify spoken improvement.
 
-## Minute-60 checkpoint
+## Early close-out — user requested completion as soon as possible
 
-Pending. Record each check as **passed**, **failed** or **unverified**, identify whether evidence is synthetic or observed on a device, and retain limitations. No overall product success is inferred from the duration gate.
+Closed before the planned minute-60 checkpoint at 15:53 IST. Software commit `f64a2fd` on top of main `6bd9852` passed **163/163 synthetic tests**, full typecheck and production build after isolated `npm ci`. Relative Markdown links and `git diff --check` pass. The eight E1 tests include a real CLI subprocess, missing/malformed evidence, concurrent immutable retries, persisted read-back mismatches and scope checks. No device pass is inferred from these tests. No extra agents, calls, live-provider changes, merges or deployment were performed by E1.
+
+| Call acceptance | Status | Evidence / limit |
+| --- | --- | --- |
+| Final duration strictly over 45 s | passed | Fresh finalized Bolna read: completed, 48 s; matching private execution/audit and immutable evaluation read-back. Overall organizer eligibility remains unverified. |
+| Useful opening | passed, transcript only | Private exact-span review: permitted task fact, no-linked-PR uncertainty and one useful invitation. Audio delivery unverified. |
+| Interruption recovery | unverified | Partial transcript turns cannot establish timing, overlap or natural recovery; audio not reviewed. |
+| Evidence lookup and uncertainty | failed | One task-evidence refusal; later no-confirmed-linked-PR wording became an unsupported absolute no-PR claim. No confirmed code/PR match is invented in the evaluation. |
+| Explicit task/status confirmation | unverified | No exact save agreement observed; intent to work is insufficient. |
+| Persisted task-update read-back during call | unverified | No saved-update record or save tool in the captured call window. Independent evaluator tests are synthetic, not live-save evidence. |
+| Evaluation saved and retry read back | passed | Private content-addressed bundle retains duration, consent reference, version, scenario, captured source, scoped tools and absent-write evidence. Unchanged retry returned the same run. |
+| Focused fix reviewed before another call | passed, code/regression review | R2 exact-task-ID regression failed before and passed after; linked private review saved. Voice improvement remains unverified. |
+
+D1–D4 webcam results above apply to the earlier user-operated component check. **Final integrated-head D1–D7 remain unverified on-device.** D5–D7 are unverified even on the earlier component check. All AirPods D1–D7 remain **unverified**, explicitly deferred without hardware. The next useful validation is one consenting integrated-device replay covering activation, physical loss and provider switching, followed by the same approved-source call scenario with explicit save/read-back. Repository-onboarding calls use a different scenario/source and cannot establish comparable V1→V2 improvement.
