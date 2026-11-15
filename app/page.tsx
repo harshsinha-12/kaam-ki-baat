@@ -42,6 +42,14 @@ export default function Home() {
   const conv = board?.conversation;
   return (
     <main style={{ fontFamily: "ui-sans-serif, system-ui", background: "#0d0f12", color: "#e8e6e1", minHeight: "100vh", padding: "28px 32px" }}>
+      <style>{`
+        .specialists { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 28px; }
+        .details { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-top: 24px; }
+        .active-card { animation: focus-glow 2s ease-in-out infinite alternate; }
+        @keyframes focus-glow { to { box-shadow: 0 10px 36px rgba(240,180,41,.3); } }
+        @media (max-width: 760px) { .specialists, .details { grid-template-columns: 1fr; } }
+        @media (prefers-reduced-motion: reduce) { .active-card { animation: none; } article { transition: none !important; transform: none !important; } }
+      `}</style>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 28 }}>Kaam Ki Baat</h1>
@@ -49,7 +57,7 @@ export default function Home() {
         </div>
         {board?.snapshot && (
           <div style={{ fontSize: 13, textAlign: "right" }}>
-            <span style={{ padding: "2px 8px", borderRadius: 6, background: board.snapshot.label === "LIVE" ? "#1f6f43" : "#8a5a00", fontWeight: 600 }}>{board.snapshot.label}</span>{" "}
+            <span style={{ padding: "8px 14px", fontSize: 18, display: "inline-block", borderRadius: 6, background: board.snapshot.label === "LIVE" ? "#1f6f43" : "#8a5a00", fontWeight: 600 }}>{board.snapshot.label === "LIVE" ? "LIVE evidence" : "FIXTURE · demo data"}</span>{" "}
             {board.snapshot.repository} @ <code>{board.snapshot.pinnedSha.slice(0, 7)}</code>
             {conv && <div style={{ opacity: 0.7 }}>call {conv.callId} · task {conv.focus.taskId ?? "—"} · context v{conv.focus.contextVersion}</div>}
           </div>
@@ -61,12 +69,12 @@ export default function Home() {
 
       {conv && (
         <>
-          <section style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18, marginTop: 28 }}>
+          <section className="specialists" aria-label="Evidence specialists">
             {ORDER.map((id) => {
               const c = conv.cards[id];
               const active = conv.focus.active === id;
               return (
-                <article key={id} style={{
+                <article key={id} className={active ? "active-card" : undefined} aria-label={`${c.label}${active ? ", active" : ""}`} style={{
                   border: `1px solid ${active ? "#f0b429" : "#2a2f36"}`, borderRadius: 14, padding: 18, background: active ? "#1a1810" : "#14171b",
                   transform: active ? "translateY(-6px)" : "none", transition: "all .25s", boxShadow: active ? "0 10px 30px rgba(240,180,41,.15)" : "none",
                 }}>
@@ -86,12 +94,14 @@ export default function Home() {
               );
             })}
           </section>
-          <section style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 18, marginTop: 24 }}>
+          <section className="details">
             <div style={{ background: "#14171b", borderRadius: 14, padding: 18 }}>
-              <h3 style={{ marginTop: 0 }}>Conversation</h3>
+              <h3 style={{ marginTop: 0 }}>Tool timeline</h3>
+              <p style={{ fontSize: 12, opacity: 0.7 }}>Successful get_task_evidence turns · latest six. Other tools are recorded in the private audit log.</p>
+              {conv.turns.length === 0 && <p>No evidence tool turns yet.</p>}
               {conv.turns.slice(-6).map((t, i) => (
                 <div key={i} style={{ fontSize: 14, marginBottom: 10 }}>
-                  <div style={{ opacity: 0.7 }}>“{t.utterance || "…"}” → {t.specialist.replace("_", " ")}</div>
+                  <div style={{ fontSize: 12, color: "#f0b429" }}><time dateTime={t.at}>{new Date(t.at).toLocaleTimeString()}</time> · get_task_evidence → {t.specialist.replaceAll("_", " ")}</div>
                   <div>{t.spoken}</div>
                 </div>
               ))}
