@@ -42,6 +42,23 @@ it("reusing a clarification key for a different question is rejected", async () 
   assert.equal((await z.act(z.dev, "ticket_create", { ...body, question: "Who owns the specialist board?" })).status, 409);
 });
 
+it("a lost ticket response can be retried after the leader has already answered", async () => {
+  const z = await zoneSetup();
+  const request = { question: "When is the demo freeze?", confirmed: true, idempotency_key: "review-retry-after-answer" };
+  const created = await z.act(z.dev, "ticket_create", request);
+  const id = (created.body.ticket as { id: string }).id;
+  await z.unlockLeader();
+  assert.equal((await z.act(z.lead, "leader_resolve", { ticket_id: id, statement: "Friday", confirmed: true, expected_version: 0 })).status, 200);
+  const retry = await z.act(z.dev, "ticket_create", request);
+  assert.equal(retry.status, 200);
+  assert.equal(retry.body.replayed, true);
+  assert.equal((retry.body.ticket as { id: string; state: string }).id, id);
+  assert.equal((retry.body.ticket as { state: string }).state, "answered");
+  const phoneRetry = await runTool({ store: z.store, snapshot: z.snapshot, conversations: new Map() }, "request_clarification", { ...request, call_token: z.devCall.token });
+  assert.equal(phoneRetry.status, 200);
+  assert.match(String(phoneRetry.body.speak), /already saved.*answered: Friday/);
+});
+
 it("leader step-up proofs are one-time and failed guesses are bounded", async () => {
   const z = await zoneSetup();
   assert.equal((await z.unlockLeader()).status, 200);

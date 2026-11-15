@@ -162,7 +162,10 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       if (!x.ok) return { status: x.status, body: { ok: false, error: x.reason, speak: `I didn't send it — ${x.reason}.` } };
       return ok({
         ticketId: x.ticket.id, replayed: x.replayed, state: x.ticket.state,
-        speak: "Done — I've sent that to the leader. I won't guess the answer; I'll tell you as soon as it's approved, even if you call back later.",
+        speak: x.ticket.answer
+          ? `That question was already saved and the leader has answered: ${x.ticket.answer.statement}${x.ticket.answer.conditions ? `, on condition that ${x.ticket.answer.conditions}` : ""}.`
+          : x.ticket.state === "withdrawn" ? "That question was previously saved and has been withdrawn. I haven't opened another ticket."
+          : "Saved and read back. Your question is pending for the leader. I won't guess the answer; ask for it again after it's approved.",
         evidenceIds: [x.ticket.id],
       });
     }

@@ -4,7 +4,7 @@ import type { EventStore } from "../store/event-store";
 import type { ClarificationTicket, Decision, TicketState } from "./contracts";
 import { zoneAccess } from "./focus";
 import type { Actor } from "./identity";
-import { askTeamMemory, currentDecisions } from "./memory";
+import { askTeamMemory, currentDecisions, finalIntent } from "./memory";
 import { contextVersion, ev, leaderPresence, tickets } from "./state";
 
 // Unknown answer -> requester-approved ticket -> leader resolves (verified write)
@@ -35,18 +35,21 @@ export async function createTicket(
   const meetingId = actor.meetingIds[0];
   if (!meetingId) return { ok: false, status: 403, reason: "no approved meeting for this person" };
 
-  const events = await store.all();
-  const mem = askTeamMemory(snapshot, events, actor, question);
-  if (mem.kind === "confirmed") return { ok: false, status: 409, reason: "that already has a confirmed answer" };
-  const decision = "decision" in mem ? mem.decision : undefined;
-
-  return store.appendGuarded<{ ok: true; ticket: ClarificationTicket; replayed: boolean } | Fail>((log) => {
+  const normalizedQuestion = finalIntent(question).slice(0, 300);
+  const result = await store.appendGuarded<{ ok: true; ticket: ClarificationTicket; replayed: boolean } | Fail>((log) => {
     const existing = [...tickets(log).values()].find((t) => (t as ClarificationTicket & { idempotencyKey?: string }).idempotencyKey === key && t.requesterId === actor.participant.id);
     if (existing) {
-      if (existing.question !== mem.question.slice(0, 300) || existing.meetingId !== (decision?.meetingId ?? meetingId))
+      if (!actor.meetingIds.includes(existing.meetingId))
+        return { reject: { ok: false, status: 403, reason: "ticket is outside the authorized meeting scope" } };
+      if (existing.question !== normalizedQuestion)
         return { reject: { ok: false, status: 409, reason: "idempotency key was already used for a different question" } };
       return { reject: { ok: true as const, ticket: existing, replayed: true } };
     }
+    // A matching retry must succeed even if the leader answered meanwhile.
+    // Check current memory only for a genuinely new ticket, under the write lock.
+    const mem = askTeamMemory(snapshot, log, actor, question);
+    if (mem.kind === "confirmed") return { reject: { ok: false, status: 409, reason: "that already has a confirmed answer" } };
+    const decision = "decision" in mem ? mem.decision : undefined;
     const ticket: ClarificationTicket & { idempotencyKey: string } = {
       id: `clar_${randomBytes(5).toString("hex")}`,
       requesterId: actor.participant.id,
@@ -61,6 +64,11 @@ export async function createTicket(
     };
     return { append: ev("ticket", ticket.id, ticket), result: { ok: true as const, ticket, replayed: false } };
   });
+  if (!result.ok) return result;
+  const persisted = tickets(await store.all()).get(result.ticket.id);
+  if (!persisted || persisted.requesterId !== actor.participant.id || persisted.question !== normalizedQuestion || !actor.meetingIds.includes(persisted.meetingId))
+    return { ok: false, status: 409, reason: "ticket read-back failed; save was not confirmed" };
+  return { ...result, ticket: persisted };
 }
 
 export async function leaderInbox(store: EventStore, snapshot: EvidenceSnapshot, actor: Actor) {
