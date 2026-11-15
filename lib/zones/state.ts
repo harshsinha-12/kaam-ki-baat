@@ -14,7 +14,10 @@ export type ZoneKind =
   | "ticket"
   | "utterance"
   | "presence"
-  | "bolna_execution";
+  | "bolna_execution"
+  | "passkey"
+  | "webauthn_challenge"
+  | "webauthn_used";
 
 export const zoneEvents = (events: StoredEvent[], kind?: ZoneKind): ZoneEvent[] =>
   events.filter((e): e is ZoneEvent => e.type === "zone" && (!kind || e.kind === kind));

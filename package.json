@@ -18,7 +18,9 @@
     "call:token": "tsx scripts/create-call.ts",
     "demo:dry": "tsx scripts/demo-dry-run.ts",
     "session:issue": "tsx scripts/issue-session.ts",
-    "leader:code": "tsx scripts/issue-session.ts"
+    "leader:code": "tsx scripts/issue-session.ts",
+    "graph": "tsx scripts/build-codegraph.ts",
+    "graph:eval": "tsx scripts/eval-codegraph.ts"
   },
   "dependencies": {
     "@bolna/web-call": "3.0.1",
