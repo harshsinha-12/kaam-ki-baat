@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BolnaWebCall } from "@bolna/web-call";
+import { browserHandoff } from "@/lib/auth/browser-handoff";
 import { evidenceUrl, type ActionReceipt, type PageState, type PendingAction, type Space, type SpatialContext } from "@/lib/spatial/contracts";
 import { executeBrowserAction } from "@/lib/spatial/browser-actions";
 import type { ConfirmedFocus } from "@/lib/focus/input-contracts";
@@ -38,9 +39,11 @@ export function SpatialWorkspace() {
     if (focus.zone !== "leader_desk") updatePage({ ...pageRef.current, space: focus.zone === "team_memory" ? "meeting" : "code", selectedEvidence: null });
   }, [updatePage]);
 
+  useEffect(() => { const prepared = browserHandoff().callToken; if (prepared) setToken(prepared); }, []);
+
   useEffect(() => {
     if (!token) return;
-    const boardKey = new URLSearchParams(window.location.search).get("key") ?? "";
+    const boardKey = browserHandoff().boardKey;
     const controller = new AbortController();
     let alive = true;
     let timer: ReturnType<typeof setTimeout>;
@@ -102,7 +105,7 @@ export function SpatialWorkspace() {
     startingRef.current = true;
     setCallState("connecting"); setError("");
     try {
-      const key = new URLSearchParams(window.location.search).get("key") ?? "";
+      const key = browserHandoff().boardKey;
       const call = new Client({
         audioElement: audioRef.current!,
         getSession: async () => {
