@@ -2,16 +2,16 @@
 
 ## Current status
 
-Planning and MCP setup are in progress. Application implementation is on hold pending further user context and an instruction to begin.
+The architecture is converged (see [architecture.md](architecture.md) and [integration-design.md](integration-design.md)). The user has authorized the first application implementation, to be carried out by Claude Opus on its own branch. No application code has been written yet. Real calls, agent changes, deployment, and merging still need separate instructions.
 
 ## Implementation checkpoint
 
 Last inspected: 2026-11-15, from baseline commit `80d61eeb3dfdbfe4064f0a89b712294cbed81e65` (merged planning PR #1). This is a dated checkpoint; every agent must inspect its current checkout before using it.
 
 - **Implemented:** project documentation and shared coding-agent startup/handoff instructions in `AGENTS.md`, with a `CLAUDE.md` entrypoint. Bolna and Wispr setup evidence is recorded in [integrations.md](integrations.md); credentials live outside the repository.
-- **Application:** no application source, package manifest, database, runtime endpoints, tests, or evaluation implementation exists at this checkpoint. The architecture and evaluation pipeline are designs.
-- **Validation:** documentation links and whitespace are checked for the agent-instruction update. No application tests or voice calls were run for this documentation task. Earlier provider checks retain their own dated evidence in the integration notes.
-- **Blockers / next steps:** await the user's next context and implementation instruction; select an authorized Wispr meeting before source ingestion. The implementation hold remains in effect.
+- **Application:** no application source, package manifest, database, runtime endpoints, tests, or evaluation implementation exists at this checkpoint. The architecture, integration design, and evaluation pipeline are written down; the code is next.
+- **Validation:** see the pull request for this change. No application tests or voice calls have been run.
+- **Blockers / next steps:** (1) the user supplies one approved Wispr meeting ID or link; (2) the user approves one repository for the demo; (3) Claude Opus starts the first slice on its own branch, following the build order in [architecture.md](architecture.md) §9; (4) pattern A or B for Bolna is confirmed (see [decisions.md](decisions.md), D-018 and D-019).
 
 Update this section after meaningful work with the new baseline, implementation evidence, checks/results, blockers, and next step. Keep detailed decisions in their source documents instead of copying them here.
 
@@ -30,8 +30,9 @@ Update this section after meaningful work with the new baseline, implementation 
 - [x] Research and document the initial tool recommendations, distinguishing live discovery from documentation.
 - [x] Verify the public competition rules and 1–4 PM build window.
 - [x] Design the stored call-evaluation and reviewed improvement pipeline.
+- [x] Write the converged architecture, the Bolna and Wispr integration design, and the decision log (2026-11-15, this branch).
 - [ ] Read one user-selected, authorized Wispr meeting after authentication.
-- [ ] Incorporate the next context update and settle remaining scope decisions.
+- [ ] Settle the remaining open decisions in [decisions.md](decisions.md) (D-019 to D-023).
 
 ## Future milestones — do not execute yet
 
