@@ -19,6 +19,9 @@ export interface MeetingRecord {
   date?: string;
   source: SourceLabel; // LIVE = read through Wispr MCP for an approved meeting
   approvedBy: string; // who approved this meeting for the project
+  sourceVersion?: string; // provider modification timestamp or immutable source hash
+  fetchedAt?: string;
+  transcriptHash?: string; // source transcript hash; full transcript stays private
 }
 
 export interface MeetingPassage {
@@ -30,6 +33,7 @@ export interface MeetingPassage {
   charEnd: number;
   text: string;
   visibility: "participant" | "team";
+  textHash?: string;
 }
 
 export interface RepoFile {
