@@ -141,9 +141,13 @@ export function FocusInputControls({ onConfirmedFocus, compact = false }: { onCo
         <legend>Choose one input</legend>
         {(["manual", "webcam", "airpods"] as const).map(input => <label key={input} className={styles.inputChoice} data-active={provider === input}><input type="radio" name="focus-input" aria-label={input === "manual" ? "Manual" : input === "webcam" ? "Webcam" : "AirPods"} checked={provider === input} onChange={() => void switchInput(input)} /><span><strong>{input === "manual" ? "Manual" : input === "webcam" ? "Webcam" : "AirPods"}</strong><small>{input === "manual" ? "Keyboard & click" : input === "webcam" ? "Local head tracking" : "macOS companion"}</small></span></label>)}
       </fieldset>
-      <p className={styles.focusReadout} role="status" aria-live="polite">Selected zone: <strong>{currentSelection && focus?.zone ? ZONE_LABELS[focus.zone] : "awaiting this input"}</strong>
-        {!currentSelection && focus?.zone ? ` · Last confirmed: ${ZONE_LABELS[focus.zone]} (${focus.provider})` : ""}
-        {zoneAccess && !zoneAccess.allowed ? ` · locked: ${zoneAccess.reason}` : ""}</p>
+      <div className={compact ? styles.routeIndicator : styles.focusReadout} data-zone={currentSelection ? focus?.zone : undefined} role="status" aria-live="polite">
+        <span><small>{compact ? "Targeted agent" : "Selected zone"}</small><strong>{currentSelection && focus?.zone ? focus.zone === "leader_desk" ? "Leader guide" : ZONE_LABELS[focus.zone] : "Awaiting selection"}</strong></span>
+        {compact && <span className={styles.routeHint}>{currentSelection ? "Turn your head to change the guide · same voice call" : "Select an area to confirm this input"}</span>}
+        {!currentSelection && focus?.zone && <span>Last confirmed: {ZONE_LABELS[focus.zone]}</span>}
+        {compact && <button className={styles.activateButton} disabled={connection !== "connected" || changing || !currentSelection || !zoneAccess?.allowed} onClick={() => void controller.current?.activate().catch(e => setError(e.message))}>{focus?.activeZone === focus?.zone && currentSelection ? `Active: ${ZONE_LABELS[focus.zone!]}` : `Activate ${currentSelection && focus?.zone ? ZONE_LABELS[focus.zone] : "selected zone"}`}</button>}
+        {zoneAccess && !zoneAccess.allowed && <span className={styles.routeHint}>Leader workspace locked · AI guide only</span>}
+      </div>
       {provider === "manual" && <>
         <p className={styles.provenance}>Permission: no motion permission needed · Calibration: not required. Use ← / ↑ / → to select, then Enter or Activate.</p>
         <div className={styles.manualZones} aria-label="Select a zone">{(["team_memory", "leader_desk", "code_navigator"] as const).map((zone, i) => <button key={zone} disabled={connection !== "connected" || changing} aria-pressed={currentSelection && focus?.zone === zone} onClick={() => select(zone)}>{["←", "↑", "→"][i]} {ZONE_LABELS[zone]}</button>)}</div>
@@ -158,7 +162,7 @@ export function FocusInputControls({ onConfirmedFocus, compact = false }: { onCo
       </div>}
       <details className={styles.advancedControls} open={compact ? undefined : true}><summary>Selection &amp; device details</summary>
       <div className={styles.focusActions}>
-        <button className={styles.activateButton} disabled={connection !== "connected" || changing || !currentSelection || !zoneAccess?.allowed} onClick={() => void controller.current?.activate().catch(e => setError(e.message))}>Activate {currentSelection && focus?.zone ? ZONE_LABELS[focus.zone] : "selected zone"}</button>
+        {!compact && <button className={styles.activateButton} disabled={connection !== "connected" || changing || !currentSelection || !zoneAccess?.allowed} onClick={() => void controller.current?.activate().catch(e => setError(e.message))}>Activate {currentSelection && focus?.zone ? ZONE_LABELS[focus.zone] : "selected zone"}</button>}
         <span>Active zone: {focus?.activeZone ? ZONE_LABELS[focus.activeZone] : "none"}</span>
         <button onClick={() => void disconnect()} disabled={changing}>Disconnect focus controls</button>
         {connection === "unavailable" && <button onClick={forget}>Forget unavailable session</button>}
