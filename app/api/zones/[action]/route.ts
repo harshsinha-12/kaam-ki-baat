@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 async function handle(req: Request, ctx: { params: Promise<{ action: string }> }) {
   const { action } = await ctx.params;
   if (!ZONE_ACTIONS.includes(action as ZoneAction)) return NextResponse.json({ ok: false, error: "unknown action" }, { status: 404 });
-  if (req.method === "GET" && !["me", "deliveries", "leader_inbox", "focus-input"].includes(action))
+  if (req.method === "GET" && !["me", "deliveries", "leader_inbox", "focus-input", "memory_sources"].includes(action))
     return NextResponse.json({ ok: false, error: "use POST for this action" }, { status: 405 });
   const header = req.headers.get("authorization") ?? "";
   const token = header.startsWith("Session ") ? header.slice(8) : null;

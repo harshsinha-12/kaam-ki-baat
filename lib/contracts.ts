@@ -23,6 +23,7 @@ export interface MeetingRecord {
   sourceCreatedAt?: string; // provider record creation time, not an assumed meeting date
   fetchedAt?: string;
   transcriptHash?: string; // source transcript hash; full transcript stays private
+  shareLink?: string; // actual Wispr notes link, never synthesized from an ID
 }
 
 export interface MeetingPassage {

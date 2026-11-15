@@ -3,6 +3,7 @@ import type { StoredEvent } from "../store/event-store";
 import type { ClarificationTicket, Decision, LiveUtterance, SourceRef } from "./contracts";
 import type { Actor } from "./identity";
 import { latestConsent, loggedDecisions, tickets, utterances } from "./state";
+import { meetingContext, meetingSource, visibleMeetingPassages } from "./meeting-context";
 
 // LEFT — Team Memory. Answers only from APPROVED, authorized context. Anything
 // else is said to be unconfirmed and offered as a leader clarification.
@@ -22,7 +23,7 @@ export function baseDecisions(snapshot: EvidenceSnapshot): Decision[] {
     version: 1,
     meetingId: t.meetingId,
     sources: passages.map((p) => {
-      return { kind: "wispr_meeting" as const, id: p.id, meetingId: t.meetingId, label: `${p.speaker ?? "speaker"}: "${p.text.slice(0, 160)}"` };
+      return meetingSource(snapshot, p);
     }),
   } as Decision;
   });
@@ -36,15 +37,16 @@ export function currentDecisions(snapshot: EvidenceSnapshot, events: StoredEvent
   return [...merged.values()];
 }
 
-export const visibleDecisions = (snapshot: EvidenceSnapshot, events: StoredEvent[], actor: Actor) =>
-  currentDecisions(snapshot, events).filter((d) => actor.meetingIds.includes(d.meetingId)).flatMap(d => {
+export const visibleDecisions = (snapshot: EvidenceSnapshot, events: StoredEvent[], actor: Actor) => {
+  const visible = new Set(visibleMeetingPassages(snapshot, actor).map(p => JSON.stringify([p.meetingId, p.id])));
+  return currentDecisions(snapshot, events).filter((d) => actor.meetingIds.includes(d.meetingId) && snapshot.meetings.some(m => m.id === d.meetingId && m.approvedBy.trim())).flatMap(d => {
     const sources = d.sources.filter(ref => {
       if (ref.kind !== "wispr_meeting") return true;
-      const passage = snapshot.passages.find(p => p.id === ref.id && p.meetingId === d.meetingId);
-      return passage && (passage.visibility === "team" || snapshot.tasks.some(t => actor.participant.taskIds.includes(t.id) && t.passageIds.includes(passage.id)));
+      return visible.has(JSON.stringify([d.meetingId, ref.id]));
     });
     return d.sources.length > 0 && sources.length === 0 ? [] : [{ ...d, sources }];
   });
+};
 
 const STOP = new Set("the a an is are was it to of and or for in on at by be do does did what when who whom which where how why we our us you your i me my this that with from have has will would should can could kya kab kaun kis hai tha ka ki ke ko se mein aur ya bhi agar wait sorry matlab actually umm uh hmm".split(" "));
 export const terms = (s: string) =>
@@ -61,12 +63,19 @@ export function finalIntent(q: string): string {
 }
 
 export type MemoryAnswer =
+  | { kind: "meeting_context"; speak: string; sources: SourceRef[]; offerEscalation: true; pendingTicket?: ClarificationTicket }
   | { kind: "confirmed" | "conditional"; decision: Decision; speak: string; sources: SourceRef[]; offerEscalation: false }
   | { kind: "not_confirmed"; decision: Decision; speak: string; sources: SourceRef[]; offerEscalation: true; pendingTicket?: ClarificationTicket }
   | { kind: "unknown"; speak: string; sources: []; offerEscalation: true; pendingTicket?: ClarificationTicket };
 
-export function askTeamMemory(snapshot: EvidenceSnapshot, events: StoredEvent[], actor: Actor, rawQuestion: string): MemoryAnswer & { provisional: LiveUtterance[]; question: string } {
+export function askTeamMemory(snapshot: EvidenceSnapshot, events: StoredEvent[], actor: Actor, rawQuestion: string, meetingId?: string): MemoryAnswer & { provisional: LiveUtterance[]; question: string } & ReturnType<typeof meetingContext> {
   const question = finalIntent(rawQuestion);
+  const scope = meetingId ? { ...actor, meetingIds: actor.meetingIds.filter(id => id === meetingId) } : actor;
+  const context = meetingContext(snapshot, scope, question, meetingId);
+  return { ...answerTeamMemory(snapshot, events, scope, question, context), ...context };
+}
+
+function answerTeamMemory(snapshot: EvidenceSnapshot, events: StoredEvent[], actor: Actor, question: string, context: ReturnType<typeof meetingContext>): MemoryAnswer & { provisional: LiveUtterance[]; question: string } {
   const q = terms(question);
   const decisions = visibleDecisions(snapshot, events, actor);
   const scored = decisions
@@ -85,6 +94,11 @@ export function askTeamMemory(snapshot: EvidenceSnapshot, events: StoredEvent[],
 
   const best = scored[0]?.d;
   if (!best) {
+    if (context.passages.length) {
+      const p = context.passages[0];
+      return { kind: "meeting_context", question, provisional, sources: context.passages.map(p => p.source), offerEscalation: true, pendingTicket: myOpen,
+        speak: `In ${p.source.meetingTitle}, ${p.speaker ?? "an unidentified speaker"} said: “${p.text.slice(0, 500)}”${p.text.length > 500 ? " (excerpt)" : ""}. This is recorded meeting context; I don't have a confirmed decision for this question.${live}` };
+    }
     return {
       kind: "unknown", question, provisional, sources: [], offerEscalation: true, pendingTicket: myOpen,
       speak: myOpen

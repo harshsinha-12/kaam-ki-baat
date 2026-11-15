@@ -67,7 +67,7 @@ ONE authorized Wispr meeting               ONE authorized GitHub repository
 
 ### What the integrations actually do
 
-- **Wispr Flow** supplies **reviewed, consented meeting context** through read-only MCP. The documented MCP is not a continuous per-device microphone stream.
+- **Wispr Flow** supplies **reviewed, consented meeting context** through read-only MCP. Team Memory searches permitted imported meetings, with exact passage citations and a meeting selector. See [selected-meeting import and access](docs/wispr-meetings.md). The documented MCP is not a continuous per-device microphone stream.
 - **GitHub** provides repository evidence at a pinned commit. PR merge state and CI check SHA are evaluated separately.
 - **Bolna** powers voice sessions; its management MCP is separate from the application's protected runtime HTTP tools. See [agent setup](docs/bolna/agent.md).
 - **Spatial inputs** choose a logical agent. Native AirPods head tracking, webcam-based head pose and keyboard/mouse controls are separate providers.

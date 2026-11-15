@@ -17,7 +17,8 @@ import { flowReducer, initialFlow } from "./flow-state";
 // ← / → (or click) selects; selection is sent as a low-privilege focus event.
 
 type Me = { participant?: { name: string }; role?: string; zones?: Record<string, { allowed: boolean; reason?: string }>; snapshot?: { label: string; pinnedSha: string; repository: string }; error?: string };
-type Mem = { kind: string; speak: string; offerEscalation: boolean; sources: { kind: string; label: string }[]; question: string; provisional: { text: string }[]; pendingTicket?: { id: string } | null };
+type Mem = { kind: string; speak: string; offerEscalation: boolean; sources: { kind: string; label: string; url?: string }[]; question: string; provisional: { text: string }[]; pendingTicket?: { id: string } | null };
+type Meeting = { id: string; title: string; source: string; date?: string; fetchedAt?: string; passageCount: number; shareLink?: string };
 type GA = { explanation: string[]; match: string; seed: { label: string; path: string; line: number } | null; subgraph: { nodes: string[] }; graph: ViewGraph; sha: string; repository: string };
 type Ticket = { id: string; question: string; state: string; answer?: { statement: string; conditions?: string; approvedBy: string; decisionVersion: number } };
 
@@ -33,8 +34,10 @@ export default function Team() {
   const [focus, setFocus] = useState<"team_memory" | "leader_desk" | "code_navigator">("team_memory");
   const [q, setQ] = useState("What did we agree in the meeting?");
   const [mem, setMem] = useState<Mem | null>(null);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [meetingId, setMeetingId] = useState("");
   const [sent, setSent] = useState<string | null>(null);
-  const escalation = useRef<{ question: string; id: string; pending: boolean } | null>(null);
+  const escalation = useRef<{ question: string; meetingId: string; id: string; pending: boolean } | null>(null);
   const [sending, setSending] = useState(false);
   const [cq, setCq] = useState("where do we read back before saying saved");
   const [ga, setGa] = useState<GA | null>(null);
@@ -49,7 +52,7 @@ export default function Team() {
   const [inbox, setInbox] = useState<{ answered: Ticket[]; pending: Ticket[] }>({ answered: [], pending: [] });
 
   const refreshSession = useCallback(async () => {
-    setConnecting(true); setError("");
+    setConnecting(true); setError(""); setMeetings([]); setMeetingId(""); setMem(null);
     try {
       if (!sessionToken()) { setMe(null); return; }
       const r = await zone<Me>("me");
@@ -57,6 +60,8 @@ export default function Team() {
         setMe(null); setError("Your session has expired or is unavailable. Ask your team lead for a new personal session link."); return;
       }
       setMe(r.data);
+      const sources = await zone<{ meetings: Meeting[] }>("memory_sources");
+      if (sources.status === 200) setMeetings(sources.data.meetings);
     } catch { setMe(null); setError("The workspace could not connect. Check the connection and try again."); }
     finally { setConnecting(false); }
   }, []);
@@ -101,7 +106,7 @@ export default function Team() {
     const requestId = ++flowRequestId.current;
     dispatchFlow({ type: "start", requestId, destination: "memory" });
     setAsking(true); setSent(null); setError(""); setMem(null);
-    try { const r = await zone<Mem>("memory_ask", { question: q });
+    try { const r = await zone<Mem>("memory_ask", { question: q, meeting_id: meetingId || undefined });
       if (r.status !== 200 || !r.data.kind) throw new Error(r.data.error ?? "Memory unavailable");
       setMem(r.data);
       dispatchFlow({ type: "finish", requestId, success: true });
@@ -113,10 +118,10 @@ export default function Team() {
     if (escalation.current?.pending) return;
     const requestId = ++flowRequestId.current;
     dispatchFlow({ type: "start", requestId, destination: "leader" });
-    if (escalation.current?.question !== question) escalation.current = { question, id: key(), pending: false };
+    if (escalation.current?.question !== question || escalation.current?.meetingId !== meetingId) escalation.current = { question, meetingId, id: key(), pending: false };
     const attempt = escalation.current!;
     attempt.pending = true; setSending(true);
-    try { const r = await zone<{ ticket: Ticket }>("ticket_create", { question, confirmed: true, idempotency_key: attempt.id });
+    try { const r = await zone<{ ticket: Ticket }>("ticket_create", { question, meeting_id: meetingId || undefined, confirmed: true, idempotency_key: attempt.id });
       setSent(r.data.ticket ? `Sent to the leader as ${r.data.ticket.id}. I won't guess; you'll see the answer here.` : r.data.error ?? "not sent");
       dispatchFlow({ type: "finish", requestId, success: Boolean(r.data.ticket) });
     } catch { setError("Question could not be sent. Try again."); dispatchFlow({ type: "finish", requestId, success: false }); }
@@ -175,6 +180,20 @@ export default function Team() {
           <div className={s.cardHeading}><span className={s.zoneNumber}>01 / MEMORY</span><span className={s.cardTag}>Approved meeting notes</span></div>
           <h2 className={s.h}>What did we decide?</h2>
           <p className={s.cardDescription}>Pick up where your team left off.</p>
+          {connected && <div className={s.list}>
+            <label className={s.label} htmlFor="memory-meeting">Wispr meeting sources</label>
+            {meetings.length > 0 ? <>
+              <select id="memory-meeting" className={s.input} value={meetingId} disabled={asking || sending} onChange={e => { setMeetingId(e.target.value); setMem(null); setSent(null); }}>
+                <option value="">All permitted meetings ({meetings.length})</option>
+                {meetings.map(m => <option key={m.id} value={m.id}>{m.title} · {m.source === "FIXTURE" ? "demo · " : ""}{m.passageCount} passages</option>)}
+              </select>
+              {meetings.filter(m => !meetingId || m.id === meetingId).map(m => <div key={m.id} className={s.meta}>
+                {m.shareLink ? <a href={m.shareLink} target="_blank" rel="noreferrer">{m.title} ↗</a> : m.title}
+                {` · ${m.source === "FIXTURE" ? "Demo source" : "Imported from Wispr"} · ${m.passageCount} permitted passages`}
+                {m.fetchedAt && ` · read ${new Date(m.fetchedAt).toLocaleString()}`}
+              </div>)}
+            </> : <p className={s.meta}>No approved Wispr meetings are available to your session. Ask your team lead to import a selected meeting and grant access.</p>}
+          </div>}
           <div className={s.row}>
             <input className={s.input} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ask()} aria-label="Ask Team Memory" />
             <button className={`${s.btn} ${s.primary}`} disabled={!connected || asking || !q.trim()} onClick={ask}>{asking ? "Looking up…" : "Ask"}</button>
@@ -182,9 +201,9 @@ export default function Team() {
           {!mem && <div className={s.empty}><span className={s.label}>{asking ? "Reading permitted sources" : "Meeting notes → sourced answers"}</span><p>{asking ? "Checking your team’s approved notes…" : "Ask about a decision, commitment, or owner. If the notes do not confirm an answer, you can ask your leader."}</p></div>}
           {mem && (
             <div className={s.answer}>
-              <div className={mem.kind === "confirmed" ? s.ok : mem.kind === "conditional" ? s.warn : s.bad}>● {mem.kind.replace("_", " ")}</div>
+              <div className={mem.kind === "confirmed" ? s.ok : ["conditional", "meeting_context"].includes(mem.kind) ? s.warn : s.bad}>● {mem.kind.replaceAll("_", " ")}</div>
               <div style={{ marginTop: 6 }}>{mem.speak}</div>
-              <div className={s.src}>{mem.sources.map((x, i) => <span key={i}>{x.kind} · {x.label}</span>)}{mem.provisional.map((p, i) => <span key={`p${i}`} className={s.warn}>live (provisional) · {p.text}</span>)}</div>
+              <div className={s.src}>{mem.sources.map((x, i) => <span key={i}>{x.kind} · {x.url ? <a href={x.url} target="_blank" rel="noreferrer">{x.label} ↗</a> : x.label}</span>)}{mem.provisional.map((p, i) => <span key={`p${i}`} className={s.warn}>live (provisional) · {p.text}</span>)}</div>
               {mem.offerEscalation && !mem.pendingTicket && !sent && <button className={s.btn} style={{ marginTop: 12 }} disabled={sending} onClick={escalate}>{sending ? "Sending…" : "Yes, ask the leader"}</button>}
               {sent && <p className={s.meta} style={{ marginTop: 10 }}>{sent}</p>}
             </div>

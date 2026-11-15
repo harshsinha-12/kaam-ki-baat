@@ -29,7 +29,7 @@ test("project voice tool works without a meeting task and enforces repository ac
 test("the same voice session follows current confirmed head selection without leader privilege", async () => {
   const s=snapshot(),store=new EventStore(null),rt={snapshot:s,store,conversations:new Map()};
   s.meetings=[{id:"allowed",title:"Team notes",source:"FIXTURE",approvedBy:"test"}];
-  s.passages=[{kind:"meeting",id:"allowed#1",meetingId:"allowed",charStart:0,charEnd:20,text:"Permitted team note",visibility:"participant"},{kind:"meeting",id:"private#1",meetingId:"private",charStart:0,charEnd:12,text:"PRIVATE NOTE",visibility:"participant"}];
+  s.passages=[{kind:"meeting",id:"allowed#1",meetingId:"allowed",charStart:0,charEnd:20,text:"Permitted team note",visibility:"team"},{kind:"meeting",id:"private#1",meetingId:"private",charStart:0,charEnd:12,text:"PRIVATE NOTE",visibility:"participant"}];
   s.participants[0].meetingIds=["allowed"];
   const {issueDeviceSession}=await import("../lib/zones/identity");
   const {ev}=await import("../lib/zones/state");
