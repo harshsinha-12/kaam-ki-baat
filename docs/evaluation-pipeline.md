@@ -2,6 +2,10 @@
 
 Status: implementation design requested by the user, not a running evaluation pipeline. The application core and metadata evaluation recorder are implemented; real-call evaluation remains unverified. Current results are tracked in [plan.md](plan.md), with commands in [voice setup](bolna/agent.md). Competition requirements are verified in [competition.md](competition.md).
 
+## E1 implementation checkpoint — 2026-11-15
+
+Claimed on `feat/post-call-evaluation` from `17de40b`. The existing metadata recorder remains available. The next slice adds a distinct manual normalized import, private immutable evaluation runs, deterministic qualification and evidence checks, and synthetic regression coverage. At this checkpoint those additions are pending; no new real call or live evaluation has been verified. Automatic provider normalization/webhooks and LLM judging remain future work.
+
 ## Intended loop
 
 Call V1 → fetch finalized call and backend evidence → store evaluation → review a focused suggestion → change and version the agent → call V2 → evaluate again → replay the same regression → call V3 and prepare submission evidence.
