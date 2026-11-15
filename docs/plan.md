@@ -77,10 +77,18 @@ Baseline now includes merged PR #11 (`f4b1e71`), preserving PR #10 and main’s 
 | HTTP callback path | **Verified with FIXTURE data**: 11 local HTTP checks passed; public HTTPS unauthenticated POST returned 401 | Auth, brief, evidence, save/read-back, replay, ownership refusal, changes and board; NOT telephone evidence |
 | Bolna agent configuration | **Created and persisted read-back verified**: six functions, callbacks/auth/token mapping, spatial prompt and dynamic opening | [redacted profile](bolna/agent-profile.redacted.json); audio/context forwarding in a call remain unverified |
 | Evaluation recorder + board polish | **Recovered and implemented** from PR #6 without replacing PR #7 adapter | `lib/eval/recorder.ts`, `scripts/eval-call.ts`, `app/page.tsx`; real-call evaluation pending |
-| Real calls >45 s (need 3) | **0** | — |
+| Real calls >45 s (need 3) | **1 completed at 48 seconds** | R2 finalized execution and stored evaluation; overall eligibility, remaining calls and voice replay still require review |
 | Spatial browser workspace + Bolna relay | **Implemented; synthetic local checks pass** | `app/components/SpatialWorkspace.tsx`, `app/api/spatial/**`, `lib/spatial/**`; [setup and limits](bolna/spatial-browser.md). No browser visual/mic QA or provider call tested; Leader Desk locked, AirPods deferred |
 
 ## 3a. Distance to the final product
+
+### R2 first phone call completed — 2026-11-15
+
+On `codex/first-call-setup`, preserving the concurrent R3 planning commit `35b54c3` and all other worktrees: restored the owned production server and current HTTPS tunnel against the already approved private LIVE snapshot (`17de40b`, fetchedAt retained). Local/public health and authenticated board match that snapshot. All six agent callback origins/auth/token templates, existing dynamic opening and the new authenticated completion webhook passed fresh read-back. Harsh named himself as first tester, explicitly consented to calling/recording and supplied his number privately (D-040). Charan is designated leader, with no inferred speaker mapping or permission to call him.
+
+Bolna rejected the initial request before execution because this trial account required a verified recipient. After the user verified the number and explicitly requested a retry, one call was accepted and finalized as **completed, 48 seconds, user_hung_up**, agent version `380c9b19-d54c-44ba-a23d-0671aa21b2c3`. Execution correlation was persisted/read back; lifecycle callbacks include completed. Raw execution, transcript, logs, consent and recipient remain ignored/private. The [agent-reviewed metadata evaluation](evals/3742594a-dae4-4d64-97aa-13cdc039f31f.md) excludes setup preflight from live-tool counts: **one task-evidence refusal, one successful brief, no saved task update**. This clears the duration gate for one call, not overall competition eligibility.
+
+Reviewed fix: V1 passed the meeting title as `task_id`. Phone/browser setup now preloads the exact authorized `current_task_id` from the brief, and the agent prompt requires exact IDs or a fresh brief lookup. The browser regression fails before/passes after the fix and verifies client task-ID spoofing cannot override server selection. The prompt update passed provider read-back. **No second call or voice replay has run.** The coherent source/code link, live saved-update demonstration, further consenting calls, Charan leader integration and E1's richer evaluator remain outstanding in their existing lanes. `scripts/start-phone-call.ts` preserves private attempts and rejects blind duplicates; missing-input and duplicate-attempt CLI guards passed. Tests/typecheck pass; production build and final runtime recheck are recorded in R2's completion entry.
 
 ### First-call readiness recheck — 2026-11-15
 
@@ -156,6 +164,7 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | ID | Task | Owner | Status | Done when |
 | --- | --- | --- | --- | --- |
 | R3 | Check remaining implementation and define independent tab-sized work packages with a conditional first-call ETA | Codex | done (2026-11-15; §3b, checkout `0447109`, fetched main `daf6d28`; preserves concurrent R2/E1 work) | Current evidence, dependencies, ownership boundaries and copyable tab briefs recorded |
+| R2 | Restore first-call runtime/HTTPS, verify live tools and perform Harsh's consenting first phone test | Codex | done (`codex/first-call-setup`; §3a): completed 48-second call, agent-reviewed evaluation, task-ID regression/prompt fix; 95 tests/typecheck/build pass | Post-restart local/public LIVE health/board/auth gates and fresh agent read-back pass; no further call or voice replay |
 | R1 | Read-only first-call readiness audit: current main, local runtime, provider configuration/history and remaining gates | Codex | done (`codex/call-readiness-audit`, main baseline `daf6d28`; §3a) | 95 tests/typecheck pass; server unavailable, tunnel 530, six agent tools/zero executions verified; no call or provider mutation |
 | X1 | `npm install && npm run typecheck && npm test && npm run build`; fix breakages without weakening tests | Codex | done (PR #2 review; files and results in §3) | All four green; paste results in §3 |
 | U1 | **Pick the ONE approved Wispr meeting** (title/date or link) and confirm the demo repo = this repo | **User** | approved (D-031/D-032; source details private) | Approval and private import recorded |
@@ -185,6 +194,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | M13 | Resolve/retarget PR #13 onto current main; preserve authenticated workspace links, reduced-motion behavior and truthful capability copy; validate and merge | Codex | conflicts resolved on isolated `codex/review-landing`; npm ci, 86 tests, full typecheck, build and production HTTP smoke pass; updated-head CI/merge pending | Updated head passes checks and merges into main; calls remain held |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 · Codex · R2 completed on `codex/first-call-setup`, preserving incoming R3 `35b54c3`: restored owned root production server/current HTTPS tunnel, scoped LIVE health/board and all six callback auth/token mappings, plus completion webhook read-back. Harsh explicitly consented to the first phone call/recording; after trial-recipient verification and an authorized retry, one execution finalized completed at 48 seconds. Preserved private execution/version/log/correlation and a agent-reviewed metadata report excluding setup preflight. One invented task-ID request was refused; later brief succeeded; no task update saved. Added guarded private phone launcher and fixed task-ID preload/browser spoof regression plus agent prompt/read-back. 95/95 tests, full typecheck, production build, duplicate/missing-input launcher guards and post-restart local/public HTTP checks pass. No second call, voice replay, Charan call, merge or deployment. Larger evaluator/source/leader/device lanes remain separate.
 
 - 2026-11-15 · Codex · R1 first-call audit on fetched main `daf6d28`: 95/95 tests and full typecheck pass. Current local server refuses connections and public HTTPS returns 530, superseding historical running-service claims. Live Bolna read-back retains six tools and dynamic opening, with zero executions; positive credit/free concurrency and no listed phone numbers. Browser calls remain disabled under D-038. Documented runtime restoration, live audio/tool validation, missing clarification/webhook configuration, E1/PR #16 boundaries and conditional browser-test estimate. No private source re-import, runtime mutation, agent change, call, merge or deployment.
 
@@ -258,3 +269,9 @@ curl -s -X POST localhost:3000/api/tools/get_my_brief -H "Authorization: Bearer 
 ## 7. Never
 
 Commit secrets, phone numbers, or private transcripts · call anyone without recorded consent · call a FIXTURE result "live" · say "saved" without read-back · say "done" from an open PR or a stale check · merge or deploy without the user.
+
+### W1 — webcam sprint interface / ownership — 2026-11-15 10:03 UTC
+
+- **Doing, Tab 2:** isolated `codex/webcam-head-tracking`, `/Users/harshsinha/kaam-ki-baat-webcam`, fetched main `146e277`. Own new `lib/focus/webcam*.ts`, `app/components/WebcamHeadTracker.tsx`, its CSS and `tests/webcam*.test.ts`; no SpatialWorkspace, API or selector edits. Shared manifest/lock changes only for pinned MediaPipe dependency; coordinate with Tab 4.
+- **Interface proposed to Tab 4:** `<WebcamHeadTracker onSelect={(zone: SelectorZone) => …} onStatusChange?={(status: WebcamTrackingStatus) => …} disabled?={boolean} />`. Named export; status union `idle | starting | calibrating | tracking | lost | unavailable`; provider `webcam`. Component owns start/stop/recenter and local camera lifecycle. `onSelect` emits only dwell-confirmed selections; never activates, authenticates or writes an API. Tab 4 owns serialized authenticated focus events, source switching and existing keyboard/click controls. Disable/unmount stops camera and suppresses stale emissions.
+- **Plan:** prerequisites minutes 0–10; adapter/component/tests minutes 10–40; integration/camera verification minutes 40–60. MediaPipe local inference; camera frames never stored/uploaded. Physical camera/permission and yaw sign not yet verified; synthetic tests will be labelled separately.

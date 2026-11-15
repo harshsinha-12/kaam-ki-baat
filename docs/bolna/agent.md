@@ -2,9 +2,17 @@
 
 Configured 2026-11-15 under explicit user authorization. The Kaam Ki Baat agent was created and its six functions verified by persisted read-back. The approved meeting is imported, the LIVE text/HTTP preview works, and browser calling is prepared behind fresh recording consent. Provider token forwarding/audio and real telephone calls remain unverified. See the [redacted profile](agent-profile.redacted.json).
 
-## Current call hold
+## Current first-call authorization
 
-All calls are held under D-038 until one final user confirmation names the specific consenting participant. `KKB_ENABLE_WEB_CALLS=false` is set locally and authenticated browser start returns 503. Setup approval and text preview are not permission to start a provider session. The final named-participant confirmation is still absent.
+D-038 is satisfied for Harsh's first phone test (D-040): explicit call/recording consent and the recipient are stored privately. Browser calling remains disabled. Charan is the designated team leader; this grants no permission to call him or to infer his meeting-speaker identity.
+
+The local production server and temporary HTTPS tunnel were restored on `codex/first-call-setup`. All six tool callback URLs, bearer authentication, token templates, existing prompt/opening and the new authenticated completion webhook passed persisted agent read-back. LIVE local/public health, authenticated opening-brief preflight and HTTP authorization guards pass.
+
+Bolna rejected the first submission with HTTP 400 because trial accounts require a verified recipient. The user completed verification and explicitly authorized one retry. That call finalized as **completed at 48 seconds**, ending with `user_hung_up`. The [reviewed evaluation](../evals/3742594a-dae4-4d64-97aa-13cdc039f31f.md) records one task-ID refusal and one successful brief; no task update was saved. Bolna's shared outbound numbers work without a purchased account number; see [outbound setup](https://www.bolna.ai/docs/outbound/making-calls).
+
+`scripts/start-phone-call.ts` prepares a private LIVE opening/session, then requires `--place-call` to submit. A durable exclusive attempt file prevents duplicate dialing after a crash/timeout. `--retry-rejected` permits one deliberate retry only after an explicit HTTP 400 refusal, preserving that refusal in an exclusive archive. Never retry an uncertain/accepted request. Recipient, raw payloads, responses and consent remain ignored under `data/private/`; execution correlation is persisted/read back in the event store. The setup opening-tool preflight precedes submission and must not count as live voice-tool evidence.
+
+The V1 evidence failure used a meeting title in `task_id`. The fix preloads `current_task_id` from the authenticated brief for phone/browser sessions and requires exact server-returned IDs in the agent prompt. Browser regression verifies a client-supplied private task ID cannot override it. The prompt update passed provider read-back; the failing-before/passing-after regression is not a voice replay. For a later explicitly authorized call, use `--name <unique-attempt>` with a fresh consent receipt to retain V1 artifacts. Charan's leader integration remains a separate lane; do not call him without his consent.
 
 ## Generate the custom functions
 
@@ -89,6 +97,6 @@ The selected source has no confirmed implementation/PR link in this repository. 
 node --env-file=.env.local --import tsx scripts/demo-text.ts --participant <approved-participant-id>
 ```
 
-This runs the real handlers with an isolated event file and saves a private trace. It never changes live task status or calls Bolna. The current preview passes nine turns. All voice calls remain held for the final named-participant confirmation.
+This runs the real handlers with an isolated event file and saves a private trace. It never changes live task status or calls Bolna. The current preview passes nine turns. First-phone authorization and outcome are recorded above; the preview is still separate evidence.
 
 Browser starts require a fresh recording-consent request, record an audit receipt and preload the permitted opening brief before minting the provider session. The returned execution ID is persisted with the local call ID. Withdrawing the checkbox consent stops the browser call. Provider audio, exact context substitution and DOM timing still need the user's consenting browser test.

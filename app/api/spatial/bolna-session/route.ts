@@ -29,7 +29,11 @@ export async function POST(req: Request) {
     const response = await fetch("https://api.bolna.ai/web-call/freeswitch-session", {
       method: "POST", signal: AbortSignal.timeout(15000),
       headers: { Authorization: `Bearer ${process.env.BOLNA_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ agent_id: process.env.BOLNA_AGENT_ID, user_data: { call_token: token, opening_brief: brief.body.speak } }),
+      body: JSON.stringify({ agent_id: process.env.BOLNA_AGENT_ID, user_data: {
+        call_token: token, opening_brief: brief.body.speak,
+        current_task_id: typeof brief.body.task === "object" && brief.body.task !== null && "id" in brief.body.task
+          && typeof brief.body.task.id === "string" ? brief.body.task.id : "",
+      } }),
     });
     if (!response.ok) return json({ ok: false, error: "Bolna could not create a browser session. Issue a new participant token before retrying." }, 502);
     const session = await response.json() as Record<string, unknown>;

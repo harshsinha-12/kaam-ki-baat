@@ -1,6 +1,6 @@
 # Project context
 
-Status: application core, spatial browser workspace, source import and Bolna configuration are implemented as tracked in [plan.md](plan.md). The user approved one Wispr source, this repository, Speaker 1 identity and agent setup/testing. Real voice/call behaviour remains unverified. All calls are held for one final user confirmation naming the specific consenting participant (D-038).
+Status: application core, spatial browser workspace, source import and Bolna configuration are implemented as tracked in [plan.md](plan.md). Harsh's explicitly consented first phone test finalized as completed at **48 seconds** (D-040). The stored evaluation records one refused evidence lookup using an invented task ID, followed by a successful brief; no task update was saved. An exact-task-ID preload/prompt fix is locally tested; voice replay remains outstanding. Charan is the user-designated team leader; no source-speaker mapping or call consent for Charan is inferred.
 
 ## Purpose and users
 
