@@ -13,6 +13,12 @@ Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competiti
 - The repo already has an explicitly labeled hypothetical meeting. A companion [Scratchpad rehearsal and QA matrix](demo/QA_MEETING_SCENARIO.md) is available; it must remain `FIXTURE`, not a fabricated Wispr Notetaker recording.
 - Review and test details: [live graph audit](audits/live-team-graph-review-2026-11-15.md). No new live call, meeting import or browser animation test was performed in this PR.
 
+## Landing-page graph deduplication — 2026-11-15
+
+- User asked to remove the redundant lower **“Find a function. Follow the links.”** graph section while retaining the interactive graph displayed near the beginning of the landing page.
+- Removed only the lower `GraphSection` presentation, its unused imports/styles, and dead `#graph` nav anchor; retained `DemoGraph` at `#demo`, `CodeNav`, `/graph`, and the authenticated code-graph APIs.
+- Added `tests/landing-single-graph.test.ts` to prevent the duplicated landing section from returning. CI/build and deployed-render verification must be checked after the PR.
+
 ## 0. Goal of the demo (the vertical slice)
 
 ### E3 — direct evaluation and workspace access — 2026-11-15
