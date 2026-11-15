@@ -5,6 +5,8 @@ import graphData from "../../data/demo/codegraph.json";
 import graphDemo from "../../data/demo/codegraph.demo.json";
 import { CodeGraphView, type ViewGraph } from "../components/CodeGraphView";
 import { AgentGlyph } from "../components/AgentGlyph";
+import { VoiceWave } from "../components/VoiceWave";
+import { DemoGraph } from "../components/DemoGraph";
 import { arcLength, catmullRomToBezier, damp, toSvgPath, type V2 } from "../../lib/motion/curves";
 import { understand } from "../../lib/core/understand";
 
@@ -100,14 +102,14 @@ function useCountUp(target: number, run: boolean, ms = 1400) {
 // "You", seen from the front, wearing AirPods. The head turns in 3D toward the
 // agent you select; a soft light cone lands on that agent.
 const TURN: Record<Zone, number> = { team_memory: -28, leader_desk: 0, code_navigator: 28 };
-function Listener({ zone, listening }: { zone: Zone; listening: boolean }) {
+function Listener({ zone, listening, speaking }: { zone: Zone; listening: boolean; speaking: boolean }) {
   const reduced = useContext(ReducedMotion);
   const color = ZONE_HEX[zone];
   const look = zone === "team_memory" ? -1 : zone === "code_navigator" ? 1 : 0;
   const anim = !reduced;
   return (
     <div className={s.listener} aria-hidden>
-      <div className={s.listenerHead} style={{ transform: `perspective(480px) rotateY(${TURN[zone]}deg) rotateX(${zone === "leader_desk" ? -5 : 0}deg) rotateZ(${look * -2}deg)` }}>
+      <div className={`${s.listenerHead} ${listening ? s.nod : ""}`} style={{ transform: `perspective(480px) rotateY(${TURN[zone]}deg) rotateX(${zone === "leader_desk" ? -5 : 0}deg) rotateZ(${look * -2}deg)` }}>
         <svg viewBox="0 0 140 150" width="100%" height="100%">
           <defs>
             <radialGradient id="kkbSkin" cx="42%" cy="32%" r="75%"><stop offset="0" stopColor="#e7b48c" /><stop offset=".6" stopColor="#c98c63" /><stop offset="1" stopColor="#9c6644" /></radialGradient>
@@ -147,7 +149,7 @@ function Listener({ zone, listening }: { zone: Zone; listening: boolean }) {
               ))}
               <path d="M70 64 q-2.5 7 1.5 8.5" stroke="#9c6644" strokeWidth="1.8" fill="none" strokeLinecap="round" />
               <ellipse cx="71" cy="82" rx="6" ry="2" fill="#7a3f30">
-                {anim && listening && <animate attributeName="ry" values="1.5;3.6;1.2;3;1.5" dur=".9s" repeatCount="indefinite" />}
+                {anim && speaking && <animate attributeName="ry" values="1.5;3.6;1.2;3;1.5" dur=".7s" repeatCount="indefinite" />}
               </ellipse>
               <circle cx="52" cy="74" r="4" fill="#e58f7a" opacity=".25" /><circle cx="90" cy="74" r="4" fill="#e58f7a" opacity=".25" />
             </g>
@@ -162,7 +164,7 @@ function Listener({ zone, listening }: { zone: Zone; listening: boolean }) {
           </g>
         </svg>
       </div>
-      <div className={s.listenerLabel} style={{ color }}>{listening ? "listening…" : "you · airpods"}</div>
+      <div className={s.listenerLabel} style={{ color }}>{speaking ? "you, asking…" : listening ? "listening…" : "you · airpods"}</div>
     </div>
   );
 }
@@ -175,11 +177,13 @@ function Stage({ zone, onZone, autoplay }: { zone: Zone; onZone: (z: Zone) => vo
   const script = SCRIPT[zone];
   const words = script.say.split(" ");
   const [n, setN] = useState(0);
+  const [asking, setAsking] = useState(true);
   useEffect(() => {
-    if (reduced) return;
-    setN(0);
-    const id = setInterval(() => setN((x) => (x >= words.length ? x : x + 1)), 95);
-    return () => clearInterval(id);
+    if (reduced) { setAsking(false); return; }
+    setN(0); setAsking(true);
+    let id: ReturnType<typeof setInterval> | undefined;
+    const t = setTimeout(() => { setAsking(false); id = setInterval(() => setN((x) => (x >= words.length ? x : x + 1)), 95); }, 1700);
+    return () => { clearTimeout(t); if (id) clearInterval(id); };
   }, [zone, words.length, reduced]);
   const visibleWords = reduced ? words.length : n;
 
@@ -211,9 +215,13 @@ function Stage({ zone, onZone, autoplay }: { zone: Zone; onZone: (z: Zone) => vo
           <span className={s.agentKey}>{z === "team_memory" ? "A · look left" : z === "code_navigator" ? "L · look right" : "↑ · face front"}{z === "leader_desk" ? " · leader only" : ""}</span>
         </button>
       ))}
-      <Listener zone={zone} listening={visibleWords < words.length} />
+      <Listener zone={zone} listening={!asking && visibleWords < words.length} speaking={asking} />
+      <div className={`${s.voiceBubble} ${asking ? s.voiceOn : ""}`} aria-hidden>
+        <VoiceWave active={asking} color="#f2efe6" bars={16} height={18} reduced={reduced} />
+        <span>“{script.ask}”</span>
+      </div>
       <div className={s.transcript} aria-live="polite">
-        <div className={s.who}><span style={{ color: "var(--zc)" }}>● {SCRIPT[zone].label}</span><span>{autoplay ? "demo · fictional team" : "you're driving"}</span></div>
+        <div className={s.who}><span style={{ color: "var(--zc)", display: "inline-flex", alignItems: "center", gap: 8 }}><VoiceWave active={!asking && visibleWords < words.length} color={ZONE_HEX[zone]} bars={10} height={12} reduced={reduced} />{asking ? "listening to you…" : SCRIPT[zone].label}</span><span>{autoplay ? "demo · fictional team" : "you're driving"}</span></div>
         <div className={s.ask}>“{script.ask}”</div>
         <div className={s.say}>
           {words.map((w, i) => <span key={`${zone}-${i}`} className={`${s.word} ${i < visibleWords ? s.wordOn : ""}`}>{w} </span>)}
@@ -684,7 +692,7 @@ export default function Landing() {
       <nav className={s.nav} style={{ boxShadow: scrolled ? "0 10px 30px -20px #000" : "none" }}>
         <a href="#" className={s.brand}><BrandMark />Kaam Ki Baat</a>
         <div className={s.navLinks}>
-          <a href="#problem">Problem</a><a href="#hears">How it hears</a><a href="#zones">Three zones</a><a href="#escalation">Escalation</a><a href="#guards">Guards</a><a href="#graph">Code graph</a><a href="#how">How it works</a>
+          <a href="#demo">Demo</a><a href="#problem">Problem</a><a href="#hears">How it hears</a><a href="#zones">Three zones</a><a href="#escalation">Escalation</a><a href="#guards">Guards</a><a href="#graph">Code graph</a><a href="#how">How it works</a>
         </div>
         <a href="/team" className={`${s.btn} ${s.primary}`}>Open workspace →</a>
       </nav>
@@ -709,6 +717,10 @@ export default function Landing() {
           </div>
           <HeroStage />
         </header>
+
+        <section id="demo" className={s.section}>
+          <DemoGraph graph={graphData as never} />
+        </section>
 
         <section id="problem" className={s.section}>
           <Reveal><div className={s.eyebrow}>The cost of “wait, what did we decide?”</div></Reveal>
