@@ -1,18 +1,19 @@
-import { EventStore, eventsLogPath } from "./store/event-store";
-import { loadSnapshot } from "./evidence/load";
+import { runtimeStore } from "./store/runtime-store";
+import { loadRuntimeSnapshot } from "./evidence/hosted";
 import type { Runtime } from "./tools/runtime";
 
-// One process-wide runtime for the Next.js server. Conversations live in memory
-// (single process); every write and tool call is persisted in the event log.
-const g = globalThis as unknown as { __kkbRuntime?: Runtime };
+const g = globalThis as unknown as { __kkbRuntime?: Runtime; __kkbRuntimePromise?: Promise<Runtime> };
 
-export function getRuntime(): Runtime {
-  if (!g.__kkbRuntime) {
-    g.__kkbRuntime = {
-      store: new EventStore(eventsLogPath()),
-      snapshot: loadSnapshot(),
-      conversations: new Map(),
-    };
+// The process cache is an optimization. Snapshot and event/session state are
+// shared in hosted storage, so a new Vercel instance resolves the same identity.
+export async function getRuntime(): Promise<Runtime> {
+  if (g.__kkbRuntime) return g.__kkbRuntime;
+  if (!g.__kkbRuntimePromise) {
+    g.__kkbRuntimePromise = loadRuntimeSnapshot().then(snapshot => {
+      const runtime: Runtime = { store: runtimeStore(), snapshot, conversations: new Map() };
+      g.__kkbRuntime = runtime;
+      return runtime;
+    }).catch(error => { g.__kkbRuntimePromise = undefined; throw error; });
   }
-  return g.__kkbRuntime;
+  return g.__kkbRuntimePromise;
 }

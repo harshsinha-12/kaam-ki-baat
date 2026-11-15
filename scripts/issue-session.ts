@@ -1,8 +1,8 @@
 // Issue a device session for the spatial web app / AirPods companion.
 //   npm run session:issue -- --participant p_lead --device "Lead laptop"
 //   npm run leader:code -- --session dev_xxx      (demo step-up code; NOT a passkey)
-import { loadSnapshot } from "../lib/evidence/load";
-import { EventStore, eventsLogPath } from "../lib/store/event-store";
+import { loadRuntimeSnapshot } from "../lib/evidence/hosted";
+import { runtimeStore } from "../lib/store/runtime-store";
 import { issueDeviceSession, leaderCode } from "../lib/zones/identity";
 
 const arg = (n: string) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : undefined; };
@@ -16,8 +16,8 @@ async function main() {
   }
   const participantId = arg("participant");
   if (!participantId) throw new Error("--participant required");
-  const store = new EventStore(eventsLogPath());
-  const { token, session } = await issueDeviceSession(store, loadSnapshot(), { participantId, deviceLabel: arg("device") ?? "browser" });
+  const store = runtimeStore();
+  const { token, session } = await issueDeviceSession(store, await loadRuntimeSnapshot(), { participantId, deviceLabel: arg("device") ?? "browser" });
   console.log(JSON.stringify({ sessionId: session.sessionId, session_token: token, expiresAt: session.expiresAt }, null, 2));
 }
 main().catch((e) => { console.error(e.message); process.exit(1); });

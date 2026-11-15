@@ -206,9 +206,6 @@ export default function Team() {
           {connected && <CodeFocus request={sourceRequest} refreshKey={sourceRefresh} onFocus={highlightSource} />}
         </section>
       </div>
-      <section id="workspace-settings" className={s.setupRow} aria-label="Workspace settings">
-        <details className={s.setupDisclosure}><summary><span>A quick guide</span><small>Make yourself at home</small></summary><p className={s.setupHint}>Connect the approved GitHub URL above to open its graph. Start the voice guide to ask about code and documentation. Team Memory answers from approved meeting notes; unclear decisions can be sent to the verified team leader. Camera is off until you start it, and video stays on your device.</p></details>
-      </section>
       <footer className={s.workspaceFooter}><span>Kaam Ki Baat</span><span>Grounded in your meetings. Connected to your code.</span></footer>
       </div>
     </main>

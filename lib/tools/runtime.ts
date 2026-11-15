@@ -1,3 +1,5 @@
+import { acquireLease } from "../store/lease";
+import { persistConversation, restoreConversations } from "../store/conversation";
 import { projectContext } from "../project/context";
 import { publishSource, questionSource } from "../codegraph/source";
 import { randomBytes } from "node:crypto";
@@ -37,23 +39,29 @@ export async function runTool(rt: Runtime, tool: ToolName, body: Record<string, 
   const auth = await resolveCaller(rt.store, rt.snapshot, body.call_token ?? body.callToken);
   if (!auth.ok) return { status: auth.status, body: { ok: false, error: auth.reason, speak: "I can't verify who I'm speaking with, so I can't share project details." } };
   const caller = auth.caller;
-  const res = await dispatch(rt, tool, caller, body);
-  // A clarification answer counts as acknowledged only when the caller explicitly
-  // acknowledged it in the communication ledger (not merely because it was spoken).
-  const conv = rt.conversations.get(caller.session.callId);
-  for (const item of conv?.ledger.items ?? []) {
-    if (item.id.startsWith("clar:") && item.acknowledged) await acknowledge(rt.store, callActor(caller), item.id.slice(5));
-  }
-  await rt.store.append({
-    type: "tool_call",
-    at: new Date().toISOString(),
-    callId: caller.session.callId,
-    tool,
-    ok: res.status < 400 && res.body.ok !== false,
-    summary: String(res.body.speak ?? res.body.error ?? "").slice(0, 300),
-    evidenceIds: (res.body.evidenceIds as string[] | undefined) ?? [],
-  });
-  return res;
+  const release = await acquireLease(rt.store, `conversation:${caller.session.callId}`);
+  if (!release) return { status: 409, body: { ok: false, error: "Another turn is being processed.", speak: "Please try that question again in a moment." } };
+  try {
+    await restoreConversations(rt);
+    const res = await dispatch(rt, tool, caller, body);
+    // A clarification answer counts as acknowledged only when the caller explicitly
+    // acknowledged it in the communication ledger (not merely because it was spoken).
+    const conv = rt.conversations.get(caller.session.callId);
+    for (const item of conv?.ledger.items ?? []) {
+      if (item.id.startsWith("clar:") && item.acknowledged) await acknowledge(rt.store, callActor(caller), item.id.slice(5));
+    }
+    await rt.store.append({
+      type: "tool_call",
+      at: new Date().toISOString(),
+      callId: caller.session.callId,
+      tool,
+      ok: res.status < 400 && res.body.ok !== false,
+      summary: String(res.body.speak ?? res.body.error ?? "").slice(0, 300),
+      evidenceIds: (res.body.evidenceIds as string[] | undefined) ?? [],
+    });
+    await persistConversation(rt, caller.session.callId);
+    return res;
+  } finally { await release(); }
 }
 
 /** Phone callers are never leaders for privileged actions (no step-up on PSTN). */

@@ -14,6 +14,6 @@ export async function POST(req: Request) {
   if (!checkServerKey(req.headers.get("authorization"), process.env.KKB_CALLBACK_KEY)) return NextResponse.json({ ok: false }, { status: 401 });
   const body = await readBody(req);
   if (!body) return NextResponse.json({ ok: false, error: "expected a bounded JSON object" }, { status: 400 });
-  const res = await recordExecutionCallback(getRuntime().store, body);
+  const res = await recordExecutionCallback((await getRuntime()).store, body);
   return NextResponse.json(res, { status: res.ok ? 200 : 400 });
 }

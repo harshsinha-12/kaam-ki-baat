@@ -2,8 +2,8 @@
 //   npm run call:token -- --participant p_dev --consent "verbal consent to Harsh, 13:50 IST" --scenario brief-and-update
 // Put the printed token in Bolna user_data as call_token. Never commit it.
 import { issueCallSession } from "../lib/auth/call-session";
-import { loadSnapshot } from "../lib/evidence/load";
-import { EventStore, eventsLogPath } from "../lib/store/event-store";
+import { loadRuntimeSnapshot } from "../lib/evidence/hosted";
+import { runtimeStore } from "../lib/store/runtime-store";
 
 const arg = (n: string) => {
   const i = process.argv.indexOf(`--${n}`);
@@ -14,10 +14,10 @@ async function main() {
   const participantId = arg("participant");
   const consent = arg("consent");
   if (!participantId || !consent) throw new Error("--participant and --consent are required (no consent, no call)");
-  const snapshot = loadSnapshot();
+  const snapshot = await loadRuntimeSnapshot();
   const p = snapshot.participants.find((x) => x.id === participantId);
   if (!p) throw new Error(`participant ${participantId} is not in the ${snapshot.label} snapshot`);
-  const store = new EventStore(eventsLogPath());
+  const store = runtimeStore();
   const { token, session } = await issueCallSession(store, {
     participantId,
     meetingIds: p.meetingIds,
