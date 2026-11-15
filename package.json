@@ -23,7 +23,8 @@
     "leader:code": "tsx scripts/issue-session.ts",
     "smoke:zones": "tsx scripts/smoke-zones.ts",
     "graph": "tsx scripts/build-codegraph.ts",
-    "graph:eval": "tsx scripts/eval-codegraph.ts"
+    "graph:eval": "tsx scripts/eval-codegraph.ts",
+    "mcp": "tsx scripts/mcp-server.ts"
   },
   "dependencies": {
     "@bolna/web-call": "3.0.1",

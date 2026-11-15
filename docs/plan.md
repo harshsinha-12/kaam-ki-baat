@@ -107,6 +107,21 @@ Implemented on `codex/graphify-context` (implementation `3ede500` and setup/devi
 
 Verification: **95/95 tests pass**, full `npm run typecheck`, production `npm run build`, local documentation links and `git diff --check` pass. Real Graphify **0.9.100** extraction against the existing fixture snapshot at `63317bd` produced **147 nodes, 330 edges, 27 code files**; the task-linked query returned `persistVerifiedUpdate`, callers and helpers with pinned excerpts. The fixture demo passed with the graph enabled, including idempotent save/read-back in an in-memory store. A deliberate source-byte mismatch was rejected before extraction and preserved the prior output. Graph outputs are ignored and not committed. No live meeting import, agent change, provider call, browser visual QA, hardware gesture test or voice-latency measurement was run for G2. Enable `KKB_CODE_GRAPH` for the chosen snapshot and restart; rebuild whenever that snapshot changes.
 
+
+## 3a. Claude stage audit — 2026-11-15 ~15:50 IST (from code + tests)
+
+| Stage | Status | Gap / needs |
+| --- | --- | --- |
+| Roles, consent, sessions, call tokens | Implemented + tested | — |
+| Leader passkey (Touch ID) | Implemented; simulated authenticator with real P-256 signatures | **One real Touch ID run on Charan's Mac over HTTPS** (`KKB_RP_ID`/`KKB_ORIGIN` = tunnel host) |
+| Spatial selector → phone agent | Implemented: activating a zone on screen steers `get_task_evidence` when the caller names no focus (`tests/bolna-zones.test.ts`) | Webcam (MediaPipe) provider needs a package install; AirPods needs the Mac companion |
+| Team Memory, escalation, Leader Desk | Implemented + tested; `/team`, `/leader` | Browser QA against a running server |
+| Code graph | Built-in TS graph (`lib/codegraph`) + Codex's Graphify import (`lib/evidence/code-graph.ts`) | — |
+| MCP server for other teams | `npm run mcp` (stdio, 4 read-only tools), tested over real stdio | — |
+| Meeting context | `docs/demo/meeting-notes.md` / `data/demo/meeting.kkb.json` — hypothetical demo meeting, Charan + Harsh (consented) | Wispr MCP had no matching meeting |
+| Bolna live calls | Prompt ready (`docs/bolna/kaam-ki-baat-agent.md`) | **Runtime must run on a machine with a public URL** (Codex #17: localhost refused, tunnel 530). Bolna's connector cannot place calls; calls go via the dashboard/API from that machine |
+| Manim film | Scenes in `scripts/manim/architecture.py` | `pip install manim` not possible in Claude's sandbox; render locally |
+
 ## 4. Task board
 
 Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in place.
@@ -141,6 +156,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | M13 | Resolve/retarget PR #13 onto current main; preserve authenticated workspace links, reduced-motion behavior and truthful capability copy; validate and merge | Codex | conflicts resolved on isolated `codex/review-landing`; npm ci, 86 tests, full typecheck, build and production HTTP smoke pass; updated-head CI/merge pending | Updated head passes checks and merges into main; calls remain held |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 ~15:50 · Claude · PR #16 rebased on main (kept Codex's step-up hardening + Graphify import). Added demo meeting notes (Charan lead, Harsh teammate), screen-zone → Bolna focus + `focus:"code"` graph answers, MCP stdio server, app icon + agent glyphs + colour system (`docs/design/colors.md`), landing "Wispr hears it. The evidence decides it." pipeline, Manim scenes, Bolna prompt. 109 tests pass (synthetic).
 
 - 2026-11-15 · Codex · M13 merge review: retargeted landing PR #13 from the old PR #11 branch to main, preserving merged PR #11/#12 and evaluation planning. Fixed the two code-review findings: legacy authenticated root URLs redirect to `/board` with all query values retained, and reduced-motion preference now gates JS timers/rAF, SVG animation, smooth scrolling and CSS transitions. Initial SSR is static with final counters/text; fictional labels remain visible after manual interaction. Removed current passkey/headset claims and retained future-work labels. Verified the historical code excerpt against the pinned git object and checked all three statistic links against their primary sources. 86/86 tests, full typecheck, production build, isolated HTTP smoke, local documentation links and whitespace pass. HTTP checks cover root/board and the auth-preserving redirect. Post-change interactive browser/device QA and real calls were not run; calls stay held.
 

@@ -86,3 +86,14 @@ export function leaderPresence(events: StoredEvent[], participantId: string): { 
   const p = zoneEvents(events, "presence").filter((e) => e.key === participantId);
   return (p[p.length - 1]?.data as { available: boolean; callConsent: boolean } | undefined) ?? { available: false, callConsent: false };
 }
+
+/**
+ * The zone this participant most recently ACTIVATED on any of their devices
+ * (head turn / webcam / keyboard selection + explicit activation), if fresh.
+ * Lets the phone agent follow what the caller is looking at on screen.
+ */
+export function latestActivatedZone(events: StoredEvent[], participantId: string, now = Date.now(), maxAgeMs = 10 * 60_000): Zone | null {
+  const mine = new Set(zoneEvents(events, "device_session").filter((e) => (e.data as unknown as DeviceSession).participantId === participantId).map((e) => e.key));
+  const acts = zoneEvents(events, "activation").filter((e) => mine.has(e.key) && now - Date.parse(e.at) <= maxAgeMs);
+  return (acts[acts.length - 1]?.data as { zone: Zone } | undefined)?.zone ?? null;
+}

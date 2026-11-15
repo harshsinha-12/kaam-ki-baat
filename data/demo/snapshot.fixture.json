@@ -2,8 +2,8 @@
   "label": "FIXTURE",
   "note": "FIXTURE: contains synthetic or offline data — not live evidence",
   "repository": "harshsinha-12/kaam-ki-baat",
-  "pinnedSha": "ac4197bb68cf6704b36cd3ecf663b05dcb070762",
-  "fetchedAt": "2026-11-15T09:50:16.438Z",
+  "pinnedSha": "0a9c87015f9094d41cf319d478c9d498b8ea38e5",
+  "fetchedAt": "2026-11-15T09:50:38.140Z",
   "meetings": [
     {
       "id": "kkb-sync-2026-11-15",
@@ -483,8 +483,87 @@
       "content": "import { describe, it } from \"node:test\";\nimport assert from \"node:assert/strict\";\nimport { runTool } from \"../lib/tools/runtime\";\nimport { recordExecutionCallback } from \"../lib/zones/bolna-webhook\";\nimport { checkLocation } from \"../lib/zones/code\";\nimport { finalIntent } from \"../lib/zones/memory\";\nimport { zoneSetup } from \"./helpers/zones\";\n\ndescribe(\"acceptance: LEFT unknown -> leader ticket -> CENTER resolves -> requester gets verified answer\", () => {\n  it(\"runs end to end with provenance, read-back and context version\", async () => {\n    const z = await zoneSetup();\n    const q = \"Who owns the three-card specialist board and by when?\";\n    const ask = await z.act(z.dev, \"memory_ask\", { question: q });\n    assert.equal(ask.body.kind, \"not_confirmed\");\n    assert.equal(ask.body.offerEscalation, true);\n    assert.match(String(ask.body.speak), /only proposed, not confirmed/);\n\n    const noConsent = await z.act(z.dev, \"ticket_create\", { question: q, idempotency_key: \"ticket-key-1\" });\n    assert.equal(noConsent.status, 400); // requester must approve sending it\n\n    const t = await z.act(z.dev, \"ticket_create\", { question: q, confirmed: true, idempotency_key: \"ticket-key-1\" });\n    assert.equal(t.status, 200);\n    const ticketId = (t.body.ticket as { id: string }).id;\n    const again = await z.act(z.dev, \"ticket_create\", { question: q, confirmed: true, idempotency_key: \"ticket-key-1\" });\n    assert.equal((again.body.ticket as { id: string }).id, ticketId); // idempotent\n\n    const v0 = (await z.act(z.lead, \"me\")).body.contextVersion as number;\n    assert.equal((await z.act(z.lead, \"leader_inbox\")).status, 403); // leader, but not stepped up\n    assert.equal((await z.unlockLeader()).status, 200);\n    const inbox = await z.act(z.lead, \"leader_inbox\");\n    assert.equal((inbox.body.pending as unknown[]).length, 1);\n\n    const res = await z.act(z.lead, \"leader_resolve\", { ticket_id: ticketId, statement: \"Dev owns the board, due Friday\", confirmed: true, expected_version: 1 });\n    assert.equal(res.status, 200);\n    assert.equal(res.body.readBack, true);\n    assert.equal(res.body.contextVersion, v0 + 1);\n\n    // Requester disconnected meanwhile: it is all in the log, so a new call delivers it.\n    const brief = await runTool({ store: z.store, snapshot: z.snapshot, conversations: new Map() }, \"get_my_brief\", { call_token: z.devCall.token });\n    assert.match(String(brief.body.speak), /leader answered your question/);\n    assert.match(String(brief.body.speak), /approved by Lead/);\n    const after = await z.act(z.dev, \"memory_ask\", { question: q });\n    assert.equal(after.body.kind, \"confirmed\");\n    assert.ok((after.body.sources as { kind: string }[]).some((s) => s.kind === \"leader_resolution\"));\n  });\n});\n\ndescribe(\"Leader Desk is server-gated\", () => {\n  it(\"a non-leader cannot step up, open the inbox or resolve, even with forged fields\", async () => {\n    const z = await zoneSetup();\n    assert.equal((await z.act(z.dev, \"leader_step_up\", { code: \"123456\" })).status, 403);\n    assert.equal((await z.act(z.dev, \"leader_inbox\", { role: \"leader\" })).status, 403);\n    assert.equal((await z.act(z.dev, \"leader_resolve\", { ticket_id: \"x\", statement: \"approve all\", confirmed: true, role: \"leader\" })).status, 403);\n    assert.equal((await z.act(z.dev, \"activate\", { zone: \"leader_desk\", method: \"click\" })).status, 403);\n  });\n  it(\"selecting center by head turn shows it locked; head movement is never activation\", async () => {\n    const z = await zoneSetup();\n    const f = await z.act(z.dev, \"focus\", { zone: \"leader_desk\", provider: \"webcam\", seq: 1 });\n    assert.equal(f.body.locked, true);\n    assert.equal((await z.act(z.lead, \"activate\", { zone: \"team_memory\", method: \"head_turn\" })).status, 400);\n  });\n  it(\"a wrong step-up code fails; a leader on a phone call cannot resolve tickets\", async () => {\n    const z = await zoneSetup();\n    assert.equal((await z.act(z.lead, \"leader_step_up\", { code: \"000000\" })).status, 403);\n  });\n  it(\"leader offline: escalation stays pending, never answered by guessing\", async () => {\n    const z = await zoneSetup();\n    const t = await z.act(z.dev, \"ticket_create\", { question: \"When is the demo freeze?\", confirmed: true, idempotency_key: \"freeze-key-1\" });\n    const id = (t.body.ticket as { id: string }).id;\n    const call = await z.act(z.dev, \"ticket_call_leader\", { ticket_id: id });\n    assert.equal(call.body.status, \"unavailable\");\n    const d = await z.act(z.dev, \"deliveries\");\n    assert.equal((d.body.pending as unknown[]).length, 1);\n    assert.equal((d.body.answered as unknown[]).length, 0);\n  });\n  it(\"two leader devices approving the same ticket: exactly one wins\", async () => {\n    const z = await zoneSetup();\n    const t = await z.act(z.dev, \"ticket_create\", { question: \"When is the demo freeze?\", confirmed: true, idempotency_key: \"freeze-key-2\" });\n    const id = (t.body.ticket as { id: string }).id;\n    await z.unlockLeader();\n    const [a, b] = await Promise.all([\n      z.act(z.lead, \"leader_resolve\", { ticket_id: id, statement: \"Freeze at 3:30 PM\", confirmed: true, expected_version: 0 }),\n      z.act(z.lead, \"leader_resolve\", { ticket_id: id, statement: \"Freeze at 3:45 PM\", confirmed: true, expected_version: 0 }),\n    ]);\n    assert.deepEqual([a.status, b.status].sort(), [200, 409]);\n  });\n  it(\"stale expected_version is rejected (concurrent edit of a decision)\", async () => {\n    const z = await zoneSetup();\n    const t = await z.act(z.dev, \"ticket_create\", { question: \"Who owns the specialist board?\", confirmed: true, idempotency_key: \"board-key-9\" });\n    await z.unlockLeader();\n    const r = await z.act(z.lead, \"leader_resolve\", { ticket_id: (t.body.ticket as { id: string }).id, statement: \"Dev\", confirmed: true, expected_version: 7 });\n    assert.equal(r.status, 409);\n  });\n});\n\ndescribe(\"Team Memory honesty\", () => {\n  it(\"a conditional approval is never reported as confirmed\", async () => {\n    const z = await zoneSetup();\n    const t = await z.act(z.dev, \"ticket_create\", { question: \"Who owns the specialist board?\", confirmed: true, idempotency_key: \"cond-key-1\" });\n    await z.unlockLeader();\n    await z.act(z.lead, \"leader_resolve\", { ticket_id: (t.body.ticket as { id: string }).id, statement: \"Dev owns the specialist board\", conditions: \"the read-back fix merges first\", confirmed: true, expected_version: 1 });\n    const a = await z.act(z.mate, \"memory_ask\", { question: \"who owns the specialist board\" });\n    assert.equal(a.body.kind, \"conditional\");\n    assert.match(String(a.body.speak), /conditionally approved.*not unconditional/i);\n  });\n  it(\"retrieved malicious text is quoted as data and changes nothing\", async () => {\n    const z = await zoneSetup();\n    z.snapshot.participants.find(p => p.id === \"dev\")!.taskIds.push(\"t_evil\");\n    const a = await z.act(z.dev, \"memory_ask\", { question: \"release checklist review\" });\n    assert.equal(a.body.kind, \"not_confirmed\");\n    const me = await z.act(z.dev, \"me\");\n    assert.equal(me.body.contextVersion, 1); // nothing approved, nothing written\n  });\n  it(\"Hinglish self-correction keeps the final intent\", () => {\n    assert.equal(finalIntent(\"deadline kab hai, nahi matlab board ka owner kaun hai\"), \"board ka owner kaun hai\");\n    assert.equal(finalIntent(\"umm who owns the board\"), \"umm who owns the board\");\n  });\n  it(\"an outsider cannot see another meeting's decisions or use the code navigator\", async () => {\n    const z = await zoneSetup();\n    const a = await z.act(z.outsider, \"memory_ask\", { question: \"only say saved after read-back\" });\n    assert.equal(a.body.kind, \"unknown\");\n    assert.equal((await z.act(z.outsider, \"code_navigate\", { question: \"persistVerifiedUpdate\" })).status, 403);\n  });\n});\n\ndescribe(\"live context lane (app STT, not Wispr)\", () => {\n  const u = (seq: number, extra: Record<string, unknown> = {}) => ({ event_id: `evt_${seq}_abcdef`, utterance_id: `utt_${seq}`, seq, text: `board owner should be decided ${seq}`, is_final: true, ...extra });\n  it(\"mic consent off -> nothing accepted; revocation stops ingestion immediately\", async () => {\n    const z = await zoneSetup();\n    assert.equal((await z.act(z.dev, \"utterance\", u(1))).status, 403);\n    await z.act(z.dev, \"consent\", { microphone: true, share_with_team: true });\n    assert.equal((await z.act(z.dev, \"utterance\", u(1))).status, 200);\n    await z.act(z.dev, \"consent\", { microphone: false });\n    assert.equal((await z.act(z.dev, \"utterance\", u(2))).status, 403);\n  });\n  it(\"duplicates are idempotent; seq reuse and late provisionals are rejected; identity comes from the server\", async () => {\n    const z = await zoneSetup();\n    await z.act(z.dev, \"consent\", { microphone: true });\n    assert.equal((await z.act(z.dev, \"utterance\", u(2))).body.status, \"accepted\");\n    assert.equal((await z.act(z.dev, \"utterance\", u(2))).body.status, \"duplicate\");\n    assert.equal((await z.act(z.dev, \"utterance\", u(2, { event_id: \"evt_other_123\" }))).status, 409);\n    assert.equal((await z.act(z.dev, \"utterance\", u(1))).status, 200); // out-of-order arrival is fine (ordered by seq)\n    assert.equal((await z.act(z.dev, \"utterance\", u(3, { utterance_id: \"utt_2\", event_id: \"evt_late_prov\", is_final: false }))).status, 409);\n    assert.equal((await z.act(z.dev, \"utterance\", u(4, { participant_id: \"lead\" }))).status, 400);\n  });\n  it(\"private utterances never reach teammates; live text is labeled provisional and never becomes a decision\", async () => {\n    const z = await zoneSetup();\n    await z.act(z.dev, \"consent\", { microphone: true, share_with_team: false });\n    await z.act(z.dev, \"utterance\", u(1, { text: \"the specialist board owner is definitely me\" }));\n    const mate = await z.act(z.mate, \"memory_ask\", { question: \"specialist board owner\" });\n    assert.equal((mate.body.provisional as unknown[]).length, 0);\n    const mine = await z.act(z.dev, \"memory_ask\", { question: \"specialist board owner\" });\n    assert.equal((mine.body.provisional as { status: string }[])[0].status, \"provisional\");\n    assert.notEqual(mine.body.kind, \"confirmed\");\n  });\n});\n\ndescribe(\"focus input + forged events\", () => {\n  it(\"rejects missing tokens, unknown fields, stale and duplicate sequence numbers\", async () => {\n    const z = await zoneSetup();\n    assert.equal((await z.rt.store.all()).length > 0, true);\n    const { runZoneAction } = await import(\"../lib/zones/service\");\n    assert.equal((await runZoneAction(z.rt, \"focus\", \"forged-token-forged-token\", { zone: \"team_memory\", provider: \"webcam\", seq: 1 })).status, 401);\n    assert.equal((await z.act(z.dev, \"focus\", { zone: \"team_memory\", provider: \"webcam\", seq: 1, role: \"leader\" })).status, 400);\n    assert.equal((await z.act(z.dev, \"focus\", { zone: \"team_memory\", provider: \"airpods\", seq: 5 })).status, 200);\n    assert.equal((await z.act(z.dev, \"focus\", { zone: \"code_navigator\", provider: \"airpods\", seq: 5 })).status, 409);\n    assert.equal((await z.act(z.dev, \"focus\", { zone: \"code_navigator\", provider: \"airpods\", seq: 4 })).status, 409);\n  });\n});\n\ndescribe(\"code navigator pinning\", () => {\n  it(\"returns exact highlighted lines at the pinned SHA\", async () => {\n    const z = await zoneSetup();\n    const r = await z.act(z.mate, \"code_navigate\", { question: \"where is persistVerifiedUpdate\" });\n    const loc = (r.body.locations as { path: string; verified: boolean; lines: string[]; url: string }[])[0];\n    assert.equal(loc.path, \"lib/core/persist-update.ts\");\n    assert.equal(loc.verified, true);\n    assert.match(loc.lines[0], /persistVerifiedUpdate/);\n    assert.match(loc.url, /blob\\/1111111aaaaaaa\\//);\n  });\n  it(\"a link whose lines don't exist at the pinned commit is demoted to candidate\", async () => {\n    const z = await zoneSetup();\n    const bad = checkLocation(z.snapshot, \"lib/core/persist-update.ts\", 400, 410, \"confirmed\", undefined, \"https://github.com/team/repo/blob/main/lib/core/persist-update.ts#L400\");\n    assert.equal(bad.verified, false);\n    assert.equal(bad.match, \"candidate\");\n  });\n});\n\ndescribe(\"Bolna callbacks\", () => {\n  it(\"duplicate, late and out-of-order callbacks are recorded once or ignored\", async () => {\n    const z = await zoneSetup();\n    const callback = async (body: Record<string, unknown>) => {\n      const result = await recordExecutionCallback(z.store, body);\n      assert.ok(result.ok);\n      return result.recorded;\n    };\n    assert.equal(await callback({ id: \"exec_123456\", status: \"in-progress\" }), true);\n    assert.equal(await callback({ id: \"exec_123456\", status: \"in-progress\" }), false);\n    assert.equal(await callback({ id: \"exec_123456\", status: \"completed\", conversation_duration: 61 }), true);\n    assert.equal(await callback({ id: \"exec_123456\", status: \"ringing\" }), false);\n    assert.equal(await callback({ id: \"exec_finalizing\", status: \"call-disconnected\" }), true);\n    assert.equal(await callback({ id: \"exec_finalizing\", status: \"completed\", conversation_duration: 62 }), true);\n  });\n});\n\ndescribe(\"phone escalation over Bolna tools\", () => {\n  it(\"caller asks memory, approves a ticket; the call channel can never act as leader\", async () => {\n    const z = await zoneSetup();\n    const rt = { store: z.store, snapshot: z.snapshot, conversations: new Map() };\n    const m = await runTool(rt, \"get_task_evidence\", { call_token: z.devCall.token, focus: \"memory\", question: \"when is the demo freeze\" });\n    assert.equal(m.body.kind, \"unknown\");\n    const t = await runTool(rt, \"request_clarification\", { call_token: z.devCall.token, question: \"When is the demo freeze?\", confirmed: true, idempotency_key: \"phone-key-1\" });\n    assert.equal(t.status, 200);\n    assert.match(String(t.body.speak), /won't guess/);\n  });\n});\n"
     }
   ],
-  "pullRequests": [],
-  "checks": [],
+  "pullRequests": [
+    {
+      "kind": "pr",
+      "id": "pr:11",
+      "repository": "harshsinha-12/kaam-ki-baat",
+      "number": 11,
+      "title": "feat: spatial zones backend — Team Memory, Leader Desk escalation, live context, focus input",
+      "state": "merged",
+      "headSha": "0adfd8e84ace043261db43fa2e13f63368127b6e",
+      "mergedSha": "f4b1e71002fa8bb5a757ac360026455434fa100b",
+      "changedFiles": [
+        ".env.example",
+        "app/api/bolna/callback/route.ts",
+        "app/api/zones/[action]/route.ts",
+        "data/demo/project.fixture.json",
+        "data/demo/snapshot.fixture.json",
+        "docs/decisions.md",
+        "docs/plan.md",
+        "lib/contracts.ts",
+        "lib/focus/selector.ts",
+        "lib/store/event-store.ts",
+        "lib/tools/runtime.ts",
+        "lib/zones/bolna-webhook.ts",
+        "lib/zones/code.ts",
+        "lib/zones/contracts.ts",
+        "lib/zones/escalation.ts",
+        "lib/zones/focus.ts",
+        "lib/zones/identity.ts",
+        "lib/zones/live.ts",
+        "lib/zones/memory.ts",
+        "lib/zones/service.ts",
+        "lib/zones/state.ts",
+        "package.json",
+        "scripts/issue-session.ts",
+        "scripts/smoke-zones.ts",
+        "tests/focus-selector.test.ts",
+        "tests/helpers/zones.ts",
+        "tests/zones-review.test.ts",
+        "tests/zones.test.ts"
+      ],
+      "url": "https://github.com/harshsinha-12/kaam-ki-baat/pull/11"
+    }
+  ],
+  "checks": [
+    {
+      "kind": "check",
+      "id": "check:132772446783",
+      "repository": "harshsinha-12/kaam-ki-baat",
+      "commitSha": "0a9c87015f9094d41cf319d478c9d498b8ea38e5",
+      "name": "check",
+      "conclusion": "pending",
+      "url": "https://github.com/harshsinha-12/kaam-ki-baat/actions/runs/43701180638/job/132772446783"
+    },
+    {
+      "kind": "check",
+      "id": "check:132766703737",
+      "repository": "harshsinha-12/kaam-ki-baat",
+      "commitSha": "0adfd8e84ace043261db43fa2e13f63368127b6e",
+      "name": "check",
+      "conclusion": "success",
+      "url": "https://github.com/harshsinha-12/kaam-ki-baat/actions/runs/43699312074/job/132766703737"
+    },
+    {
+      "kind": "check",
+      "id": "check:132766692364",
+      "repository": "harshsinha-12/kaam-ki-baat",
+      "commitSha": "0adfd8e84ace043261db43fa2e13f63368127b6e",
+      "name": "check",
+      "conclusion": "success",
+      "url": "https://github.com/harshsinha-12/kaam-ki-baat/actions/runs/43699308529/job/132766692364"
+    },
+    {
+      "kind": "check",
+      "id": "check:132766977314",
+      "repository": "harshsinha-12/kaam-ki-baat",
+      "commitSha": "f4b1e71002fa8bb5a757ac360026455434fa100b",
+      "name": "check",
+      "conclusion": "success",
+      "url": "https://github.com/harshsinha-12/kaam-ki-baat/actions/runs/43699396938/job/132766977314"
+    }
+  ],
   "tasks": [
     {
       "id": "t_leader_device",
