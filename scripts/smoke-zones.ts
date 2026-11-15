@@ -15,6 +15,10 @@ import { zoneSnapshot } from "../tests/helpers/zones";
 async function main() {
   const directory = await mkdtemp(path.join(tmpdir(), "kkb-zones-smoke-"));
   const snapshot = zoneSnapshot();
+  snapshot.meetings.push({ id: "synthetic-wispr", title: "Synthetic migration sync", source: "FIXTURE", approvedBy: "HTTP smoke fixture" });
+  snapshot.participants.find(p => p.id === "dev")!.meetingIds.push("synthetic-wispr");
+  const meetingText = "Rollback rehearsal is on Friday.";
+  snapshot.passages.push({ kind: "meeting", id: "synthetic-wispr#1", meetingId: "synthetic-wispr", speaker: "Speaker 2", text: meetingText, charStart: 0, charEnd: meetingText.length, visibility: "team" });
   const snapshotFile = path.join(directory, "snapshot.json");
   const eventsFile = path.join(directory, "events.jsonl");
   await writeFile(snapshotFile, JSON.stringify(snapshot));
@@ -65,6 +69,17 @@ async function main() {
     }
     assert.equal((await request("me")).status, 401);
     assert.equal((await request("me", dev.token)).status, 200);
+    assert.equal((await request("memory_sources", undefined, {}, "GET")).status, 401);
+    const sources = await request("memory_sources", dev.token, {}, "GET");
+    assert.equal(sources.status, 200);
+    assert.equal(sources.body.meetings.find((m: { id: string }) => m.id === "synthetic-wispr").passageCount, 1);
+    assert.ok(!(await request("memory_sources", lead.token, {}, "GET")).body.meetings.some((m: { id: string }) => m.id === "synthetic-wispr"));
+    const memory = await request("memory_ask", dev.token, { question: "rollback rehearsal", meeting_id: "synthetic-wispr" });
+    assert.equal(memory.body.kind, "meeting_context");
+    assert.equal(memory.body.passages[0].text, meetingText);
+    const deniedMemory = await request("memory_ask", lead.token, { question: "rollback rehearsal", meeting_id: "synthetic-wispr" });
+    assert.equal(deniedMemory.body.kind, "unknown");
+    assert.equal(deniedMemory.body.passages.length, 0);
     assert.equal((await request("consent", dev.token, {}, "GET")).status, 405);
     assert.equal((await request("consent", dev.token, null)).status, 400);
     assert.equal((await request("leader_inbox", dev.token)).status, 403);
@@ -95,7 +110,7 @@ async function main() {
       const response = await fetch(`${base}/api/bolna/callback`, { method: "POST", headers: { "Content-Type": "application/json", ...(authorized ? { Authorization: `Bearer ${callbackKey}` } : {}) }, body: JSON.stringify({ id: "http_smoke_execution", status: "completed" }) });
       assert.equal(response.status, authorized ? 200 : 401);
     }
-    console.log("FIXTURE production HTTP smoke passed: landing/static-motion SSR, legacy board-key redirect, board/team/leader routes, scoped graph, passkey/session/leader gates, ticket resolution, persisted read-back and callback auth. No provider request or call.");
+    console.log("FIXTURE production HTTP smoke passed: landing/static-motion SSR, legacy board-key redirect, board/team/leader routes, permitted Wispr catalog/selected passages, scoped graph, passkey/session/leader gates, ticket resolution, persisted read-back and callback auth. No provider request or call.");
   } finally {
     if (server.exitCode === null && server.signalCode === null) {
       const exited = new Promise<void>(resolve => server.once("exit", () => resolve()));

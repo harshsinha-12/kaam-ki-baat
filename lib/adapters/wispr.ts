@@ -49,6 +49,10 @@ export function importWisprMeeting(snapshot: EvidenceSnapshot, input: unknown, a
   if (snapshot.passages.some(p => p.meetingId !== doc.meeting.id && ids.has(p.id))) throw Error("Passage ID collides with another meeting");
   if (snapshot.tasks.some(t => t.meetingId === doc.meeting.id && t.passageIds.some(id => !ids.has(id))))
     throw Error("Import would remove evidence referenced by an existing task");
+  const referenced = new Set(snapshot.tasks.filter(t => t.meetingId === doc.meeting.id).flatMap(t => t.passageIds));
+  if (snapshot.passages.some(p => p.meetingId === doc.meeting.id && referenced.has(p.id) && doc.passages.some(next =>
+    next.id === p.id && (next.text !== p.text || next.charStart !== p.charStart || next.charEnd !== p.charEnd || next.speaker !== p.speaker))))
+    throw Error("Import would change evidence referenced by an existing task; review its mapping first");
   return { ...snapshot,
     // Repository and overall LIVE/FIXTURE status remain exactly as verified.
     meetings: [...snapshot.meetings.filter(m => m.id !== doc.meeting.id), doc.meeting],

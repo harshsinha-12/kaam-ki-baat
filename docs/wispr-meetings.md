@@ -45,9 +45,11 @@ npm run meeting:import -- \
 
 `--participants` is an explicit, comma-separated grant of meeting access to existing participant IDs. Omit it to keep all participant permissions unchanged. `team` passages are visible to those authorized for that meeting. `participant` passages additionally require an authorized task referencing the passage. Importing a meeting never adds tasks, accepted owners or repository access.
 
-The command validates provenance, spans, visibility and hashes, rejects unknown participants or removal of task-referenced passages, and atomically saves a mode-0600 file under ignored `data/private/`. It verifies persisted bytes before reporting success. Repeating the same import is idempotent. It retains the repository SHA, GitHub evidence, task states and overall LIVE/FIXTURE label. Optional `--out data/private/another-snapshot.json` prepares a separate snapshot for review.
+The command validates provenance, spans, visibility and hashes, rejects unknown participants or changes/removal of task-referenced passages, and atomically saves a mode-0600 file under ignored `data/private/`. It verifies persisted bytes before reporting success. Repeating the same import is idempotent. It retains the repository SHA, GitHub evidence, task states and overall LIVE/FIXTURE label. Optional `--out data/private/another-snapshot.json` prepares a separate snapshot for review.
 
 Restart the application against that snapshot (`KKB_SNAPSHOT`) to load it. This is a local operator import, not a hosted OAuth picker, automatic refresh, deployment or provider write. Building a new snapshot with the older single-meeting `snapshot` command replaces the source set; reapply selected imports afterwards.
+
+For the hosted Redis runtime, `KKB_SNAPSHOT` is not the active source: it reads `KKB_SNAPSHOT_KEY`. Prepare the merged private snapshot first, then follow the separately authorized [hosted storage migration and deployment procedure](vercel-runtime.md) to install its immutable snapshot and select the returned key. The local import command never modifies hosted storage, credentials, audit events or a running server.
 
 ## Read and verify
 

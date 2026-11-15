@@ -47,6 +47,7 @@ test("import rejects denied/empty sources, missing provenance, invalid spans, ha
   assert.throws(() => validateWisprImport(doc(), " "));
   assert.throws(() => importWisprMeeting(testSnapshot(), doc(), "test", ["unknown"]));
   assert.throws(() => importWisprMeeting(testSnapshot(), { ...doc("m1"), passages: [{ ...doc("m1").passages[0], id: "m1#new" }] }, "test", []), /referenced/);
+  assert.throws(() => importWisprMeeting(testSnapshot(), doc("m1"), "test", []), /change evidence/);
 });
 
 test("Team Memory reads imported passages with no fabricated task or confirmed ownership", async () => {
