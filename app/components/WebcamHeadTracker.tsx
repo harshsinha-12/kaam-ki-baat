@@ -16,6 +16,15 @@ export interface WebcamHeadTrackerProps {
 const ZONE_LABELS: Record<SelectorZone, string> = {
   team_memory: "Left · Team Memory", leader_desk: "Center · Leader Desk", code_navigator: "Right · Code Navigator",
 };
+const ZONES: { id: SelectorZone; direction: string; title: string }[] = [
+  { id: "team_memory", direction: "← Left", title: "Team Memory" },
+  { id: "leader_desk", direction: "↑ Center", title: "Leader Desk" },
+  { id: "code_navigator", direction: "Right →", title: "Code Navigator" },
+];
+const STATUS_LABELS: Record<WebcamTrackingStatus, string> = {
+  idle: "Camera off", starting: "Connecting", calibrating: "Calibrate to begin",
+  tracking: "Tracking", lost: "Tracking paused", unavailable: "Unavailable",
+};
 
 /** Opt-in local head orientation, never gaze/identity/authorization. */
 export function WebcamHeadTracker({ onSelect, onStatusChange, disabled = false }: WebcamHeadTrackerProps) {
@@ -47,19 +56,36 @@ export function WebcamHeadTracker({ onSelect, onStatusChange, disabled = false }
   useEffect(() => { callbacks.current.onStatusChange?.(snapshot.status); }, [snapshot.status]);
 
   const running = ["starting", "calibrating", "tracking", "lost"].includes(snapshot.status);
+  const markerPosition = 50 - Math.max(-50, Math.min(50, snapshot.yawDeg ?? 0));
   return <section className={styles.tracker} aria-label="Webcam head tracking" data-webcam-status={snapshot.status}>
-    <div className={styles.heading}><strong>Webcam head tracking</strong><span>{snapshot.status}</span></div>
-    <p role="status" aria-live="polite">{snapshot.message}</p>
-    <div className={styles.controls}>
-      <button type="button" disabled={disabled || running} onClick={() => void controller.current?.start()}>Start camera</button>
-      <button type="button" disabled={!running} onClick={() => controller.current?.stop()}>Stop camera</button>
-      <button type="button" disabled={disabled || !snapshot.canCalibrate} onClick={() => controller.current?.recenter()}>Calibrate / recenter</button>
+    <div className={styles.heading}>
+      <div className={styles.titleGroup}>
+        <span className={styles.cameraIcon} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m8 6 1.5-2h5L16 6h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" /><circle cx="12" cy="12.5" r="3.5" /></svg></span>
+        <div><span className={styles.eyebrow}>Webcam · on this device</span><h4>Move your head to select</h4></div>
+      </div>
+      <span className={styles.statusBadge}><i aria-hidden="true" />{STATUS_LABELS[snapshot.status]}</span>
     </div>
-    <p className={styles.readout}>Head turn: {snapshot.yawDeg === null ? "—" : `${Math.round(snapshot.yawDeg)}°`}
-      {" · "}{snapshot.selectedZone ? `Last camera selection: ${ZONE_LABELS[snapshot.selectedZone]}` : "No camera selection"}</p>
-    <p className={styles.hint}>Left → Team Memory · Center → Leader Desk · Right → Code Navigator.<br />
-      Selection only. Use your normal click or keyboard controls to activate. Leader access still requires verification.</p>
-    <p className={styles.hint}>Camera off by default. Frames stay on this device; no footage is stored or uploaded. No microphone access. Starting downloads the face-tracking model.</p>
+    <p className={styles.message} role="status" aria-live="polite">{snapshot.message}</p>
+    <div className={styles.orientation} aria-label="Head movement zones">
+      <div className={styles.zoneRail}>{ZONES.map(zone => <div key={zone.id} className={styles.zone}
+        data-zone={zone.id} data-selected={snapshot.selectedZone === zone.id} data-tracking={snapshot.status === "tracking"}>
+        <span>{zone.direction}</span><strong>{zone.title}</strong>
+      </div>)}</div>
+      <div className={styles.poseTrack} aria-hidden="true"><span className={styles.neutralMark} />
+        {snapshot.yawDeg !== null && <span className={styles.poseMarker} style={{ left: `${markerPosition}%` }} />}
+      </div>
+      <div className={styles.readout}><span aria-live="polite">{snapshot.selectedZone ? `Selected: ${ZONE_LABELS[snapshot.selectedZone]}` : "Calibrate, then hold a turn briefly."}</span>
+        <span className={styles.angle} aria-label="Head turn in degrees">{snapshot.yawDeg === null ? "—" : `${Math.round(snapshot.yawDeg)}°`}</span>
+      </div>
+    </div>
+    <div className={styles.controls}>
+      <button type="button" className={styles.primary} disabled={disabled || running} onClick={() => void controller.current?.start()}>Start camera <span aria-hidden="true">↗</span></button>
+      <button type="button" disabled={disabled || !snapshot.canCalibrate} onClick={() => controller.current?.recenter()}>Calibrate / recenter</button>
+      <button type="button" className={styles.stop} disabled={!running} onClick={() => controller.current?.stop()}>Stop camera</button>
+    </div>
+    <div className={styles.privacy}><svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="m10 2 6 2.5v4.8c0 4-6 7.7-6 7.7s-6-3.7-6-7.7V4.5Z" /><path d="m7 9.5 2 2 4-4" /></svg>
+      <span>Camera off by default. No video saved or uploaded. No microphone access.</span></div>
+    <p className={styles.hint}>Head turns select only. Click or use your keyboard to activate; Leader Desk still requires verification. Starting downloads the local tracking model.</p>
     {/* A decoder surface only; no canvas, capture, recorder or image serialization. */}
     <video ref={video} className={styles.decoder} muted playsInline aria-hidden="true" tabIndex={-1} />
   </section>;

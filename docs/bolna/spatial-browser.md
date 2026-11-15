@@ -1,6 +1,25 @@
 # Bolna spatial browser integration
 
-Status, 2026-11-15: browser-control implementation with synthetic local verification. No Bolna agent was changed, session minted against the provider, microphone opened or real call placed. AirPods, camera selection, leader authentication and live STT remain outside this slice. The browser-first choice was confirmed by the user; [Spatial Live Context v2](../spatial-live-context-v2.md) remains the larger proposed design.
+Status, 2026-11-15: the original browser relay is implemented; the input sprint below adds Manual / Webcam / AirPods selection to the actual `/board` workspace. The sprint does not mint a provider session or change the existing Bolna call. Latest phone-call evidence belongs in [the plan](../plan.md); browser audio and physical AirPods motion are separate verification gates. [Spatial Live Context v2](../spatial-live-context-v2.md) remains the larger design.
+
+## Browser input sprint
+
+`SpatialWorkspace` mounts `FocusInputControls` and the real `WebcamHeadTracker` component, alongside the existing scoped evidence and Bolna conversation. Connect a device session issued by `session:issue` (or the existing `#t=` link). This credential remains separate from the per-call token. Consuming the device fragment preserves the board's query parameters. Input switching never calls the Bolna session endpoint.
+
+| Endpoint | Authenticated device behaviour |
+| --- | --- |
+| `GET /api/zones/focus-input` | Returns `input:{provider,epoch}`, persisted `focus:{zone,provider,seq,inputEpoch,activeZone}`, and optional companion status. |
+| `POST /api/zones/focus-input` with `{provider}` | Selects one provider and starts a new epoch, including when restarting the same provider. Does not reset focus sequence numbers. |
+| `POST /api/zones/focus` | Sends a dwell-confirmed or manual selection with `zone`, `provider`, global `seq`, and `inputEpoch`. Inactive providers, old epochs and stale sequences receive 409 after arbitration is enabled. |
+| `POST /api/zones/focus-input-status` | Active AirPods companion only: `{inputEpoch,state,calibrated,lastSampleAt}`. ISO timestamp or null; no raw yaw. Server receipt time drives six-second freshness. |
+
+All use `Authorization: Session <device token>`; no server key is embedded in a browser or companion. Older callers retain the original focus contract until the device first explicitly selects an input. After that, even legacy calls must supply the active provider and epoch. Browser requests are serialized, provider switches invalidate queued callbacks immediately, and 409 refreshes state without replaying an old head turn. Only confirmed focus from the selected provider's current epoch reveals a workspace panel.
+
+Manual arrows/clicks select; Enter or Activate is a separate action. A provider switch requires fresh selection before the browser enables activation. Center can be selected while locked; member access and leader step-up remain enforced server-side. The Leader Desk link opens the existing verification surface and grants nothing by itself.
+
+Webcam starts only on explicit Start, processes frames locally, requires neutral calibration, and stops when disabled, unmounted or hidden. Permission denial, absent/ambiguous face, model failure and tracking loss produce honest states. Selecting AirPods unmounts webcam tracking and waits for the native companion's heartbeat; a missing or stale heartbeat is unavailable, not a simulated headset.
+
+Verification is separated: deterministic provider/ordering tests; real browser manual selection and denial-state checks against an isolated FIXTURE server; Tab 2's user-confirmed physical Chrome camera inference with all three zones; Tab 3's Swift client against the actual handlers using synthetic input. Physical camera cover/unplug and integrated Chrome source switching remain pending shared QA. User has no AirPods and explicitly deferred physical-headset verification. No live call or deployment is inferred from these checks.
 
 ## Compatibility finding
 
@@ -20,7 +39,7 @@ The page retains the existing operator board and adds a participant workspace. C
 
 - **Left: meeting context.** Only the current authorized task's passages from an approved meeting, retaining speaker, character span and source label. This is not a whole-transcript export.
 - **Right: codebase.** Existing Code Scout, Fix Navigator and Evidence Verifier results, repository/SHA/freshness, candidate/confirmed labels, selected source excerpts, and allowlisted GitHub links. It does not index new files or edit code.
-- **Center: locked Leader Desk.** No center target, leader route, role bypass or privileged action exists in this slice. The ordinary shared conversation is separate from the reserved center desk.
+- **Center: gated Leader Desk.** Selection shows the desk's access state; the existing `/leader` route requires server-owned role and fresh step-up for privileged actions. Center remains outside the model's browser-action target catalog.
 - **One shared Bolna conversation.** Selecting a space does not replace the task, reset the context, create another agent or start another call.
 
 The existing four evidence/write tools are unchanged. Two optional browser tools are added:
@@ -71,8 +90,8 @@ The authenticated mint route forwards only the server-selected agent and the exi
 
 **Provider discrepancy:** the setup docs currently show `/web-call/session`; the pinned SDK source/README uses `/web-call/freeswitch-session`. The route uses the latter to match the pinned package. Confirm that endpoint with Bolna during the first authorized integration test; do not probe both by creating multiple sessions. No live mint was attempted in this task.
 
-## Verification and next step
+## Original relay verification and browser-audio next step
 
-Synthetic tests exercise HTTP authentication/origin restrictions, caller-scoped passages, forbidden center/actions/URLs, the action/receipt cycle, mismatch/timeout handling, optional function generation and disabled provider minting. These are application tests, not call evidence. Browser visual/microphone QA and live Bolna calls were not run.
+Original relay tests exercise HTTP authentication/origin restrictions, caller-scoped passages, forbidden center/actions/URLs, the action/receipt cycle, mismatch/timeout handling, optional function generation and disabled provider minting. These are application tests, not call evidence. That original slice did not run browser visual/microphone QA or live calls; the input sprint's later verification is described above.
 
-Next: obtain the existing agent-change/call authorizations, configure/read back the six functions, start one consenting browser session, and verify “show the codebase” → tool callback → actual DOM focus → acknowledged result → spoken confirmation. Then test a manual left/right switch before the next spoken question. Preserve execution ID and findings in the existing evaluation pipeline. AirPods input comes later through an authenticated native motion bridge; no fake browser headphone tracking is provided.
+Next for browser audio: use the existing authorization and configuration gates, start one consenting browser session, and verify “show the codebase” → tool callback → actual DOM focus → acknowledged result → spoken confirmation. Then test a manual left/right switch before the next spoken question. Preserve execution ID and findings in the existing evaluation pipeline. AirPods selection uses the authenticated native motion bridge, never fake browser headphone tracking.
