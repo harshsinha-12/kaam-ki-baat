@@ -39,6 +39,21 @@ async function main() {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     assert.ok(ready, "isolated production server did not become ready");
+    // The public landing page must not break the existing authenticated root
+    // bookmark; redirect before rendering any public links with a board key.
+    const landing = await fetch(base);
+    assert.equal(landing.status, 200);
+    const html = await landing.text();
+    assert.match(html, /Meeting mein bola/);
+    assert.match(html, /data-reduced-motion="true"/);
+    assert.doesNotMatch(html, /<animate(?:Motion)?\b/);
+    const legacy = await fetch(`${base}/?key=synthetic-board-key&callId=synthetic-call`, { redirect: "manual" });
+    assert.equal(legacy.status, 307);
+    const destination = new URL(legacy.headers.get("location")!, base);
+    assert.equal(destination.pathname, "/board");
+    assert.equal(destination.searchParams.get("key"), "synthetic-board-key");
+    assert.equal(destination.searchParams.get("callId"), "synthetic-call");
+    assert.equal((await fetch(`${base}/board`)).status, 200);
     async function request(action: string, token?: string, body: unknown = {}, method = "POST") {
       const response = await fetch(`${base}/api/zones/${action}`, { method,
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Session ${token}` } : {}) },
@@ -68,7 +83,7 @@ async function main() {
       const response = await fetch(`${base}/api/bolna/callback`, { method: "POST", headers: { "Content-Type": "application/json", ...(authorized ? { Authorization: `Bearer ${callbackKey}` } : {}) }, body: JSON.stringify({ id: "http_smoke_execution", status: "completed" }) });
       assert.equal(response.status, authorized ? 200 : 401);
     }
-    console.log("FIXTURE production HTTP zones smoke passed: session/leader gates, JSON/method guards, ticket resolution, persisted read-back, delivery and callback auth. No provider request or call.");
+    console.log("FIXTURE production HTTP smoke passed: landing/static-motion SSR, legacy board-key redirect, workspace route, session/leader gates, ticket resolution, persisted read-back and callback auth. No provider request or call.");
   } finally {
     if (server.exitCode === null && server.signalCode === null) {
       const exited = new Promise<void>(resolve => server.once("exit", () => resolve()));
