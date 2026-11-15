@@ -13,6 +13,7 @@ import { queryGraph } from "../codegraph/graph";
 import { explainFirstPrinciples } from "../codegraph/explain";
 import { understand } from "../core/understand";
 import { ev, zoneEvents } from "./state";
+import { publishSource, readSource, sourceExcerpt } from "../codegraph/source";
 
 // Framework-free dispatcher for the browser / native companion API
 // (app/api/zones/[action]/route.ts). Deny by default: every action resolves the
@@ -27,7 +28,7 @@ export interface ZoneRuntime {
 export const ZONE_ACTIONS = [
   "me", "focus", "focus-input", "focus-input-status", "activate", "consent", "utterance", "memory_ask", "ticket_create", "ticket_withdraw", "ticket_call_leader",
   "deliveries", "delivery_seen", "delivery_ack", "code_navigate", "leader_step_up", "leader_presence", "leader_inbox", "leader_resolve",
-  "passkey_options", "passkey_register", "passkey_assert", "code_graph_query", "code_focus", "understand",
+  "passkey_options", "passkey_register", "passkey_assert", "code_graph_query", "code_focus", "code_files", "code_open", "understand",
 ] as const;
 export type ZoneAction = (typeof ZONE_ACTIONS)[number];
 
@@ -101,21 +102,34 @@ export async function runZoneAction(rt: ZoneRuntime, action: ZoneAction, token: 
       const ruleTask = rt.snapshot.tasks.find((t) => a.seed && t.searchTerms.includes(a.seed.label.toLowerCase()) && actor.meetingIds.includes(t.meetingId));
       const rulePassage = ruleTask ? rt.snapshot.passages.find((p) => ruleTask.passageIds.includes(p.id)) : undefined;
       const fp = explainFirstPrinciples(rt.snapshot, a, rulePassage ? `${rulePassage.text} (${rulePassage.speaker}, ${rulePassage.id})` : undefined);
-      if (fp) await rt.store.append(ev("code_focus", actor.participant.id, { ...fp, from: "web" }));
+      const source = fp ? sourceExcerpt(rt.snapshot, fp.path, fp.highlights) : null;
+      const sourceFocus = source ? await publishSource(rt.store, actor.participant.id, source, "web") : null;
       // Return only this authorized snapshot, with a bounded visual subset.
       // Prefer the answer path so truncation cannot hide its code pointers.
       const selected = new Set(a.subgraph.nodes);
       const nodes = [...g.nodes.filter(n => selected.has(n.id)), ...g.nodes.filter(n => !selected.has(n.id))].slice(0, 600);
       const ids = new Set(nodes.map(n => n.id));
       const graph = { nodes, edges: g.edges.filter(e => ids.has(e.from) && ids.has(e.to)).slice(0, 1800), godNodes: g.godNodes.filter(id => ids.has(id)), sha: g.sha, repository: g.repository };
-      return r(200, { ok: true, ...a, graph, sha: g.sha, repository: g.repository, label: rt.snapshot.label, engine: "builtin_static_graph", understood: u, firstPrinciples: fp });
+      return r(200, { ok: true, ...a, graph, sha: g.sha, repository: g.repository, label: rt.snapshot.label, engine: "builtin_static_graph", understood: u, firstPrinciples: fp, sourceFocus });
+    }
+    case "code_files": {
+      if (!zoneAccess(actor, "code_navigator").allowed) return r(403, { ok: false, error: "no repository access" });
+      return r(200, { ok: true, repository: rt.snapshot.repository, sha: rt.snapshot.pinnedSha,
+        files: rt.snapshot.files.map(f => ({ path: f.path, lineCount: f.content.split("\n").length })).sort((a, b) => a.path.localeCompare(b.path)) });
+    }
+    case "code_open": {
+      if (!zoneAccess(actor, "code_navigator").allowed) return r(403, { ok: false, error: "no repository access" });
+      if (Object.keys(body).some(k => !["path", "line", "endLine"].includes(k))) return r(400, { ok: false, error: "unexpected source fields" });
+      const line = body.line ?? 1, end = body.endLine ?? line;
+      const source = sourceExcerpt(rt.snapshot, body.path, [{ start: line as number, end: end as number, reason: "Selected source lines" }]);
+      if (!source) return r(400, { ok: false, error: "File or line range is not in the approved snapshot." });
+      const focus = await publishSource(rt.store, actor.participant.id, source, "browse");
+      return r(200, { ok: true, focus });
     }
     case "code_focus": {
       // Latest code location to box in this person's browser (set by their call or their own query).
       if (!zoneAccess(actor, "code_navigator").allowed) return r(403, { ok: false, error: "no repository access" });
-      const f = zoneEvents(await rt.store.all(), "code_focus").filter((e) => e.key === actor.participant.id);
-      const last = f[f.length - 1];
-      return r(200, { ok: true, focus: last ? { ...last.data, at: last.at } : null });
+      return r(200, { ok: true, focus: readSource(rt.snapshot, await rt.store.all(), actor.participant.id) });
     }
     case "understand": return r(200, { ok: true, ...understand(String(body.text ?? "")) });
     case "leader_resolve": { const x = await resolveTicket(rt.store, rt.snapshot, actor, body); return x.ok ? r(200, x) : fail(x); }
