@@ -1,4 +1,5 @@
 import { projectContext } from "../project/context";
+import { publishSource, questionSource } from "../codegraph/source";
 import { randomBytes } from "node:crypto";
 import type { EvidenceSnapshot, Task } from "../contracts";
 import { resolveCaller, type Caller } from "../auth/call-session";
@@ -98,7 +99,9 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       }
       if (caller.participant.repoAccess === false) return { status: 403, body: { ok: false, error: "Repository access denied" } };
       const context = projectContext(rt.snapshot, question);
-      return ok({ ...context, selectedZone, leaderName:"Charan", ownership: selectedZone === "leader_desk" ? rt.snapshot.tasks.filter(t => caller.taskIds.has(t.id)).map(t => ({ task:t.title, assignment:t.assignment })) : undefined,
+      const source = selectedZone === "code_navigator" ? questionSource(rt.snapshot, question, context.passages) : null;
+      const sourceFocus = source ? await publishSource(rt.store, caller.participant.id, source, "call") : null;
+      return ok({ ...context, selectedZone, sourceFocus, leaderName:"Charan", ownership: selectedZone === "leader_desk" ? rt.snapshot.tasks.filter(t => caller.taskIds.has(t.id)).map(t => ({ task:t.title, assignment:t.assignment })) : undefined,
         instructions: context.instructions + (selectedZone === "leader_desk" ? " Leader Desk is selected: explain ownership, open questions and next steps from permitted sources as an AI guide for Charan’s team. You are not the human Charan, do not approve decisions, and do not claim new assignments are saved." : " Code Navigator is selected: explain implementation with exact files, symbols and source links. Graph matches are candidates, not proof of completion."),
         speak: context.passages.length ? "I found the relevant repository sources. I will explain them and mention any uncertainty." : "I could not find an answer in the approved repository files.", evidenceIds: context.passages.map(p => `${p.path}:${p.lineStart}`) });
     }

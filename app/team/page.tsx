@@ -1,11 +1,12 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CodeGraphView, type ViewGraph } from "../components/CodeGraphView";
+import { CodeGraphView, type ViewGraph, type ViewNode } from "../components/CodeGraphView";
 import { ProjectConnection, type ConnectedProject } from "../components/ProjectConnection";
 import { FocusInputControls } from "../components/FocusInputControls";
 import type { ConfirmedFocus, FocusSnapshot } from "@/lib/focus/input-contracts";
 import { AgentGlyph } from "../components/AgentGlyph";
-import { CodeFocus } from "../components/CodeFocus";
+import { CodeFocus, type CodeSourceRequest } from "../components/CodeFocus";
+import type { CodeSourceFocus } from "@/lib/codegraph/source";
 import { key, sessionToken, zone } from "../zones/client";
 import s from "../zones/zones.module.css";
 
@@ -33,6 +34,13 @@ export default function Team() {
   const [sending, setSending] = useState(false);
   const [cq, setCq] = useState("where do we read back before saying saved");
   const [ga, setGa] = useState<GA | null>(null);
+  const [sourceRequest, setSourceRequest] = useState<CodeSourceRequest | null>(null);
+  const [sourceRefresh, setSourceRefresh] = useState(0);
+  const openGraphSource = useCallback((node: ViewNode) => setSourceRequest({ path: node.path, line: node.line, id: key() }), []);
+  const highlightSource = useCallback((source: CodeSourceFocus) => {
+    setGa(current => current ? { ...current, subgraph: { nodes: current.graph.nodes.filter(node => node.path === source.path &&
+      (["file", "test"].includes(node.kind) || source.highlights.some(h => node.line >= h.start && node.line <= h.end))).map(node => node.id) } } : current);
+  }, []);
   const [error, setError] = useState("");
   const [inbox, setInbox] = useState<{ answered: Ticket[]; pending: Ticket[] }>({ answered: [], pending: [] });
 
@@ -110,6 +118,7 @@ export default function Team() {
     try { const r = await zone<GA>("code_graph_query", { question: cq });
       if (r.status !== 200 || !r.data.graph || !r.data.subgraph) throw new Error(r.data.error ?? "Code graph unavailable");
       setGa(r.data);
+      setSourceRefresh(n => n + 1);
     } catch (e) { setError((e as Error).message); }
     finally { setFinding(false); }
   };
@@ -186,7 +195,7 @@ export default function Team() {
             <input className={s.input} value={cq} onChange={(e) => setCq(e.target.value)} onKeyDown={(e) => e.key === "Enter" && navigate()} aria-label="Ask Code Navigator" />
             <button className={`${s.btn} ${s.primary}`} disabled={!connected || finding || !cq.trim()} onClick={navigate}>{finding ? "Finding…" : "Find"}</button>
           </div>
-          {ga ? <CodeGraphView graph={ga.graph} highlight={ga.subgraph.nodes} height={360} /> : <div className={s.empty}><span className={s.label}>{finding ? "Searching pinned code" : "Question → graph → source"}</span><p>{finding ? "Finding relevant files and connections…" : "Ask where a behavior is implemented. Results link to a file and line at the selected commit. Graph connections are hints to verify in the source."}</p></div>}
+          {ga ? <CodeGraphView graph={ga.graph} highlight={ga.subgraph.nodes} height={360} onPick={openGraphSource} /> : <div className={s.empty}><span className={s.label}>{finding ? "Searching pinned code" : "Question → graph → source"}</span><p>{finding ? "Finding relevant files and connections…" : "Ask where a behavior is implemented. Results link to a file and line at the selected commit. Graph connections are hints to verify in the source."}</p></div>}
           {ga && (
             <>
               {ga.seed && <a className={s.meta} href={`https://github.com/${ga.repository}/blob/${ga.sha}/${ga.seed.path}#L${ga.seed.line}`} target="_blank" rel="noreferrer">{ga.seed.path}:{ga.seed.line} @ {ga.sha.slice(0, 7)} ↗ · <span className={ga.match === "confirmed" ? s.ok : s.warn}>{ga.match}</span></a>}
@@ -194,7 +203,7 @@ export default function Team() {
               <ol className={s.steps}>{ga.explanation.map((l, i) => <li key={i}>{l.replace(/^\d+\.\s*/, "")}</li>)}</ol>
             </>
           )}
-          {connected && <CodeFocus />}
+          {connected && <CodeFocus request={sourceRequest} refreshKey={sourceRefresh} onFocus={highlightSource} />}
         </section>
       </div>
       <section id="workspace-settings" className={s.setupRow} aria-label="Workspace settings">
