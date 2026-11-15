@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+    <key>CFBundleIdentifier</key><string>in.kaamkibaat.airpods</string>
+    <key>CFBundleName</key><string>Kaam Ki Baat AirPods</string>
+    <key>CFBundleDisplayName</key><string>Kaam Ki Baat AirPods</string>
+    <key>CFBundleExecutable</key><string>KaamKiBaatAirPods</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>0.1.0</string>
+    <key>CFBundleVersion</key><string>1</string>
+    <key>LSMinimumSystemVersion</key><string>14.0</string>
+    <key>NSHighResolutionCapable</key><true/>
+    <key>NSMotionUsageDescription</key><string>Use headphone head motion to select Team Memory, Leader Desk or Code Navigator. Head motion never activates a zone.</string>
+    <key>NSLocalNetworkUsageDescription</key><string>Connect to your local Kaam Ki Baat server using your authenticated device session to send zone selections and companion status.</string>
+    <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
+</dict></plist>

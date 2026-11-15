@@ -1,9 +1,9 @@
-.workspace { margin-top: 28px; padding: 24px; border: 1px solid #343e4c; border-radius: 16px; background: #121820; line-height: 1.5; }
+.workspace { margin-top: 28px; padding: 24px; border: 1px solid #24231f; border-radius: 16px; background: #121211; color: #f2efe6; line-height: 1.5; }
 .heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .heading h2 { margin: 0; font-size: 22px; }
-.heading p, .provenance { color: #adb9c9; font-size: 14px; }
+.heading p, .provenance { color: #9a968c; font-size: 14px; }
 .badge { font-size: 12px; border: 1px solid #475569; padding: 4px 9px; border-radius: 20px; }
-.workspace button, .workspace input[type=password] { font: inherit; color: inherit; border-radius: 8px; padding: 9px 12px; border: 1px solid #526274; background: #1c2735; }
+.workspace :where(button, input[type=password]) { font: inherit; color: inherit; border-radius: 8px; padding: 9px 12px; border: 1px solid #46433b; background: #1a1916; }
 .workspace button { cursor: pointer; }
 .workspace button:disabled { cursor: default; opacity: .5; }
 .workspace button:focus-visible, .workspace input:focus-visible { outline: 2px solid #f0b429; outline-offset: 3px; }
@@ -32,11 +32,28 @@
 .turn { border-bottom: 1px solid #343e4c; padding: 10px 0; }
 .footer { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-top: 20px; font-size: 12px; color: #adb9c9; }
 .error { color: #ff9f9f; }
-.inputPanel { margin-top: 18px; padding: 16px; border: 1px solid #475569; border-radius: 10px; }
-.inputPanel h3 { margin: 0 0 12px; }
-.inputSelector { display: flex; gap: 18px; flex-wrap: wrap; border: 0; padding: 0; }
-.inputSelector legend { font-size: 13px; color: #adb9c9; margin-bottom: 8px; }
-.inputSelector label { display: flex; align-items: center; gap: 5px; }
+.inputPanel { margin: 18px 0 24px; padding: 20px; border: 1px solid #24231f; border-radius: 14px; background: #0b0b0c; }
+.inputPanel h3 { margin: 2px 0 0; font-size: 20px; }
+.inputTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.eyebrow { font-size: 10px; letter-spacing: .13em; text-transform: uppercase; color: #9a968c; font-weight: 650; }
+.connectionBadge { padding: 4px 10px; border: 1px solid #475569; border-radius: 20px; font-size: 12px; text-transform: capitalize; color: #b7c4d5; }
+.connectionBadge[data-state=connected] { color: #9edcb3; border-color: #355a45; background: #14281d; }
+.connectionBadge[data-state=unavailable] { color: #ffb6a7; border-color: #784839; background: #2b1c19; }
+.inputSelector { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.inputSelector legend { font-size: 12px; color: #9a968c; margin-bottom: 10px; padding: 0; }
+.inputChoice { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid #24231f; border-radius: 9px; background: #121211; cursor: pointer; min-width: 0; }
+.inputChoice[data-active=true] { border-color: #a88b43; background: #262115; }
+.inputChoice input { margin: 0; accent-color: #f5c451; }
+.inputChoice strong { display: block; font-size: 14px; }
+.inputChoice small { display: block; color: #9a968c; font-size: 11px; margin-top: 2px; }
+.inputSelector:disabled .inputChoice { cursor: default; opacity: .6; }
+.focusReadout { margin: 16px 0 10px; font-size: 13px; color: #9a968c; overflow-wrap: anywhere; }
+.focusReadout strong { color: #f2e4c8; font-weight: 600; }
+.focusActions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 16px; font-size: 13px; }
+.workspace .activateButton { border-color: #bd923c; color: #f4d38c; background: #30291a; }
 .manualZones { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
-.manualZones button[aria-pressed=true] { border-color: #f0b429; background: #30291a; }
+.manualZones button:nth-child(1)[aria-pressed=true] { border-color: #7cc4ff; background: #17232c; }
+.manualZones button:nth-child(2)[aria-pressed=true] { border-color: #f5c451; background: #30291a; }
+.manualZones button:nth-child(3)[aria-pressed=true] { border-color: #ff8a65; background: #2e1d18; }
+@media (max-width: 580px) { .inputPanel { padding: 14px; } .inputSelector { grid-template-columns: 1fr; } .inputChoice { padding: 10px 12px; } .inputChoice span { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; } }
 @media (max-width: 580px) { .workspace { padding: 16px; } .spaces { grid-template-columns: 1fr; } .footer { flex-wrap: wrap; } }

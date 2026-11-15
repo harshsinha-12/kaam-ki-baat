@@ -101,6 +101,7 @@ function useCountUp(target: number, run: boolean, ms = 1400) {
 // agent you select; a soft light cone lands on that agent.
 const TURN: Record<Zone, number> = { team_memory: -28, leader_desk: 0, code_navigator: 28 };
 function Listener({ zone }: { zone: Zone }) {
+  const reduced = useContext(ReducedMotion);
   const color = ZONE_HEX[zone];
   const look = zone === "team_memory" ? -1 : zone === "code_navigator" ? 1 : 0;
   return (
@@ -124,7 +125,7 @@ function Listener({ zone }: { zone: Zone }) {
             <g key={x}>
               <rect x={x - 4} y={y - 6} width="8" height="12" rx="4" fill="#f2efe6" />
               <rect x={x - 1.6} y={y + 4} width="3.2" height="10" rx="1.6" fill="#f2efe6" />
-              <circle cx={x} cy={y} r="9" fill="none" stroke={color} strokeOpacity=".55" strokeWidth="1.2"><animate attributeName="r" values="7;12;7" dur="2.4s" repeatCount="indefinite" /><animate attributeName="stroke-opacity" values=".6;0;.6" dur="2.4s" repeatCount="indefinite" /></circle>
+              <circle cx={x} cy={y} r="9" fill="none" stroke={color} strokeOpacity=".55" strokeWidth="1.2">{!reduced && <><animate attributeName="r" values="7;12;7" dur="2.4s" repeatCount="indefinite" /><animate attributeName="stroke-opacity" values=".6;0;.6" dur="2.4s" repeatCount="indefinite" /></>}</circle>
             </g>
           ))}
         </svg>
@@ -672,7 +673,7 @@ export default function Landing() {
               <a href="#zones" className={`${s.btn} ${s.primary}`}>See how it thinks ↓</a>
               <a href={REPO} className={s.btn} target="_blank" rel="noreferrer">GitHub</a>
             </div>
-            <div className={s.kbdHint}>Try it: focus the stage and press <span className={s.kbd}>←</span><span className={s.kbd}>↑</span><span className={s.kbd}>→</span>, or click a zone.</div>
+            <div className={s.kbdHint}>AirPods head motion · Webcam tracking · Keyboard + tap<br />Try the preview: focus the stage and press <span className={s.kbd}>←</span><span className={s.kbd}>↑</span><span className={s.kbd}>→</span>, or click a zone.</div>
           </div>
           <HeroStage />
         </header>
@@ -694,7 +695,7 @@ export default function Landing() {
         <section id="zones" className={s.section}>
           <Reveal><div className={s.eyebrow}>Three agents, one voice</div></Reveal>
           <Reveal i={1}><h2 className={s.h2}>Where you look decides <em>who</em> answers.</h2></Reveal>
-          <Reveal i={2}><p className={s.lede}>Inspired by Air Agents' idea of agents placed around you. Keyboard and tap controls work now. Webcam input and a native AirPods companion are planned. A turn only selects an agent; you still choose to talk.</p></Reveal>
+          <Reveal i={2}><p className={s.lede}>Choose your workspace with AirPods head motion, webcam tracking, or keyboard and tap controls. Calibrate facing forward, then turn left, center, or right to select an agent. You still choose when to talk.</p></Reveal>
           <ZonesDive />
         </section>
 
@@ -727,19 +728,19 @@ export default function Landing() {
         <section id="how" className={s.section}>
           <Reveal><div className={s.eyebrow}>How it works</div></Reveal>
           <Reveal i={1}><h2 className={s.h2}>Sources in. <em>Evidence</em> out.</h2></Reveal>
-          <Reveal i={2}><p className={s.lede}>The Wispr MCP supplies reviewed meeting passages from one approved meeting. GitHub supplies SHA-pinned code. Live speech stays provisional. Fixed rules decide status; the language model only explains.</p></Reveal>
+          <Reveal i={2}><p className={s.lede}>The Wispr MCP supplies reviewed meeting passages from one approved meeting. GitHub supplies SHA-pinned code. AirPods and webcam head motion select your zone; a click or keypress activates it. Live speech stays provisional. Fixed rules decide status; the language model only explains.</p></Reveal>
           <Architecture />
           <div className={s.statusGrid}>
             <div className={s.statusCol}><h3>Works now</h3><ul>
               <li>Evidence engine, three zones, leader escalation with read-back</li>
               <li>Live GitHub reads: PRs, changed files, check runs</li>
               <li>Bolna runtime tools (HTTPS), tested locally with fixtures</li>
-              <li>Head-turn selector logic with dwell + hysteresis</li>
+              <li>AirPods motion companion + webcam controls, with calibration and dwell</li>
             </ul></div>
             <div className={s.statusCol}><h3>Next</h3><ul>
               <li>Verify the configured voice path in a real call</li>
               <li>Three consented phone calls &gt; 45 s</li>
-              <li>Real-device passkey validation, webcam + AirPods providers</li>
+              <li>Real-device passkey validation</li>
               <li>Optional Supabase realtime, once tests match</li>
             </ul></div>
           </div>

@@ -68,7 +68,7 @@ export class BrowserFocusController {
   activate(method: ActivationMethod = "click") {
     const lease = this.generation;
     return this.queue(async () => {
-      if (this.disposed || lease !== this.generation || !this.current?.focus.zone) return;
+      if (this.disposed || lease !== this.generation || !this.current?.focus.zone || this.current.focus.inputEpoch !== this.current.input.epoch || this.current.focus.provider !== this.current.input.provider) return;
       const { input, focus } = this.current;
       await this.request("activate", { zone: focus.zone, method, expectedSeq: focus.seq, inputEpoch: input.epoch });
       this.accept(await this.request("focus-input"), lease);
