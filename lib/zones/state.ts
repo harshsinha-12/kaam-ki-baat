@@ -16,7 +16,11 @@ export type ZoneKind =
   | "ticket"
   | "utterance"
   | "presence"
-  | "bolna_execution";
+  | "bolna_execution"
+  | "passkey"
+  | "passkey_verified"
+  | "webauthn_challenge"
+  | "webauthn_used";
 
 export const zoneEvents = (events: StoredEvent[], kind?: ZoneKind): ZoneEvent[] =>
   events.filter((e): e is ZoneEvent => e.type === "zone" && (!kind || e.kind === kind));
@@ -35,8 +39,9 @@ export function deviceSessionByHash(events: StoredEvent[], tokenHash: string): D
 }
 
 export function latestStepUp(events: StoredEvent[], sessionId: string): { method: string; expiresAt: string } | null {
-  const ups = zoneEvents(events, "step_up").filter((e) => e.key === sessionId);
-  return ups.length ? (ups[ups.length - 1].data as { method: string; expiresAt: string }) : null;
+  const ups = zoneEvents(events).filter((e) => (e.kind === "step_up" || e.kind === "passkey_verified") && e.key === sessionId);
+  const latest = ups[ups.length - 1];
+  return latest ? ((latest.kind === "passkey_verified" ? latest.data.stepUp : latest.data) as { method: string; expiresAt: string }) : null;
 }
 
 export function latestConsent(events: StoredEvent[], sessionId: string): Consent | null {
@@ -82,4 +87,18 @@ export function contextVersion(events: StoredEvent[]): number {
 export function leaderPresence(events: StoredEvent[], participantId: string): { available: boolean; callConsent: boolean } {
   const p = zoneEvents(events, "presence").filter((e) => e.key === participantId);
   return (p[p.length - 1]?.data as { available: boolean; callConsent: boolean } | undefined) ?? { available: false, callConsent: false };
+}
+
+/**
+ * The zone this participant most recently ACTIVATED on any of their devices
+ * (head turn / webcam / keyboard selection + explicit activation), if fresh.
+ * Lets the phone agent follow what the caller is looking at on screen.
+ */
+export function latestActivatedZone(events: StoredEvent[], participantId: string, now = Date.now(), maxAgeMs = 10 * 60_000): Zone | null {
+  const mine = new Set(zoneEvents(events, "device_session").filter((e) => {
+    const session = e.data as unknown as DeviceSession;
+    return session.participantId === participantId && Date.parse(session.expiresAt) > now;
+  }).map((e) => e.key));
+  const acts = zoneEvents(events, "activation").filter((e) => mine.has(e.key) && Date.parse(e.at) <= now && now - Date.parse(e.at) <= maxAgeMs);
+  return (acts[acts.length - 1]?.data as { zone: Zone } | undefined)?.zone ?? null;
 }

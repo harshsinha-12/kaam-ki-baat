@@ -42,22 +42,29 @@ async function main() {
     assert.equal(health.status, 200);
     const live = (await health.json()).snapshot;
     for (const key of ["label", "repository", "pinnedSha", "fetchedAt"] as const) assert.equal(live[key], snapshot[key], "Running snapshot must match selected source");
-    const { token, session } = await issueCallSession(store, {
+    const sessionInput = {
       participantId: participant.id, meetingIds: participant.meetingIds, repository: snapshot.repository,
       consentRecordedBy: `Explicit user consent to phone call and recording, recorded ${consent.recordedAt}; private consent receipt`,
       scenario: "first-phone-call-v1", ttlMinutes: 120,
+    };
+    // Setup creates tool audit records. Keep them on a separate
+    // scoped session so the evaluator cannot mistake them for voice evidence.
+    const preflight = await issueCallSession(store, {
+      ...sessionInput, scenario: "phone-setup-preflight", ttlMinutes: 5,
     });
     const response = await fetch(`${base}/api/tools/get_my_brief`, {
       method: "POST", headers: { Authorization: `Bearer ${process.env.KKB_TOOL_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ call_token: token }), signal: AbortSignal.timeout(15000),
+      body: JSON.stringify({ call_token: preflight.token }), signal: AbortSignal.timeout(15000),
     });
     assert.equal(response.status, 200);
     const brief = await response.json();
     assert.equal(typeof brief.speak, "string"); assert.ok(brief.speak.length > 0);
+    const { token, session } = await issueCallSession(store, sessionInput);
     await privateWrite(manifest, {
       preparedAt: new Date().toISOString(), callId: session.callId, expiresAt: session.expiresAt,
       participantId: participant.id, snapshotSha: snapshot.pinnedSha, publicOrigin: base,
-      preflightNote: "Opening tool preflight precedes provider call and is not voice-call evidence.",
+      preflightCallId: preflight.session.callId,
+      preflightNote: "Opening tool preflight uses a separate session and is not voice-call evidence.",
       payload: { agent_id: agentId, recipient_phone_number: recipient,
         user_data: { call_token: token, opening_brief: brief.speak,
           current_task_id: typeof brief.task?.id === "string" ? brief.task.id : "",

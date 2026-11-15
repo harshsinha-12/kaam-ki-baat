@@ -33,6 +33,8 @@ The output is `data/private/bolna-tools.json`, mode `0600`. It contains the four
 
 Every request also carries `call_token`. The token is supplied in outbound `user_data` and prompt context, then referenced with `%(call_token)s` in each custom function. It never supplies a participant or actor ID. Bolna documents context-variable substitution; forwarding this exact variable on all four functions must still be observed during an authorized call. If substitution fails, requests fail authentication rather than accepting model-selected identity.
 
+New phone preparations from `scripts/start-phone-call.ts` use a separate short-lived session for the opening-tool preflight. The private manifest retains `preflightCallId`; the provider receives a fresh call token and call ID, so setup tool results do not count as live-call evidence. Existing manifests from before this change still require manual exclusion of setup records, as in the stored first-call evaluation.
+
 ## Draft system prompt
 
 ```text

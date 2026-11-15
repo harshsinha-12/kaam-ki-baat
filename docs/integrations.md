@@ -56,6 +56,12 @@ Wispr authorization is account-wide, with no per-meeting OAuth consent. Kaam Ki 
 
 ## Developer tools and telephone runtime
 
+### Public repository and workspace access — 2026-11-15
+
+PR #16 review called the actual GitHub adapter with an explicitly empty token. It retrieved merged PR #13, six changed files and two checks for exact head `d3d0232818a7cd13c3f7db03738a2c8fe1fe7cf5` from this public repository. Source bytes still come from the matching local Git clone at a pinned SHA. URL-based onboarding is not yet a product flow. Server-only `GITHUB_TOKEN` transport exists for authorized private reads; a GitHub App connection and private end-to-end verification remain GH2 in [the plan](plan.md). See [workspace setup](workspace-setup.md) for permissions and APIs.
+
+Passkey verification in PR #16 uses local cryptography and requires an exact HTTPS origin/RP hostname, not an external authentication API. Synthetic signature and HTTP checks are separate from a real platform-authenticator ceremony, which has not been run. The built-in visual static graph is separate from the existing optional Graphify adapter. No provider audio session or call was started during this review.
+
 ### Graphify code context — 2026-11-15
 
 The user requested Graphify for codebase knowledge transfer and linking context. Graphify is an optional local build tool, not a registered MCP server or a telephone provider. Official documentation and export source were inspected, then Graphify **0.9.100** was run with an isolated Python 3.12 tool environment against the pinned fixture code: **147 usable nodes, 330 edges, 27 code files**. Import and Code Scout retrieval returned exact source locations and relationship confidence. Generated artifacts remain ignored under `data/private/`. No meeting was imported, external Graphify account connected or Bolna agent changed. Runtime setup and boundaries are in [code context](code-context.md). End-to-end voice latency remains unmeasured.

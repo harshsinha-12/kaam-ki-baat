@@ -1,6 +1,10 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import s from "./landing.module.css";
+import graphData from "../../data/demo/codegraph.json";
+import graphDemo from "../../data/demo/codegraph.demo.json";
+import { CodeGraphView, type ViewGraph } from "../components/CodeGraphView";
+import { AgentGlyph } from "../components/AgentGlyph";
 
 // Kaam Ki Baat landing — the page explains the product by *doing* it:
 // turn left (Team Memory), face front (Leader Desk), turn right (Code Navigator).
@@ -29,15 +33,15 @@ function useMotionPreference() {
 const SCRIPT: Record<Zone, { label: string; side: string; sub: string; ask: string; say: string; src: { t: string; ok?: boolean; warn?: boolean }[] }> = {
   team_memory: {
     label: "Team Memory", side: "Look left", sub: "Approved decisions, owners, deadlines — with sources.",
-    ask: "Board ka owner kaun hai, aur deadline?",
-    say: "That was only proposed, not confirmed. I won't guess — want me to ask Riya, the lead?",
+    ask: "Code freeze kab hai, 3:30 ya 3:45?",
+    say: "That was only proposed, not confirmed. I won't guess — want me to ask Charan, the lead?",
     src: [{ t: "wispr · sync 11:04 · span 412–498" }, { t: "state: proposed", warn: true }],
   },
   leader_desk: {
     label: "Leader Desk", side: "Face front", sub: "Leader only. Fresh verification. Resolves open questions.",
-    ask: "1 pending question from Arjun: board owner + deadline.",
-    say: "Approved: Arjun owns the board, due Friday — if the read-back fix merges first. Saved and read back.",
-    src: [{ t: "decision v2 · approved by Riya", ok: true }, { t: "read-back ✓", ok: true }],
+    ask: "1 pending question from Harsh: code freeze time.",
+    say: "Approved: freeze at 3:45 — if CI is green on the current commit. Saved and read back.",
+    src: [{ t: "decision v2 · approved by Charan", ok: true }, { t: "read-back ✓", ok: true }],
   },
   code_navigator: {
     label: "Code Navigator", side: "Look right", sub: "Exact repo, commit, file, function, lines and test.",
@@ -138,7 +142,7 @@ function Stage({ zone, onZone, autoplay }: { zone: Zone; onZone: (z: Zone) => vo
       <div className={s.arc}>
         {ZONES.map((z) => (
           <button key={z} type="button" className={s.zone} data-z={z} data-on={zone === z} onClick={() => onZone(z)} aria-pressed={zone === z}>
-            <div className={s.zoneTop}><span>{SCRIPT[z].side}</span>{z === "leader_desk" && <span className={s.lock}>leader only</span>}</div>
+            <div className={s.zoneTop}><AgentGlyph zone={z} reduced={reduced} size={26} active={zone === z} look={zone === "team_memory" ? -1 : zone === "code_navigator" ? 1 : 0} /><span>{SCRIPT[z].side}</span>{z === "leader_desk" && <span className={s.lock}>leader only</span>}</div>
             <div className={s.zoneName}>{SCRIPT[z].label}</div>
             <div className={s.zoneSub}>{SCRIPT[z].sub}</div>
           </button>
@@ -280,11 +284,11 @@ function ZonesDive() {
 }
 
 const PIPE = [
-  { t: "Member asks left", d: "“Who owns the board?”", say: "> memory_ask → proposed only" },
+  { t: "Member asks left", d: "“Code freeze kab hai?”", say: "> memory_ask → proposed only" },
   { t: "No verified answer", d: "Says so. Offers to escalate.", say: "> ticket_create (confirmed: true)" },
   { t: "Leader approves", d: "Verified role, fresh step-up, confirm.", say: "> leader_resolve · expected v1" },
   { t: "Store + read-back", d: "Versioned, append-only, verified.", say: "> decision v2 · read-back ✓ · ctx+1" },
-  { t: "Requester gets source", d: "Now, or on the next call.", say: "> “Approved by Riya: …”" },
+  { t: "Requester gets source", d: "Now, or on the next call.", say: "> “Approved by Charan: …”" },
 ];
 
 function Escalation() {
@@ -418,6 +422,109 @@ function Architecture() {
   );
 }
 
+function GraphSection() {
+  const reduced = useContext(ReducedMotion);
+  const demos = graphDemo as { q: string; seed: { label: string; path: string; line: number } | null; nodes: string[]; explanation: string[] }[];
+  const [i, setI] = useState(0);
+  const [ref, inView] = useInView<HTMLDivElement>(0.25);
+  const [manual, setManual] = useState(false);
+  useEffect(() => { if (reduced || !inView || manual) return; const id = setInterval(() => setI((x) => (x + 1) % demos.length), 5200); return () => clearInterval(id); }, [inView, manual, demos.length, reduced]);
+  const d = demos[i];
+  const g = graphData as unknown as ViewGraph;
+  return (
+    <div ref={ref} className={s.graphBox}>
+      <div className={s.graphCanvas}><CodeGraphView graph={g} highlight={inView ? d.nodes : []} height={480} /></div>
+      <div className={s.graphSide}>
+        <div className={s.chips}>{demos.map((x, k) => <button key={x.q} type="button" className={`${s.chip} ${k === i ? s.chipOn : ""}`} onClick={() => { setManual(true); setI(k); }}>{x.q}</button>)}</div>
+        <div className={s.graphQ}>“{d.q}”</div>
+        <ol className={s.graphSteps}>{d.explanation.map((l, k) => <li key={`${i}-${k}`} style={{ "--i": k } as CSSProperties}>{l.replace(/^\d+\.\s*/, "")}</li>)}</ol>
+        <div className={s.cite}>FIXTURE · static graph preview · {g.nodes.length} nodes · {g.edges.length} edges · selected files from {g.repository} @ {g.sha.slice(0, 7)}. This built-in preview is separate from optional Graphify retrieval.</div>
+      </div>
+    </div>
+  );
+}
+
+const HEARS = [
+  { k: "HEARD", t: "Wispr hears it", b: "Meeting notes come from Wispr Flow, and live speech from an app you opt into. Fillers and “no, sorry” self-corrections are cleaned up.",
+    ui: "heard" },
+  { k: "UNDERSTOOD", t: "It works out what you mean", b: "“Freeze kab hai” becomes the open freeze decision. “Woh code” becomes the function you were just talking about.", ui: "mean" },
+  { k: "DECIDED", t: "The evidence decides", b: "Fixed rules check the source: who said it, whether it was proposed or approved, and whether the PR is open or merged.", ui: "decide" },
+  { k: "ANSWERED", t: "An agent answers, with the line", b: "One short sentence in Hindi or English, spoken by Bolna. The cited passage or code line opens on screen.", ui: "answer" },
+];
+
+function HearsUI({ ui, on }: { ui: string; on: boolean }) {
+  const reduced = useContext(ReducedMotion);
+  if (ui === "heard") return (
+    <div className={`${s.hUi} ${s.hDark}`}>
+      <div className={s.hTop}><span className={s.live}>● LISTENING</span><span className={s.tagPill}>EN</span><span className={s.tagPill}>हिं</span><span className={`${s.tagPill} ${s.tagHot}`}>Hinglish</span></div>
+      <div className={s.wave} aria-hidden>{Array.from({ length: 14 }, (_, i) => <i key={i} style={{ "--i": i } as CSSProperties} className={on ? s.waveOn : ""} />)}</div>
+      <div className={s.hText}><span className={s.strike}>umm,</span> code freeze <span className={s.strike}>3:30</span> <span style={{ color: "var(--mute)" }}>nahi matlab</span> kab hai?</div>
+      <div className={s.hChip}>code freeze kab hai?</div>
+    </div>
+  );
+  if (ui === "mean") return (
+    <div className={`${s.hUi} ${s.hDashed}`}>
+      {[["freeze kab hai", "dec:t_freeze"], ["woh code", "persistVerifiedUpdate()"], ["mera kaam", "Harsh · 3 calls"], ["ho gaya?", "PR #11 · merged"]].map(([a, b], i) => (
+        <div key={a} className={s.mapRow} style={{ "--i": i } as CSSProperties}><span className={s.mapFrom}>{a}</span><span className={s.mapArrow}>→</span><span className={s.mapTo}>{b}</span></div>
+      ))}
+    </div>
+  );
+  if (ui === "decide") return (
+    <div className={`${s.hUi} ${s.hPaper}`}>
+      <div className={s.docLine}><b>Freeze</b> <span className={s.strike}>3:30</span> → <span className={s.markAmber}>unknown</span></div>
+      {["said by Harsh, a question, not a decision", "no owner, so it isn't approved", "escalate to the leader, don't guess"].map((t, i) => (
+        <div key={t} className={s.check} style={{ "--i": i } as CSSProperties}><span className={i === 2 ? s.dotAmber : s.dotOk} />{t}</div>
+      ))}
+    </div>
+  );
+  return (
+    <div className={`${s.hUi} ${s.hPaper}`}>
+      <div className={s.hTop}><AgentGlyph zone="team_memory" size={22} active reduced={reduced} /><span style={{ fontWeight: 600 }}>Team Memory</span></div>
+      <div className={s.bubble}>Freeze abhi decide nahi hua. Main Charan se puchhun?</div>
+      <div className={s.meta}>meeting kkb-sync · Harsh · passage 11</div>
+    </div>
+  );
+}
+
+function Hears() {
+  const reduced = useContext(ReducedMotion);
+  const [ref, inView] = useInView<HTMLDivElement>(0.3);
+  const [i, setI] = useState(0);
+  const [manual, setManual] = useState(false);
+  useEffect(() => { if (reduced || !inView || manual) return; const id = setInterval(() => setI((x) => (x + 1) % HEARS.length), 2600); return () => clearInterval(id); }, [inView, manual, reduced]);
+  return (
+    <div ref={ref} className={s.hears}>
+      <div className={s.rail} aria-hidden>
+        <div className={s.railFill} style={{ width: `${(i / (HEARS.length - 1)) * 100}%` }} />
+        <div className={s.railDot} style={{ left: `${(i / (HEARS.length - 1)) * 100}%` }} />
+        {HEARS.map((h, k) => <span key={h.k} className={s.railLabel} style={{ left: `${(k / (HEARS.length - 1)) * 100}%` }}>{h.k}</span>)}
+      </div>
+      <div className={s.hGrid}>
+        {HEARS.map((h, k) => (
+          <button key={h.k} type="button" className={`${s.hCol} ${k === i ? s.hOn : ""}`} onClick={() => { setManual(true); setI(k); }}>
+            <HearsUI ui={h.ui} on={k === i} />
+            <div className={s.hNum}>0{k + 1}</div>
+            <div className={s.hTitle}>{h.t}</div>
+            <div className={s.hBody}>{h.b}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BrandMark() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden>
+      <defs><linearGradient id="kkbBrand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#7cc4ff" /><stop offset=".5" stopColor="#f5c451" /><stop offset="1" stopColor="#ff8a65" /></linearGradient></defs>
+      <rect width="64" height="64" rx="15" fill="#171715" />
+      <path d="M32 9 L52 20.5 V43.5 L32 55 L12 43.5 V20.5 Z" fill="url(#kkbBrand)" />
+      <ellipse cx="25" cy="31" rx="3.2" ry="4.4" fill="#0b0b0c" /><ellipse cx="39" cy="31" rx="3.2" ry="4.4" fill="#0b0b0c" />
+      <path d="M24 41 q8 5 16 0" stroke="#0b0b0c" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 /* ------------------------------------------------------------------ page */
 export default function Landing() {
   const reduced = useMotionPreference();
@@ -429,11 +536,11 @@ export default function Landing() {
     <ReducedMotion.Provider value={reduced}><div className={s.page} data-reduced-motion={reduced}>
       <a href="#main" className={s.skip}>Skip to content</a>
       <nav className={s.nav} style={{ boxShadow: scrolled ? "0 10px 30px -20px #000" : "none" }}>
-        <a href="#" className={s.brand}><span className={s.logo}>K</span>Kaam Ki Baat</a>
+        <a href="#" className={s.brand}><BrandMark />Kaam Ki Baat</a>
         <div className={s.navLinks}>
-          <a href="#problem">Problem</a><a href="#zones">Three zones</a><a href="#escalation">Escalation</a><a href="#guards">Guards</a><a href="#how">How it works</a>
+          <a href="#problem">Problem</a><a href="#hears">How it hears</a><a href="#zones">Three zones</a><a href="#escalation">Escalation</a><a href="#guards">Guards</a><a href="#graph">Code graph</a><a href="#how">How it works</a>
         </div>
-        <a href="/board" className={`${s.btn} ${s.primary}`}>Open workspace →</a>
+        <a href="/team" className={`${s.btn} ${s.primary}`}>Open workspace →</a>
       </nav>
 
       <main id="main">
@@ -465,6 +572,12 @@ export default function Landing() {
 
         <section className={s.section}><DoubtLoop /></section>
 
+        <section id="hears" className={s.section}>
+          <Reveal><div className={s.eyebrow}>From speech to a checked answer</div></Reveal>
+          <Reveal i={1}><h2 className={s.h2}>Wispr hears it. <em>The evidence</em> decides it.</h2></Reveal>
+          <Hears />
+        </section>
+
         <section id="zones" className={s.section}>
           <Reveal><div className={s.eyebrow}>Three agents, one voice</div></Reveal>
           <Reveal i={1}><h2 className={s.h2}>Where you look decides <em>who</em> answers.</h2></Reveal>
@@ -491,6 +604,13 @@ export default function Landing() {
           <CodeNav />
         </section>
 
+        <section id="graph" className={s.section}>
+          <Reveal><div className={s.eyebrow}>The codebase, as a graph</div></Reveal>
+          <Reveal i={1}><h2 className={s.h2}>Find a function. <em>Follow the links</em>.</h2></Reveal>
+          <Reveal i={2}><p className={s.lede}>Selected files and symbols form a static graph. Text matching finds a candidate, then import and call hints connect nearby code and tests. These links help navigation; they do not prove runtime behavior or test coverage.</p></Reveal>
+          <GraphSection />
+        </section>
+
         <section id="how" className={s.section}>
           <Reveal><div className={s.eyebrow}>How it works</div></Reveal>
           <Reveal i={1}><h2 className={s.h2}>Sources in. <em>Evidence</em> out.</h2></Reveal>
@@ -506,7 +626,7 @@ export default function Landing() {
             <div className={s.statusCol}><h3>Next</h3><ul>
               <li>Verify the configured voice path in a real call</li>
               <li>Three consented phone calls &gt; 45 s</li>
-              <li>Passkey step-up and webcam + AirPods providers</li>
+              <li>Real-device passkey validation, webcam + AirPods providers</li>
               <li>Optional Supabase realtime, once tests match</li>
             </ul></div>
           </div>

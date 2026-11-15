@@ -11,7 +11,9 @@ import { handleTurn, startConversation, type Conversation } from "../specialists
 import { acknowledge, createTicket, deliveries, markDelivered } from "../zones/escalation";
 import type { Actor } from "../zones/identity";
 import { askTeamMemory, nameOf } from "../zones/memory";
-import { contextVersion } from "../zones/state";
+import { contextVersion, latestActivatedZone } from "../zones/state";
+import { getCodeGraph } from "../codegraph/load";
+import { queryGraph } from "../codegraph/graph";
 
 // The four runtime tools Bolna calls during a phone call (D-013). Framework-free:
 // app/api/tools/[tool]/route.ts is a thin HTTP wrapper around these.
@@ -113,17 +115,42 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       });
     }
     case "get_task_evidence": {
+      const task = pickTask(rt, caller, body.task_id ?? body.taskId);
+      if ((body.task_id ?? body.taskId) && !task) return { status: 403, body: { ok: false, error: "task not authorized", speak: "That task isn't one I can share with you." } };
+      // No explicit focus? Follow the zone the caller activated on screen (camera/keyboard selection).
+      if (body.focus === undefined || body.focus === "") {
+        const z = latestActivatedZone(await rt.store.all(), caller.participant.id);
+        if (z === "team_memory") body = { ...body, focus: "memory", focusSource: "screen" };
+        else if (z === "code_navigator") body = { ...body, focus: "code", focusSource: "screen" };
+      }
+      if (body.focus === "code" || body.focus === "graph") {
+        const actor = callActor(caller);
+        if (!actor.repoAccess) return { status: 403, body: { ok: false, error: "no repository access", speak: "I can't show code to you." } };
+        const g = getCodeGraph(rt.snapshot);
+        const pr = task?.prNumber == null ? undefined : rt.snapshot.pullRequests.find(p => p.repository === rt.snapshot.repository && p.number === task.prNumber);
+        const a = queryGraph(g, String(body.question ?? body.utterance ?? ""), rt.snapshot.files, new Set(pr?.changedFiles ?? []));
+        const file = a.seed ? a.seed.path.split("/").pop() : "";
+        const caller2 = a.path.find((p) => p.via === "uses");
+        const test = a.path.find((p) => p.via === "tests");
+        const speak = a.seed
+          ? `Open ${file}, the ${a.seed.label} ${a.seed.kind}, line ${a.seed.line}.${caller2 ? ` A static link suggests a caller in ${caller2.node.path.split("/").pop()}.` : ""}${test ? ` A related test file is ${test.node.path.split("/").pop()}; its execution is unverified.` : ""} That's my best match, not confirmed yet.`
+          : "I couldn't find that in the code at this commit. Tell me a function or file name.";
+        return ok({
+          speak, specialist: "code_navigator", focusSource: body.focusSource ?? "caller",
+          match: a.match, explanation: a.explanation, sha: g.sha,
+          location: a.seed ? { path: a.seed.path, line: a.seed.line, url: `https://github.com/${g.repository}/blob/${g.sha}/${a.seed.path}#L${a.seed.line}` } : null,
+          evidenceIds: a.subgraph.nodes,
+        });
+      }
       if (body.focus === "memory" || body.focus === "team_memory") {
         const events = await rt.store.all();
         const a = askTeamMemory(rt.snapshot, events, callActor(caller), String(body.question ?? body.utterance ?? ""));
         return ok({
-          speak: a.speak, specialist: "team_memory", kind: a.kind, offerEscalation: a.offerEscalation,
+          speak: a.speak, specialist: "team_memory", kind: a.kind, focusSource: body.focusSource ?? "caller", offerEscalation: a.offerEscalation,
           sources: a.sources, contextVersion: contextVersion(events), pendingTicket: "pendingTicket" in a ? a.pendingTicket?.id ?? null : null,
           evidenceIds: a.sources.map((x) => x.id),
         });
       }
-      const task = pickTask(rt, caller, body.task_id ?? body.taskId);
-      if ((body.task_id ?? body.taskId) && !task) return { status: 403, body: { ok: false, error: "task not authorized", speak: "That task isn't one I can share with you." } };
       const conv = rt.conversations.get(callId) ?? startConversation(callId, caller.participant.id, task?.id ?? null, []);
       const focus = parseFocus(body.focus);
       const utterance = String(body.question ?? body.utterance ?? "");

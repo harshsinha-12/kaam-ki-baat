@@ -1,82 +1,156 @@
 {
-  "_label": "FIXTURE project config. People and meeting are synthetic. Code, PR and checks are read for real from the repository.",
+  "_label": "FIXTURE demo project: two-person team (Charan Rathore, lead; Harsh Sinha, teammate). Hypothetical meeting; real repository evidence.",
   "repository": "harshsinha-12/kaam-ki-baat",
   "paths": [
     "lib",
     "tests",
-    "app"
+    "app",
+    "scripts"
   ],
-  "meetingFile": "data/demo/meeting.fixture.json",
+  "meetingFile": "data/demo/meeting.kkb.json",
   "out": "data/demo/snapshot.fixture.json",
+  "offlineGithubFile": "data/demo/github.offline.json",
   "participants": [
     {
-      "id": "p_dev",
-      "name": "Demo Dev",
+      "id": "p_lead",
+      "name": "Charan",
       "meetingIds": [
-        "fixture-meeting-001"
+        "kkb-sync-2026-11-15"
       ],
       "taskIds": [
-        "t_readback",
-        "t_board"
+        "t_leader_device",
+        "t_approvals"
       ],
-      "role": "member",
-      "repoAccess": true
-    },
-    {
-      "id": "p_lead",
-      "name": "Demo Lead",
-      "meetingIds": [
-        "fixture-meeting-001"
-      ],
-      "taskIds": [],
       "role": "leader",
       "repoAccess": true
     },
     {
-      "id": "p_new",
-      "name": "Demo Teammate",
+      "id": "p_dev",
+      "name": "Harsh",
       "meetingIds": [
-        "fixture-meeting-001"
+        "kkb-sync-2026-11-15"
       ],
-      "taskIds": [],
+      "taskIds": [
+        "t_calls",
+        "t_readback",
+        "t_code_graph",
+        "t_film",
+        "t_freeze"
+      ],
       "role": "member",
       "repoAccess": true
     }
   ],
   "tasks": [
     {
-      "id": "t_readback",
-      "title": "only say 'saved' after the task update is read back from the store",
-      "meetingId": "fixture-meeting-001",
+      "id": "t_leader_device",
+      "title": "lock the Leader Desk to Charan's laptop with Touch ID",
+      "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "fixture-meeting-001#p1",
-        "fixture-meeting-001#p2"
+        "kkb#2"
+      ],
+      "assignment": {
+        "state": "accepted",
+        "ownerId": "p_lead"
+      },
+      "searchTerms": [
+        "assertpasskey",
+        "passkey"
+      ]
+    },
+    {
+      "id": "t_approvals",
+      "title": "handle leader approvals during the demo",
+      "meetingId": "kkb-sync-2026-11-15",
+      "passageIds": [
+        "kkb#7"
+      ],
+      "assignment": {
+        "state": "accepted",
+        "ownerId": "p_lead"
+      },
+      "searchTerms": [
+        "resolveticket"
+      ]
+    },
+    {
+      "id": "t_readback",
+      "title": "only say saved after the update is read back from the store",
+      "meetingId": "kkb-sync-2026-11-15",
+      "passageIds": [
+        "kkb#4"
       ],
       "assignment": {
         "state": "accepted",
         "ownerId": "p_dev"
       },
-      "prNumber": 2,
+      "prNumber": 11,
       "searchTerms": [
         "persistverifiedupdate",
         "read-back"
       ]
     },
     {
-      "id": "t_board",
-      "title": "build the three-card specialist board",
-      "meetingId": "fixture-meeting-001",
+      "id": "t_calls",
+      "title": "run three test calls over 45 seconds with an evaluation note after each",
+      "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "fixture-meeting-001#p3"
+        "kkb#5",
+        "kkb#6"
+      ],
+      "assignment": {
+        "state": "accepted",
+        "ownerId": "p_dev"
+      },
+      "prNumber": 11,
+      "searchTerms": [
+        "recordexecutioncallback",
+        "duration"
+      ]
+    },
+    {
+      "id": "t_code_graph",
+      "title": "move the code graph agent to the left side",
+      "meetingId": "kkb-sync-2026-11-15",
+      "passageIds": [
+        "kkb#8",
+        "kkb#9"
       ],
       "assignment": {
         "state": "proposed",
         "ownerId": "p_dev"
       },
-      "prNumber": 2,
       "searchTerms": [
-        "specialists",
-        "position"
+        "querygraph",
+        "graph"
+      ]
+    },
+    {
+      "id": "t_film",
+      "title": "record the demo film before four",
+      "meetingId": "kkb-sync-2026-11-15",
+      "passageIds": [
+        "kkb#10"
+      ],
+      "assignment": {
+        "state": "mentioned"
+      },
+      "searchTerms": [
+        "film"
+      ]
+    },
+    {
+      "id": "t_freeze",
+      "title": "decide the code freeze time, 3:30 or 3:45",
+      "meetingId": "kkb-sync-2026-11-15",
+      "passageIds": [
+        "kkb#11"
+      ],
+      "assignment": {
+        "state": "unknown"
+      },
+      "searchTerms": [
+        "freeze"
       ]
     }
   ]

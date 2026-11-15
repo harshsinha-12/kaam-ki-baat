@@ -28,7 +28,7 @@ async function main() {
   const port = (reserve.address() as { port: number }).port;
   await new Promise<void>((resolve, reject) => reserve.close(e => e ? reject(e) : resolve()));
   const server = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-H", "127.0.0.1", "-p", String(port)], {
-    env: { ...process.env, KKB_SNAPSHOT: snapshotFile, KKB_EVENTS_FILE: eventsFile, KKB_LEADER_STEPUP_SECRET: secret, KKB_CALLBACK_KEY: callbackKey, KKB_ENABLE_WEB_CALLS: "false" },
+    env: { ...process.env, KKB_SNAPSHOT: snapshotFile, KKB_EVENTS_FILE: eventsFile, KKB_LEADER_STEPUP_SECRET: secret, KKB_CALLBACK_KEY: callbackKey, KKB_ENABLE_WEB_CALLS: "false", KKB_ORIGIN: `http://127.0.0.1:${port}`, KKB_RP_ID: "127.0.0.1" },
     stdio: "ignore",
   });
   const base = `http://127.0.0.1:${port}`;
@@ -54,6 +54,8 @@ async function main() {
     assert.equal(destination.searchParams.get("key"), "synthetic-board-key");
     assert.equal(destination.searchParams.get("callId"), "synthetic-call");
     assert.equal((await fetch(`${base}/board`)).status, 200);
+    assert.equal((await fetch(`${base}/team`)).status, 200);
+    assert.equal((await fetch(`${base}/leader`)).status, 200);
     async function request(action: string, token?: string, body: unknown = {}, method = "POST") {
       const response = await fetch(`${base}/api/zones/${action}`, { method,
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Session ${token}` } : {}) },
@@ -67,6 +69,16 @@ async function main() {
     assert.equal((await request("consent", dev.token, null)).status, 400);
     assert.equal((await request("leader_inbox", dev.token)).status, 403);
     assert.equal((await request("leader_inbox", lead.token)).status, 403);
+    assert.equal((await request("code_graph_query")).status, 401);
+    const graph = await request("code_graph_query", dev.token, { question: "persistVerifiedUpdate" });
+    assert.equal(graph.status, 200);
+    assert.equal(graph.body.graph.sha, snapshot.pinnedSha);
+    assert.equal(graph.body.match, "candidate");
+    assert.equal((await request("passkey_options", dev.token)).status, 403);
+    assert.equal((await request("passkey_assert", lead.token, { authenticatorData: "AA" })).status, 403);
+    const options = await request("passkey_options", lead.token, { purpose: "register" });
+    assert.equal(options.status, 200);
+    assert.equal(options.body.rpId, "127.0.0.1");
     const created = await request("ticket_create", dev.token, { question: "When is the demo freeze?", confirmed: true, idempotency_key: "http-smoke-ticket" });
     assert.equal(created.status, 200);
     const ticketId = created.body.ticket.id;
@@ -83,7 +95,7 @@ async function main() {
       const response = await fetch(`${base}/api/bolna/callback`, { method: "POST", headers: { "Content-Type": "application/json", ...(authorized ? { Authorization: `Bearer ${callbackKey}` } : {}) }, body: JSON.stringify({ id: "http_smoke_execution", status: "completed" }) });
       assert.equal(response.status, authorized ? 200 : 401);
     }
-    console.log("FIXTURE production HTTP smoke passed: landing/static-motion SSR, legacy board-key redirect, workspace route, session/leader gates, ticket resolution, persisted read-back and callback auth. No provider request or call.");
+    console.log("FIXTURE production HTTP smoke passed: landing/static-motion SSR, legacy board-key redirect, board/team/leader routes, scoped graph, passkey/session/leader gates, ticket resolution, persisted read-back and callback auth. No provider request or call.");
   } finally {
     if (server.exitCode === null && server.signalCode === null) {
       const exited = new Promise<void>(resolve => server.once("exit", () => resolve()));
