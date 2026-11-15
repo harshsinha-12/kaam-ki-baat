@@ -1,6 +1,6 @@
 # Call evaluation and improvement pipeline
 
-Status: implementation design requested by the user, not a running evaluation pipeline. The application core is implemented; evaluation recorder E1 remains planned in [plan.md](plan.md). Competition requirements are verified in [competition.md](competition.md).
+Status: implementation design requested by the user, not a running evaluation pipeline. The application core and metadata evaluation recorder are implemented; real-call evaluation remains unverified. Current results are tracked in [plan.md](plan.md), with commands in [voice setup](bolna/agent.md). Competition requirements are verified in [competition.md](competition.md).
 
 ## Intended loop
 
