@@ -27,7 +27,7 @@ function authenticator(rpId = "localhost") {
   let count = 0;
   const authData = (attested: boolean, flags = 0x05) => {
     const cnt = Buffer.alloc(4); cnt.writeUInt32BE(++count);
-    const parts = [sha(rpId), Buffer.from([flags | (attested ? 0x40 : 0)]), cnt];
+    const parts: Uint8Array[] = [sha(rpId), Buffer.from([flags | (attested ? 0x40 : 0)]), cnt];
     if (attested) {
       const cose = new Map<number, unknown>([[1, 2], [3, -7], [-1, 1], [-2, Buffer.from(jwk.x!, "base64url")], [-3, Buffer.from(jwk.y!, "base64url")]]);
       const len = Buffer.alloc(2); len.writeUInt16BE(credId.length);
