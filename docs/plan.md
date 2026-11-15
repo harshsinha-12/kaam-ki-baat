@@ -58,6 +58,7 @@ Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 ## 3. Current status — last verified 2026-11-15 ~14:20 IST (Claude, sandbox)
 
 | Thing | State | Evidence |
+| X1 local validation | PASS | 2026-11-15: npm install, npm run typecheck, npm test (28/28), npm run build; Node 25.9.0, Next 15.5.29 |
 | --- | --- | --- |
 | Domain core + 4 runtime tools + 3 specialists | **Implemented** | `lib/**`, commit on PR #2 |
 | Unit + vertical-slice tests | **28/28 pass** (`tsx --test`, Node 22) | run in Claude sandbox |
@@ -76,7 +77,7 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 
 | ID | Task | Owner | Status | Done when |
 | --- | --- | --- | --- | --- |
-| X1 | `npm install && npm run typecheck && npm test && npm run build`; fix breakages without weakening tests | Codex | todo | All four green; paste results in §3 |
+| X1 | `npm install && npm run typecheck && npm test && npm run build`; fix breakages without weakening tests | Codex | done (see X1 validation commit) | All four green; paste results in §3 |
 | U1 | **Pick the ONE approved Wispr meeting** (title/date or link) and confirm the demo repo = this repo | **User** | blocked (needs user) | Meeting ID recorded in decisions.md D-021 |
 | U2 | Name 1–3 consenting test participants; they consent on record (no phone numbers in git) | **User** | todo | Consent note per person (who, when, how) |
 | W1 | Wispr import: `get_meeting` + paginated transcript for U1 → `data/private/meeting.json` (`source: "LIVE"`, only decision/assignment passages, with char offsets) and `data/private/project.json` (real participants + tasks, ownership state from exact words) | Claude (has Wispr MCP) | blocked on U1 | `npm run snapshot` prints `LIVE snapshot` |
@@ -90,6 +91,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 · Codex · X1: install, full typecheck, 28 tests and production build passed locally; no source fix needed. Generated package-lock.json left uncommitted outside assigned files.
 
 - 2026-11-15 ~14:20 · Claude · `npm run demo:dry` against the real PR #2 snapshot found 4 defects, now fixed with regression tests: (1) interruption recovery repeated already-spoken facts; (2) Fix Navigator pointed at a test helper, not the regression test; (3) GitHub `skipped` checks (CodeRabbit) were mapped to `failure`; (4) the spoken line number was one line early. 28/28 tests pass. These were found BEFORE any call, so they are not the V1 call failure for F1.
 
