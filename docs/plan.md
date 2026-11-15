@@ -20,7 +20,7 @@ Demo script (≈90 s, must be >45 s on Bolna's own log):
 
 | Branch | Purpose | Who merges |
 | --- | --- | --- |
-| `main` | Reviewed work only. Tip `f7100a6` matches `origin/main` after fetch on 2026-11-15. | User |
+| `main` | Reviewed work only. Latest reviewed main documentation baseline is `17de40b`, containing merged PR #10 at `f7100a6`. | User |
 | `feat/evidence-core-spatial-specialists` (**PR #2**) | Merged into `main` at `457a6a0` by the user on 2026-11-15. | User |
 | `codex/demo-readiness` (**PR #8**) | Merged into `main` at `4d72575` on 2026-11-15. | User |
 | `docs/spatial-live-context-v2` (**PR #9**) | Merged into `main` at `c64d8bc` on 2026-11-15. Documentation only. | User |
@@ -58,47 +58,41 @@ Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 - **Fix Navigator** — target file + enclosing function + line + nearest test + `npm test -- <file>`; GitHub permalinks pinned to SHA. Never edits code.
 - **Evidence Verifier** — `lib/core/reconcile.ts` (deterministic): ownership state, PR open/merged, checks on the *current* SHA vs stale, last saved update. Never says "works in production".
 
-## 3. Current status — last verified 2026-11-15 (conflict resolved on `main` `f7100a6`)
+## 3. Current status — last verified 2026-11-15 (Codex live-demo worktree; merged PR #10 and main documentation update retained)
 
-Checkpoint: `f7100a62b4851a77191b9fe297d5b86ad2ca3b2e` (Merge pull request #10, 2026-11-15 14:23 IST). After `git fetch`, `main` matches `origin/main`. GitHub Actions `check` succeeded on PR #10; CodeRabbit was `SKIPPED`.
-
-The conflict was a status recheck stashed at `c64d8bc` ("Taking a full form") against the spatial-browser status already on `main`. Resolution follows the earlier recovery rule: keep the newer merged evidence, and keep the older notes that are still true. That recheck's "spatial v2 is only a proposal" and "41/41 tests" statements were true before PR #10 and are not the current status. Its distance table stays, updated to this commit. [Spatial live context v2](spatial-live-context-v2.md) remains the larger proposal. The browser slice on `main` is the implemented part: meeting on the left, code on the right, Leader Desk locked. Camera, passkey, and live-speech code are still absent.
-
-`npm test` this session: **50/50 pass** (`tsx --test`, Node v22.23.2, 2038 ms). `npm ci` installed 35 packages, including `@bolna/web-call` 3.0.1, which `package-lock.json` already pinned. A dev server started before that install returned 500 (`Can't resolve '@bolna/web-call'`). After `npm ci` and a restart, `GET /api/health` returned 200 with snapshot label `FIXTURE` and pinned SHA `63317bd`. Unauthenticated `POST /api/tools/get_my_brief` and `POST /api/spatial/tools/get_page_context` returned 401. The board page returned 200, showed the spatial connect form, and said it is waiting for a call. No participant token was connected.
-
-`next-env.d.ts` still has an uncommitted Next.js generated route reference and is not in this commit. `/Users/harshsinha/kaam-ki-baat-evaluation` is a clean `feat/post-call-evaluation` worktree at the same `f7100a6`. There is no `data/private/`, `data/runtime/`, or `docs/evals/`.
+Baseline includes merged PR #10 (`f7100a6`) and the main status reconciliation (`17de40b`). The earlier checkout recheck is preserved in the change log. The private import/runtime/configuration evidence below belongs to `/Users/harshsinha/kaam-ki-baat-github`; private files do not travel with Git. No relational database, camera selection, leader passkey or live STT is implemented.
 
 | Thing | State | Evidence |
 | --- | --- | --- |
-| Domain core + 4 runtime tools + 3 specialists | **Implemented** | `lib/**`, `app/api/tools/[tool]/route.ts`, `app/api/board/route.ts`, `app/api/health/route.ts`; still present at `f7100a6` |
-| Unit + vertical-slice tests | **50/50 pass** this session (`tsx --test`, Node v22.23.2) | 10 files in `tests/`. The spatial PR recorded the same 50/50 count on Node 20.20.0 |
-| Core typecheck, install, production build | **Pass recorded** on the spatial PR (Node 20.20.0, Next.js 15.5.29, TypeScript 5.9) | This session ran `npm ci` and `npm test` only. `npm run typecheck` and `npm run build` were not rerun |
-| CI workflow | **Passed** on PR #10 (`f7100a6`): GitHub Actions `check` `SUCCESS`; CodeRabbit `SKIPPED` | `gh pr view 10` on 2026-11-15. PR #8 and PR #9 checks had already succeeded |
-| Database | **None** | Append-only JSONL in code. `data/private/` and `data/runtime/` are absent, so there is no `events.jsonl` |
-| GitHub adapter (live) | **Code merged** in PR #7 at `6a5b2a3`. Earlier live read was on the G1 branch | This session did not repeat the live GitHub read. Fixture meeting remains synthetic. Fixture snapshot at `3795e28`: 28 files, 1 PR, 3 checks |
-| Demo dry run (real tool handlers, no Bolna) | Recorded earlier | `npm run demo:dry` was not rerun. It is not call evidence |
-| Developer MCP connections | **Earlier live catalogs**: Bolna 121 tools; Wispr 16 tools | Not rechecked this session. See [integrations.md](integrations.md) |
-| Wispr: approved meeting read end-to-end | **BLOCKED — needs user to pick the meeting** | No imported meeting |
-| HTTP callback path | **Local server is up on FIXTURE data** | Restarted `next dev` (Next.js 15.5.29) on port 3000 after installing `@bolna/web-call`. Health 200. Unauthenticated tool and spatial posts 401. Public tunnel URL was not called. Earlier 11-check FIXTURE smoke was not rerun |
-| Bolna agent wired to our endpoints | **Prepared, not created** | [voice setup](bolna/agent.md) and [browser setup](bolna/spatial-browser.md). No agent id. Awaits explicit agent-change authorization |
-| Evaluation recorder + board page | **On `main` via PR #8** | `lib/eval/recorder.ts`, `scripts/eval-call.ts`, `app/page.tsx`. `docs/evals/` does not exist |
-| Spatial browser workspace + Bolna relay | **On `main` via PR #10. Synthetic tests pass. The connect form rendered** | `app/components/SpatialWorkspace.tsx`, `app/api/spatial/**`, `lib/spatial/**`. Leader Desk locked. No connected workspace, microphone, or provider call. AirPods deferred |
-| Real calls >45 s (need 3) | **0** | No execution record and no placed call |
+| Domain core + 4 runtime tools + 3 specialists | **Implemented** | `lib/**`, commit on PR #2 |
+| Unit + vertical-slice tests | **52/52 pass** (`tsx --test`, Node 20.20.0 locally) | Prior 41 tests plus 9 spatial context, action/receipt, DOM executor, configuration and HTTP authentication tests |
+| Core typecheck (`tsconfig.core.json`) | **Pass** | local `npm run typecheck`, TypeScript 5.9 |
+| Install, full typecheck, production build locally | **Pass**: `npm install`, `npm ci`, `npm run typecheck`, `npm run build` | Node 20.20.0; `package-lock.json` pins dependencies; Next.js 15.5.29 |
+| CI workflow | **Passed** on PR #5 head `b63f4a8`; user merged it at `e005380`. PR #7 and main `6a5b2a3` CI passed; recovery PR CI pending | CI now uses `npm ci`, full typecheck, tests, Next build |
+| GitHub adapter (live) | **Verified live read** on G1 branch: PR #2 merged, with head and merge-SHA checks | Fixture snapshot at `3795e28`: 28 files, 1 PR, 3 checks; meeting remains synthetic |
+| Demo dry run (real tool handlers, no Bolna) | Works; output reviewed | `npm run demo:dry` — NOT call evidence |
+| Developer MCP connections | **Reconnected and catalogs verified live**: Bolna 121 tools; Wispr 16 tools | Codex configuration + remote MCP initialize/tools-list; Bolna account read passed. See [integrations.md](integrations.md) |
+| Wispr: approved meeting read end-to-end | **Verified LIVE**: complete transcript read; five exact hashed passages retained privately; Speaker 1 confirmed by user | `data/private/meeting-import.json`; no asserted PR match to this repository |
+| HTTP callback path | **Verified with FIXTURE data**: 11 local HTTP checks passed; public HTTPS unauthenticated POST returned 401 | Auth, brief, evidence, save/read-back, replay, ownership refusal, changes and board; NOT telephone evidence |
+| Bolna agent configuration | **Created and persisted read-back verified**: six functions, callbacks/auth/token mapping, spatial prompt and dynamic opening | [redacted profile](bolna/agent-profile.redacted.json); audio/context forwarding in a call remain unverified |
+| Evaluation recorder + board polish | **Recovered and implemented** from PR #6 without replacing PR #7 adapter | `lib/eval/recorder.ts`, `scripts/eval-call.ts`, `app/page.tsx`; real-call evaluation pending |
+| Real calls >45 s (need 3) | **0** | — |
+| Spatial browser workspace + Bolna relay | **Implemented; synthetic local checks pass** | `app/components/SpatialWorkspace.tsx`, `app/api/spatial/**`, `lib/spatial/**`; [setup and limits](bolna/spatial-browser.md). No browser visual/mic QA or provider call tested; Leader Desk locked, AirPods deferred |
 
 ## 3a. Distance to the final product
 
-Checked against `f7100a6` on 2026-11-15. Milestones 2, 3, 5, and 6 have code on `main`. Milestones 1 and 4 have not reached their product gates. The spatial workspace is part of the board surface. It is not a telephone call. MCP catalogs and the local FIXTURE server are not a telephone runtime.
+The browser slice from PR #10 is implemented; the larger [spatial v2 proposal](spatial-live-context-v2.md) still includes future camera, passkey, live-STT and native headset work. Text/HTTP previews and configured tools are not real voice-call evidence.
 
 | Product step | Where it is specified | What the checkout shows |
 | --- | --- | --- |
-| 1. Authorized meeting, repository, participants, storage, and callback | Milestone 1 and [context.md](context.md) | Meeting, participants, and consent are still open (U1, U2). No private meeting import. Local health and unauthenticated tool and spatial refusal were observed this session. Public tunnel URL was not rechecked. |
-| 2. Smallest service and typed evidence records | Milestone 2 | **Started.** `package.json`, `lib/`, `app/`, and `tests/` exist. Reconciliation and specialists are in code. No database file. |
-| 3. One brief and one verified task update | Milestone 3 | **Started in code.** Four tool handlers and the fixture smoke script exist. No saved update from an approved meeting is on disk. |
-| 4. Live voice tools on a real call | Milestone 4 and [integrations.md](integrations.md) | **Not started as a call.** Bolna configuration is drafted, including two optional browser tools. No agent has been created and no call has been placed. |
-| 5. Stored evaluation and a reviewed fix between calls | Milestone 5 and [evaluation-pipeline.md](evaluation-pipeline.md) | **Recorder started.** Code is merged. No eval file, and no V1/V2 replay. |
-| 6. Evidence board and demo record | Milestone 6 | **Board and spatial workspace started** in `app/page.tsx` and `app/components/SpatialWorkspace.tsx`. The connect form rendered locally. No real-call demo record. Deployment was not performed. |
+| 1. Authorized meeting, repository, participants, storage, callback | Milestone 1 and [context.md](context.md) | Source/repository and owner speaker mapping confirmed; complete approved Wispr read and private LIVE snapshot verified. JSONL storage and public HTTPS callback verified. Other testers/phone consent and numbers remain pending. |
+| 2. Small service and typed evidence | Milestone 2 | Implemented and tested; provenance retains source version, exact passage spans/hashes and immutable repository SHA. No relational database. |
+| 3. One brief and one verified task update | Milestone 3 | Nine-turn LIVE-source TEXT_PREVIEW passes with isolated persisted save/read-back and safe retry. No live task status was changed by the preview. |
+| 4. Live voice tools on a real call | Milestone 4 and [integrations.md](integrations.md) | Agent created, six callbacks/configuration read back, browser consent + opening brief + execution correlation implemented. Actual audio/context forwarding and DOM timing await a consenting call. |
+| 5. Stored evaluation and reviewed fix between calls | Milestone 5 and [evaluation-pipeline.md](evaluation-pipeline.md) | Recorder merged; no completed real call evaluation or V1/V2 voice replay yet. Generic-query retrieval defect was fixed from a text preview, not a phone call. |
+| 6. Evidence board and demo record | Milestone 6 | Board/spatial workspace implemented and owner access prepared privately. No real-call demo record or deployment. |
 
-The next product step is milestone 1: the user picks the one approved Wispr meeting. W1 stays blocked until that choice is recorded. Agent creation, a call, deployment, and merging still need their own instruction.
+Next product gate: owner opens the prepared workspace and explicitly starts a recorded browser test. Then retrieve the execution through the persisted correlation, evaluate it, and review a focused fix. Three consenting telephone calls over 45 seconds remain unverified; deployment/merging remain user-controlled.
 
 ## 4. Task board
 
@@ -107,13 +101,13 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | ID | Task | Owner | Status | Done when |
 | --- | --- | --- | --- | --- |
 | X1 | `npm install && npm run typecheck && npm test && npm run build`; fix breakages without weakening tests | Codex | done (PR #2 review; files and results in §3) | All four green; paste results in §3 |
-| U1 | **Pick the ONE approved Wispr meeting** (title/date or link) and confirm the demo repo = this repo | **User** | approved (source recorded privately; repository confirmed) | D-031/D-032 and private source approval recorded |
+| U1 | **Pick the ONE approved Wispr meeting** (title/date or link) and confirm the demo repo = this repo | **User** | approved (D-031/D-032; source details private) | Approval and private import recorded |
 | U2 | Name 1–3 consenting test participants; they consent on record (no phone numbers in git) | **User** | todo | Consent note per person (who, when, how) |
-| W1 | Wispr import: `get_meeting` + paginated transcript for U1 → `data/private/meeting.json` (`source: "LIVE"`, only decision/assignment passages, with char offsets) and `data/private/project.json` (real participants + tasks, ownership state from exact words) | Codex (explicit user-approved source) | doing (`codex/live-demo`) | `npm run snapshot` prints `LIVE snapshot` |
+| W1 | Wispr import: `get_meeting` + paginated transcript for U1 → `data/private/meeting.json` (`source: "LIVE"`, only decision/assignment passages, with char offsets) and `data/private/project.json` (real participants + tasks, ownership state from exact words) | Codex | verified LIVE locally on `codex/live-demo`; no confirmed PR match | `npm run snapshot` prints `LIVE snapshot` |
 | G1 | Harden GitHub adapter: pagination, rate-limit errors, unit test with mocked fetch; ensure checks for head SHA appear once CI runs | Codex | done (PR #7 merged at `6a5b2a3`) | 36 tests, typecheck, production build, and live GitHub fixture snapshot pass |
-| B1 | Tunnel: `npm run dev` + `cloudflared tunnel --url http://localhost:3000` (or ngrok); record URL in `.env.local` only | Codex / user machine | local server and cloudflared process observed 2026-11-15; public URL not rechecked | Local unauthenticated POST returned 401. Public URL stays in `.env.local` only |
-| B2 | **Needs user go-ahead (AGENTS.md gate).** Bolna agent "Kaam Ki Baat" via Bolna MCP: one persona (Hinglish), 4 custom functions → `$URL/api/tools/<name>`, Bearer `KKB_TOOL_KEY`, `call_token` from `user_data`. Write exact config to `docs/bolna/agent.md` (no secrets). Confirm schema with Bolna `search_docs` first | Codex | todo | `get_agent` shows 4 functions; config committed |
-| B3 | **Needs user go-ahead (AGENTS.md gate).** First real call (V1): `npm run call:token -- --participant <id> --consent "<who/when>"` → Bolna call with `user_data.call_token` | User + Codex | blocked on U2, B2 | Execution ID, duration >45 s, tool calls in `data/runtime/events.jsonl` |
+| B1 | Tunnel: `npm run dev` + `cloudflared tunnel --url http://localhost:3000` (or ngrok); record URL in `.env.local` only | Codex / user machine | production server/tunnel running in live-demo worktree; public HTTPS authentication verified | Public unauthenticated POST returned 401. URL stays in ignored local files |
+| B2 | **Authorized by user (D-033).** Bolna agent "Kaam Ki Baat" via Bolna MCP: one persona (Hinglish), 4 custom functions → `$URL/api/tools/<name>`, Bearer `KKB_TOOL_KEY`, `call_token` from `user_data`. Write exact config to `docs/bolna/agent.md` (no secrets). Confirm schema with Bolna `search_docs` first | Codex | agent created; 6 functions verified by persisted read-back; live call forwarding pending | All six functions read back; redacted profile committed |
+| B3 | **Consent and secure tester numbers required.** First real call (V1): `npm run call:token -- --participant <id> --consent "<who/when>"` → Bolna call with `user_data.call_token` | User + Codex | blocked on U2, B2 | Execution ID, duration >45 s, tool calls in `data/runtime/events.jsonl` |
 | E1 | Evaluation recorder: pull Bolna `get_execution` → `docs/evals/<callId>.md` (ID, agent version, duration, tool results, what was communicated, failures) | Codex | code on `main` via PR #8 (`4d72575`); real-call acceptance pending | 1 eval file per real call |
 | F1 | V1 failure → **dictate fix requirement with Wispr Flow** → implement → V2 replay of same scenario | Claude + user | todo | V1 vs V2 table in `docs/evals/` |
 | UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | code on `main` via PR #8 (`4d72575`); three-card visual QA not repeated at `f7100a6` | Screenshot in PR |
@@ -121,6 +115,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 · Codex · Live-demo lane: approved Wispr share resolved and full transcript read; five exact hashed passages retained privately, user-confirmed Speaker 1 mapping, LIVE snapshot with pinned-commit GitHub read and no invented PR link. Created Bolna agent; official v2 update plus persisted MCP read-back verified all six functions after MCP update failed to persist changed task tools. Nine-turn text preview found generic-query false candidates, now fixed with a regression test; unlinked briefs no longer imply exact code exists. Browser minting now requires fresh recording consent, prepares the authorized opening brief, stores consent/execution correlation and stops on consent withdrawal. 52/52 tests, full typecheck and production build passed; LIVE HTTP brief/context/consent preflight passed. No provider session or phone call started. Separate local `codex/live-demo-readiness` lane is preparing preflight/handoff; this lane avoids duplicating that work.
 
 - 2026-11-15 · Codex · Claimed W1/B2 live integration on `codex/live-demo`, based on merged PR #8, then rebased onto merged PR #9/#10 (`f7100a6`). User approved this repository and one shared Wispr note, confirmed Speaker 1 identity, and authorized Bolna agent setup/testing. Source URL and passages stay private. The source describes another product: no PR link is asserted. Actual telephone tests still require participant consent and securely supplied numbers. This lane preserves the merged spatial workspace and optional browser tools.
 

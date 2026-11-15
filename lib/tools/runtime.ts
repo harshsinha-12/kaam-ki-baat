@@ -58,7 +58,7 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       const facts = [
         { id: "decision", fact: `In "${meeting?.title ?? "the meeting"}", the team agreed: ${task.title}.` },
         { id: "status", fact: v.statements[0] ?? "There's no code evidence yet." },
-        { id: "next", fact: v.statements.slice(1, 3).join(" ") || "Next step: open the code and confirm it does what the meeting said." },
+        { id: "next", fact: v.statements.slice(1, 3).join(" ") || (task.prNumber == null ? "Next step: identify the matching repository or pull request before verifying this task." : "Next step: open the code and confirm it does what the meeting said.") },
       ];
       let conv = startConversation(callId, caller.participant.id, task.id, facts);
       conv.ledger = markAttempted(markAttempted(conv.ledger, "decision"), "status");
@@ -66,7 +66,7 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       conv.cards.evidence_verifier = { ...conv.cards.evidence_verifier, status: "has_reply", summary: v.statements.join(" ") };
       rt.conversations.set(callId, conv);
       return ok({
-        speak: `Hi ${caller.participant.name}. ${facts[0].fact} ${facts[1].fact} Want me to show you exactly where the code is?`,
+        speak: `Hi ${caller.participant.name}. ${facts[0].fact} ${facts[1].fact} ${task.prNumber == null ? "Want me to check this repository for a possible code match?" : "Want me to show you exactly where the code is?"}`,
         task: { id: task.id, title: task.title, ownership: v.reconciled.ownership, pr: v.reconciled.pr, checks: v.reconciled.checks, sha: short(v.reconciled.currentSha) },
         source: { meetingId: task.meetingId, passageId: passage?.id, speaker: passage?.speaker, label: rt.snapshot.label },
         pending: ["next"],
@@ -122,7 +122,7 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       const conv = rt.conversations.get(callId);
       if (!result.saved) {
         if (conv) conv.cards.evidence_verifier = { ...conv.cards.evidence_verifier, status: "error", summary: `Not saved: ${result.reason}` };
-        return { status: 409, body: { ok: false, saved: false, reason: result.reason, speak: `I couldn't save that — ${result.reason}. Nothing was changed.` } };
+        return { status: 409, body: { ok: false, saved: false, reason: result.reason, speak: `I couldn't save that — ${result.reason}. I don't have a verified saved update.` } };
       }
       if (conv) {
         conv.focus = { ...conv.focus, contextVersion: conv.focus.contextVersion + 1 };

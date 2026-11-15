@@ -20,6 +20,7 @@ export interface MeetingRecord {
   source: SourceLabel; // LIVE = read through Wispr MCP for an approved meeting
   approvedBy: string; // who approved this meeting for the project
   sourceVersion?: string; // provider modification timestamp or immutable source hash
+  sourceCreatedAt?: string; // provider record creation time, not an assumed meeting date
   fetchedAt?: string;
   transcriptHash?: string; // source transcript hash; full transcript stays private
 }

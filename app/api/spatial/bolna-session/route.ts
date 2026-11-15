@@ -1,4 +1,5 @@
-import { json, spatialAuth } from "@/lib/spatial/http";
+import { json, readBody, spatialAuth } from "@/lib/spatial/http";
+import { runTool } from "@/lib/tools/runtime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,17 +15,29 @@ export async function POST(req: Request) {
   if (process.env.KKB_ENABLE_WEB_CALLS !== "true" || !process.env.BOLNA_API_KEY || !process.env.BOLNA_AGENT_ID) {
     return json({ ok: false, error: "Browser calls are not enabled. Bolna agent setup and call authorization are still required." }, 503);
   }
+  const body = await readBody(req);
+  if (body?.consented !== true) return json({ ok: false, error: "Explicit consent to this browser test call and recording is required." }, 400);
   for (const [id, expiry] of minted) if (expiry <= Date.now()) minted.delete(id);
   const { callId, expiresAt } = auth.caller.session;
   if (minted.has(callId)) return json({ ok: false, error: "A browser call was already requested for this session. Issue a new participant token for another call." }, 409);
   minted.set(callId, Date.parse(expiresAt));
   try {
+    await auth.rt.store.append({ type: "web_call_consent", at: new Date().toISOString(), callId,
+      participantId: auth.caller.participant.id, recording: true, snapshotSha: auth.rt.snapshot.pinnedSha });
+    const brief = await runTool(auth.rt, "get_my_brief", { call_token: token });
+    if (brief.status !== 200 || typeof brief.body.speak !== "string") return json({ ok: false, error: "An authorized opening brief could not be prepared." }, 409);
     const response = await fetch("https://api.bolna.ai/web-call/freeswitch-session", {
       method: "POST", signal: AbortSignal.timeout(15000),
       headers: { Authorization: `Bearer ${process.env.BOLNA_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ agent_id: process.env.BOLNA_AGENT_ID, user_data: { call_token: token } }),
+      body: JSON.stringify({ agent_id: process.env.BOLNA_AGENT_ID, user_data: { call_token: token, opening_brief: brief.body.speak } }),
     });
     if (!response.ok) return json({ ok: false, error: "Bolna could not create a browser session. Issue a new participant token before retrying." }, 502);
-    return json(await response.json());
+    const session = await response.json() as Record<string, unknown>;
+    if (session.agent_id !== process.env.BOLNA_AGENT_ID || typeof session.run_id !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(session.run_id)) {
+      return json({ ok: false, error: "Bolna returned an unverified session identity." }, 502);
+    }
+    await auth.rt.store.append({ type: "call_execution", at: new Date().toISOString(), callId,
+      executionId: session.run_id, agentId: process.env.BOLNA_AGENT_ID, channel: "web" });
+    return json(session);
   } catch { return json({ ok: false, error: "Bolna session connection failed." }, 502); }
 }

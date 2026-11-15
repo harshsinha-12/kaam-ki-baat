@@ -1,0 +1,33 @@
+{
+  "name": "Kaam Ki Baat",
+  "verifiedAt": "2026-11-15T09:02:16.855574+00:00",
+  "configurationHash": "fd9de6aadb9644c7f11b30501006f63e8e9815249f00c73772c2e4198d141fb3",
+  "functions": [
+    "get_my_brief",
+    "get_task_evidence",
+    "get_changes",
+    "record_task_update",
+    "get_page_context",
+    "control_page"
+  ],
+  "model": "gpt-4.1-mini",
+  "transcriber": {
+    "provider": "sarvam",
+    "model": "saaras:v4",
+    "language": "hi"
+  },
+  "voice": {
+    "provider": "sarvam",
+    "model": "bulbul:v4-flash",
+    "voiceId": "simran_enhi_customer"
+  },
+  "welcome": "{{opening_brief}}",
+  "identity": "user_data.call_token → server session; never model-selected participant",
+  "callbacks": "Private HTTPS origin; Bearer server key; exact URLs/keys verified by persisted get_agent read-back",
+  "phoneCallsPlaced": 0,
+  "limitations": [
+    "Provider context substitution and audio quality not observed in a real call",
+    "MCP update accepted prompts but did not persist changed task tools; official v2 PUT persisted all six functions",
+    "No phone number/consent supplied; no telephone call placed"
+  ]
+}
