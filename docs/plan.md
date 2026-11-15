@@ -2,7 +2,7 @@
 
 ## Current status
 
-Planning and MCP setup are in progress. Application implementation is on hold pending further user context and an instruction to begin.
+Scoped implementation is authorized. The first Next.js/Zod/Vitest evidence foundation is committed to feat/evidence-core-spatial-specialists; dependencies, compilation, provider adapters, real calls, and deployment are not verified.
 
 ## Preparation
 
@@ -21,13 +21,13 @@ Planning and MCP setup are in progress. Application implementation is on hold pe
 - [ ] Read one user-selected, authorized Wispr meeting after authentication.
 - [ ] Incorporate the next context update and settle remaining scope decisions.
 
-## Future milestones — do not execute yet
+## Active milestones — implement with verification
 
-1. Confirm the meeting, repository, participants, consent, full participant guidelines, storage, and HTTPS callback setup. After implementation is authorized, prove a real Bolna call and an authorized Wispr meeting read as independent integration gates.
+1. Confirm the meeting, repository, participants, consent, full participant guidelines, storage, and HTTPS callback setup. Prove a real Bolna call and an authorized Wispr meeting read as independent integration gates.
 2. Create the smallest service and typed evidence records. Verify ownership ambiguity, PR state, mismatched check SHA, stale evidence, and permission boundaries with focused fixtures.
 3. Deliver one personalized brief and one confirmed, persisted task update, with idempotency and read-back verification.
 4. Connect the live voice runtime to the narrow application tools. Verify interruptions, code-switching, failed tools, and uncertainty handling.
 5. Implement the [evaluation pipeline](evaluation-pipeline.md): persist call snapshots, deterministic results, optional rubric judgments, suggestions, and agent versions. Complete at least three consenting calls strictly over 45 seconds, evaluate after each, review and apply a focused fix between calls, and replay a comparable scenario.
 6. Prepare the evidence board and demo record with exact results and known limitations. Deployment requires an explicit user instruction.
 
-The [inherited build schedule](reference/BUILD_PLAN.md) is a time-boxing reference within the verified [1–4 PM event build window](competition.md). Reserve time for calls and improvements before UI polish; a large evaluation framework must not consume the three-hour window. No teammates or live outcomes are assumed. Completed changes will be committed and pushed on a coordination branch with a concise PR when appropriate; application implementation and external operations remain subject to their separate scope.
+The [inherited build schedule](reference/BUILD_PLAN.md) is a time-boxing reference within the verified [1–4 PM event build window](competition.md). Reserve time for calls and improvements before UI polish; a large evaluation framework must not consume the three-hour window. No teammates or live outcomes are assumed. Completed changes will be committed and pushed on a coordination branch with a concise PR when appropriate; merge, deployment, sharing private meeting data, and external operations remain subject to their separate scope.

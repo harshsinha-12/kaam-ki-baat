@@ -1,6 +1,6 @@
 # Project context
 
-Status: initial handoff reviewed on 2026-11-15. Further context is expected. Application implementation is on hold.
+Status: initial handoff reviewed on 2026-11-15. The user has explicitly authorized application implementation. A test-first foundation is committed on feat/evidence-core-spatial-specialists; provider integrations and real calls remain unverified.
 
 ## Purpose and users
 
@@ -29,7 +29,7 @@ The latest user instructions establish Kaam Ki Baat as the only current name and
 Confirmed by the user:
 
 - Use Kaam Ki Baat, matching the repository name.
-- Integrate and maintain planning documentation; wait for more context before implementing the application.
+- Start scoped implementation now; preserve the previous planning and complete provider gates before claiming live integration.
 - Add and explore Bolna AI MCP and Wispr Flow MCP.
 - Validate the Bolna key before using it for operational work.
 - Commit and push completed documentation and future authorized implementation changes as work progresses.
