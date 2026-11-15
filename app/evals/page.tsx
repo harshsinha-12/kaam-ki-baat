@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { browserHandoff, parseBrowserHandoff } from "@/lib/auth/browser-handoff";
 import type { CallEvaluation, EvaluationDashboard, Json } from "@/lib/eval/dashboard";
 import s from "./evals.module.css";
 
@@ -24,28 +23,25 @@ function Detail({ call }: { call: CallEvaluation }) {
 }
 
 export default function Evals() {
-  const [key, setKey] = useState(""), [draft, setDraft] = useState(""), [data, setData] = useState<Data | null>(null);
-  const [error, setError] = useState(""), [selected, setSelected] = useState(""), [loading, setLoading] = useState(false), [tick, setTick] = useState(0);
-  useEffect(() => { setKey(browserHandoff().boardKey); }, []);
+  const [data, setData] = useState<Data | null>(null);
+  const [error, setError] = useState(""), [selected, setSelected] = useState(""), [loading, setLoading] = useState(true), [tick, setTick] = useState(0);
   useEffect(() => {
-    if (!key) return;
     let alive = true, busy = false;
     const refresh = async () => {
       if (busy) return; busy = true; if (alive) setLoading(true);
-      try { const r = await fetch("/api/evals", { headers: { Authorization: `Bearer ${key}` }, cache: "no-store", signal: AbortSignal.timeout(120000) }); const j = await r.json(); if (!r.ok) throw new Error(j.error || "Evaluations unavailable"); if (alive) { setData(j); setError(""); } }
+      try { const r = await fetch("/api/evals", { cache: "no-store", signal: AbortSignal.timeout(120000) }); const j = await r.json(); if (!r.ok) throw new Error(j.error || "Evaluations unavailable"); if (alive) { setData(j); setError(""); } }
       catch (e) { if (alive) setError(e instanceof Error ? e.message : "Refresh failed"); }
       finally { busy = false; if (alive) setLoading(false); }
     };
     void refresh(); const timer = setInterval(() => { if (!document.hidden) void refresh(); }, 30000);
     return () => { alive = false; clearInterval(timer); };
-  }, [key, tick]);
+  }, [tick]);
   const calls = data?.calls ?? [], current = calls.find(c => c.id === selected) ?? calls[0];
   const completed = calls.filter(c => c.status === "completed"), phone = completed.filter(c => c.channel !== "web-call" && c.duration !== null && c.duration > 45);
-  return <main className={s.page}><nav><a href="/">Kaam Ki Baat</a><div><a href="/team">Workspace ↗</a><span>Private call evaluations</span></div></nav>
-    <header className={s.hero}><div><span className={s.eyebrow}>Observe · evaluate · improve</span><h1>Every call.<br /><em>The whole picture.</em></h1><p>Conversations, context and tools — with the evidence behind each result.</p></div><div className={s.refresh}><span className={s.live} data-stale={data?.stale}>{data?.stale ? "Saved snapshot" : data ? "Bolna connected" : "Operator access"}</span>{data && <small>Updated {date(data.syncedAt)} IST<br />Refreshes every 30s · provider sync at most once/minute</small>}<button disabled={!key || loading} onClick={() => setTick(t => t + 1)}>{loading ? "Refreshing…" : "Refresh calls ↻"}</button></div></header>
-    {!key && <form className={s.unlock} onSubmit={e => { e.preventDefault(); try { const value = draft.trim(); const url = new URL(value); const k = parseBrowserHandoff(url.hash, url.search).boardKey; if (!k) throw new Error(); setKey(k); setDraft(""); } catch { setError("Use your private operator link containing the board access capability."); } }}><h2>Open your private evaluations</h2><p>Call transcripts and source context are restricted to the operator. Paste your prepared operator link to continue.</p><label>Private operator link<input type="password" value={draft} onChange={e => setDraft(e.target.value)} autoComplete="off" required /></label><button>View evaluations →</button></form>}
+  return <main className={s.page}><nav><a href="/">Kaam Ki Baat</a><div><a href="/team">Workspace ↗</a><span>Call evaluations</span></div></nav>
+    <header className={s.hero}><div><span className={s.eyebrow}>Observe · evaluate · improve</span><h1>Every call.<br /><em>The whole picture.</em></h1><p>Conversations, context and tools — with the evidence behind each result.</p></div><div className={s.refresh}><span className={s.live} data-stale={data?.stale}>{data?.stale ? "Saved snapshot" : data ? "Bolna connected" : loading ? "Loading calls…" : "Calls unavailable"}</span>{data && <small>Updated {date(data.syncedAt)} IST<br />Refreshes every 30s · provider sync at most once/minute</small>}<button disabled={loading} onClick={() => setTick(t => t + 1)}>{loading ? "Refreshing…" : "Refresh calls ↻"}</button></div></header>
     {error && <p role="alert" className={s.error}>{error}</p>}{data?.warnings.map(w => <p key={w} className={s.warning}>{w}</p>)}
     {data && <><section className={s.stats} aria-label="Call summary">{[[calls.length, "Total attempts"], [completed.length, "Completed conversations"], [phone.length, "Phone calls over 45s"], [calls.reduce((n, c) => n + c.tools.length, 0), "Recorded tool calls"]].map(([n, label]) => <article key={label}><strong>{n}</strong><span>{label}</span></article>)}</section><section className={s.chart} aria-label="Call duration chart"><h2>Call history <span>Seconds · the duration gate is 45s</span></h2><div>{[...calls].reverse().map((c, i) => <button key={c.id} onClick={() => setSelected(c.id)} aria-label={`Select call ${i + 1}, ${c.duration ?? "unknown"} seconds`}><span>C{i + 1}</span><div><i style={{ width: `${Math.max(1, (c.duration ?? 0) / Math.max(180, ...calls.map(x => x.duration ?? 0)) * 100)}%` }} data-failed={c.status !== "completed" || c.termination === "agent_voice_error"} /></div><small>{c.duration ?? "—"}s</small></button>)}</div></section><div className={s.workspace}><aside><h2>All calls <span>{calls.length}</span></h2>{calls.map(c => <button key={c.id} aria-pressed={current?.id === c.id} onClick={() => setSelected(c.id)}><div><strong>{c.channel === "web-call" ? "Browser" : "Phone"}</strong><span>{c.duration ?? "—"}s</span></div><time>{date(c.createdAt)}</time><small>{c.status} · {c.tools.length} tools</small></button>)}</aside>{current ? <Detail key={current.id} call={current} /> : <p>No calls found. New calls appear after the next refresh.</p>}</div></>}
-    <footer className={s.footer}>Read-only Bolna API · immutable private evaluation history · no calls or agent changes from this page</footer>
+    <footer className={s.footer}>Read-only Bolna API · immutable evaluation history · no calls or agent changes from this page</footer>
   </main>;
 }

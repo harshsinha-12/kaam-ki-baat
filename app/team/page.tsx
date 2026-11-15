@@ -7,7 +7,7 @@ import type { ConfirmedFocus, FocusSnapshot } from "@/lib/focus/input-contracts"
 import { AgentGlyph } from "../components/AgentGlyph";
 import { CodeFocus, type CodeSourceRequest } from "../components/CodeFocus";
 import type { CodeSourceFocus } from "@/lib/codegraph/source";
-import { key, sessionToken, zone } from "../zones/client";
+import { connectWorkspaceSession, key, zone } from "../zones/client";
 import s from "../zones/zones.module.css";
 import { FlowRail } from "./FlowRail";
 import { flowReducer, initialFlow } from "./flow-state";
@@ -26,7 +26,6 @@ export default function Team() {
   const [flow, dispatchFlow] = useReducer(flowReducer, initialFlow);
   const flowRequestId = useRef(0);
   const [expanded, setExpanded] = useState(false);
-  const [sessionLink, setSessionLink] = useState("");
   const [connecting, setConnecting] = useState(true);
   const [asking, setAsking] = useState(false);
   const [finding, setFinding] = useState(false);
@@ -54,10 +53,10 @@ export default function Team() {
   const refreshSession = useCallback(async () => {
     setConnecting(true); setError(""); setMeetings([]); setMeetingId(""); setMem(null);
     try {
-      if (!sessionToken()) { setMe(null); return; }
+      await connectWorkspaceSession();
       const r = await zone<Me>("me");
       if (r.status !== 200 || !r.data.participant) {
-        setMe(null); setError("Your session has expired or is unavailable. Ask your team lead for a new personal session link."); return;
+        setMe(null); setError("The workspace could not connect. Please retry."); return;
       }
       setMe(r.data);
       const sources = await zone<{ meetings: Meeting[] }>("memory_sources");
@@ -66,14 +65,6 @@ export default function Team() {
     finally { setConnecting(false); }
   }, []);
   useEffect(() => { void refreshSession(); }, [refreshSession]);
-  const connect = async () => {
-    try {
-      const value = sessionLink.trim();
-      const token = value.includes("#") ? new URLSearchParams(value.slice(value.indexOf("#") + 1)).get("t") : value;
-      if (!token || !/^[A-Za-z0-9_-]{16,256}$/.test(token)) { setError("Paste the complete personal session link your team lead shared with you."); return; }
-      sessionStorage.setItem("kkb_session", token); setSessionLink(""); await refreshSession();
-    } catch { setError("This browser could not save the session. Allow session storage and try again."); }
-  };
   const connected = Boolean(me?.participant);
   const selectSpace = useCallback(async (zoneName: "team_memory" | "leader_desk" | "code_navigator") => {
     try {
@@ -154,16 +145,10 @@ export default function Team() {
           <h2 id="workspace-heading">Your project, in context.</h2>
           <p>Connect your repository. Ask a question. Follow the code.</p>
         </div>
-        <div className={s.connection} role="status"><span className={connected ? s.ok : s.warn}>●</span> {connecting ? "Checking your session…" : connected ? `Connected as ${me!.participant!.name}` : "Connect your personal session"}</div>
+        <div className={s.connection} role="status"><span className={connected ? s.ok : s.warn}>●</span> {connecting ? "Connecting workspace…" : connected ? "Workspace connected" : "Workspace unavailable"}</div>
       </section>
       <FlowRail stage={flow.stage} busy={flow.busy} branch={flow.branch} />
-      {!connected && !connecting && <section className={s.connectCard} aria-label="Connect to workspace">
-        <div><h2>Your workspace starts with a personal link</h2><p>Your team lead shares a link that gives you access to your permitted meetings and repository. Paste it here to connect.</p></div>
-        <form className={s.row} onSubmit={e => { e.preventDefault(); void connect(); }}>
-          <input className={s.input} type="password" autoComplete="off" value={sessionLink} onChange={e => setSessionLink(e.target.value)} placeholder="Paste your personal session link" aria-label="Personal session link" />
-          <button className={`${s.btn} ${s.primary}`} disabled={!sessionLink.trim() || connecting}>Connect</button>
-        </form>
-      </section>}
+      {!connected && !connecting && <button className={s.btn} onClick={() => void refreshSession()}>Retry connection</button>}
       {connected && <ProjectConnection selectedZone={focus} repository={me!.snapshot?.repository ?? "harshsinha-12/kaam-ki-baat"} onConnected={connectProject} />}
       {connected && <FocusInputControls compact key={me!.participant!.name} onConfirmedFocus={followFocus} />}
       {error && <p className={s.bad} role="alert">{error}</p>}

@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   const release = await acquireLease(rt.store, `project-voice:${auth.actor.sessionId}`, 120000);
   if (!release) return NextResponse.json({ ok: false, error: "A voice session is already being created." }, { status: 409 });
   try {
-    const { token, session } = await issueCallSession(rt.store, { participantId: auth.actor.participant.id, meetingIds: auth.actor.meetingIds, repository: rt.snapshot.repository, consentRecordedBy: "Named participant explicitly started a browser project-guide call and consented to recording", scenario: "repository-project-guide", ttlMinutes: 30 });
+    const { token, session } = await issueCallSession(rt.store, { participantId: auth.actor.participant.id, meetingIds: auth.actor.meetingIds, repository: rt.snapshot.repository, consentRecordedBy: "Browser user explicitly started a project-guide call and consented to recording; workspace access does not verify personal identity", scenario: "repository-project-guide", ttlMinutes: 30 });
     await rt.store.append(ev("project_voice_binding", session.callId, { deviceSessionId: auth.actor.sessionId, participantId: auth.actor.participant.id }));
     const selectedZone = focusState(await rt.store.all(), auth.actor.sessionId).zone ?? "code_navigator";
     await rt.store.append({ type: "web_call_consent", at: new Date().toISOString(), callId: session.callId, participantId: auth.actor.participant.id, recording: true, snapshotSha: rt.snapshot.pinnedSha });

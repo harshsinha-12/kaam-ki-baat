@@ -1,6 +1,6 @@
 # Call evaluation page
 
-Open **Call evals** from the home page, or visit `/evals`. The operator's prepared link carries `#b=<board capability>`; the page consumes it into memory and removes it from the URL. Calls are restricted by `KKB_BOARD_KEY`, sent in an Authorization header. Anonymous visitors receive the page shell only. Private transcripts, source passages and credentials never enter Git or public prerendered HTML.
+Open **Call evals** from the home page, or visit `/evals` directly. On the user's explicit request (2026-11-15), the page and `/api/evals` no longer require a token or private operator link. Anyone who can reach the app can read evaluations, including transcripts and captured context. The client fetches automatically and refreshes without credentials. Responses retain `Cache-Control: private, no-store`; provider keys remain server-only and redaction still excludes credentials, phone numbers and recording URLs. Evaluation data stays outside Git and prerendered HTML.
 
 The page shows all attempts, including failures and short calls, with duration, termination, agent version, transcript delivery flags, actual function arguments/results, call-time context/settings, latency, pipeline logs and authored reviews. Configured tools and preflight requests are separate from actual provider function counts. Deterministic checks do not establish speech quality, organizer eligibility or independently verified saved actions.
 

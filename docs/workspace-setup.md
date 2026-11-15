@@ -1,5 +1,11 @@
 # Workspace setup and remaining integrations
 
+## Direct workspace entry
+
+Following the user's explicit request on 2026-11-15, open `/team` without a personal session link. The page automatically connects through `POST /api/workspace-session`, reuses an existing valid device session, and replaces a missing/expired session with a separate browser session for the first non-leader member in the selected snapshot. This exposes that member's existing workspace permissions to app visitors; it does not verify their identity. The server chooses the member and verifies the persisted session before returning it. A leader-only snapshot returns an unavailable error rather than issuing leader access. Retry connection is available for service outages.
+
+The session stays in browser memory and, when available, session storage. Existing prepared device links still work. Leader decisions continue to require verification, and opening the workspace does not start a voice call or record consent. Evaluations also [open directly](evals/dashboard.md) without an operator token.
+
 ## Public GitHub repositories
 
 A public URL such as `https://github.com/harshsinha-12/kaam-ki-baat` identifies the selected repository. Public PR/files/check API reads work without a token. On 2026-11-15, the actual adapter, with its token explicitly disabled, read merged PR #13, six changed files and two checks for head `d3d0232818a7cd13c3f7db03738a2c8fe1fe7cf5`. This is a live public GitHub read, separate from fixture meeting evidence.

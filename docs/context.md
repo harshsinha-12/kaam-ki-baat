@@ -12,6 +12,8 @@ Initial target users are small engineering and hackathon teams, junior engineers
 
 ## Scope
 
+On 2026-11-15 the user explicitly requested removal of the call-evaluation token/private-link gate and the workspace personal-link step. `/evals` and `/api/evals` open directly, exposing evaluations, transcripts and captured context to anyone who can reach the app. `/team` automatically issues or reuses a browser device session in the first non-leader member's existing snapshot scope; visitors share that workspace scope without verifying personal identity. Provider credentials remain server-only and redacted; meeting/repository scope, leader verification and explicit voice/recording consent remain enforced.
+
 The handoff's proposed MVP is one specifically authorized meeting, one selected GitHub repository, and three personalized task briefs. A Bolna call provides a short brief, answers evidence-backed follow-ups, and records a confirmed task update in our own store only after verifying persistence.
 
 Keep these states distinct: mentioned / proposed / accepted ownership; open / closed-unmerged / merged PR; pending / passed / failed checks for an exact SHA; user-reported completion / verified completion. Deployment needs its own evidence.

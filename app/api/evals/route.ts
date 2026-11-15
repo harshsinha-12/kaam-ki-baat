@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 import { readDashboard, syncDashboard } from "@/lib/eval/dashboard-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer" };
-export async function GET(req: Request) {
-  const expected = process.env.KKB_BOARD_KEY ?? "";
-  const supplied = req.headers.get("Authorization")?.replace(/^Bearer /, "") ?? "";
-  if (!expected || Buffer.byteLength(supplied) !== Buffer.byteLength(expected) || !timingSafeEqual(Buffer.from(supplied), Buffer.from(expected))) return NextResponse.json({ error: "Open your private operator evaluation link to view calls." }, { status: 401, headers });
+export async function GET() {
   try { return NextResponse.json({ ok: true, ...await syncDashboard(), stale: false }, { headers }); }
   catch {
     const saved = await readDashboard().catch(() => null);
