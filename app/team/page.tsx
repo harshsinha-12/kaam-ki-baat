@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CodeGraphView, type ViewGraph } from "../components/CodeGraphView";
 import { ProjectConnection, type ConnectedProject } from "../components/ProjectConnection";
 import { FocusInputControls } from "../components/FocusInputControls";
-import type { ConfirmedFocus } from "@/lib/focus/input-contracts";
+import type { ConfirmedFocus, FocusSnapshot } from "@/lib/focus/input-contracts";
 import { CodeFocus } from "../components/CodeFocus";
 import { key, sessionToken, zone } from "../zones/client";
 import s from "../zones/zones.module.css";
@@ -56,17 +56,29 @@ export default function Team() {
     } catch { setError("This browser could not save the session. Allow session storage and try again."); }
   };
   const connected = Boolean(me?.participant);
+  const selectSpace = useCallback(async (zoneName: "team_memory" | "leader_desk" | "code_navigator") => {
+    try {
+      const state = await zone<FocusSnapshot>("focus-input");
+      if (state.status !== 200) throw new Error("Focus connection unavailable");
+      if (state.data.input.provider === "airpods") throw new Error("Switch to Manual to select by click while AirPods owns the input.");
+      const result = await zone("focus", { zone: zoneName, provider: state.data.input.provider, seq: state.data.focus.seq + 1, inputEpoch: state.data.input.epoch });
+      if (result.status !== 200) throw new Error(result.data.error ?? "Selection could not be saved");
+      setFocus(zoneName);
+    } catch (e) { setError(e instanceof Error ? e.message : "Selection failed. Try again."); }
+  }, []);
   const connectProject = useCallback((project: ConnectedProject) => {
     setGa({ graph: project.graph, sha: project.sha, repository: project.repository, seed: null, match: "candidate", explanation: [], subgraph: { nodes: [] } });
-    setFocus("code_navigator");
-  }, []);
+    void selectSpace("code_navigator");
+  }, [selectSpace]);
   const followFocus = useCallback((next: ConfirmedFocus) => {
     if (next.zone) setFocus(next.zone);
   }, []);
   // Answers from the leader arrive here, also after a reconnect.
   useEffect(() => {
     if (!connected) return;
-    const poll = () => zone<{ answered: Ticket[]; pending: Ticket[] }>("deliveries").then((r) => r.status === 200 && r.data.answered && setInbox({ answered: r.data.answered, pending: r.data.pending })).catch(() => setError("Answers could not refresh. Retrying…"));
+    const poll = () => zone<{ answered: Ticket[]; pending: Ticket[] }>("deliveries").then((r) => {
+      if (r.status === 200 && r.data.answered) { setInbox({ answered: r.data.answered, pending: r.data.pending }); setError(previous => previous === "Answers could not refresh. Retrying…" ? "" : previous); }
+    }).catch(() => setError("Answers could not refresh. Retrying…"));
     poll(); const id = setInterval(poll, 3000); return () => clearInterval(id);
   }, [connected]);
 
@@ -121,16 +133,16 @@ export default function Team() {
           <button className={`${s.btn} ${s.primary}`} disabled={!sessionLink.trim() || connecting}>Connect</button>
         </form>
       </section>}
-      {connected && <ProjectConnection repository={me!.snapshot?.repository ?? "harshsinha-12/kaam-ki-baat"} onConnected={connectProject} />}
+      {connected && <ProjectConnection selectedZone={focus} repository={me!.snapshot?.repository ?? "harshsinha-12/kaam-ki-baat"} onConnected={connectProject} />}
       <div className={s.setupRow}>
         <details className={s.setupDisclosure}><summary>Camera &amp; head tracking</summary><p className={s.setupHint}>Choose Webcam, start camera, then calibrate facing forward. Look left for meeting context, center for the leader, and right for code. Head movement highlights; activation is explicit.</p>{connected ? <FocusInputControls key={me!.participant!.name} onConfirmedFocus={followFocus} /> : <p>Connect your personal session to enable camera controls.</p>}</details>
         <details className={s.setupDisclosure}><summary>How to use this workspace</summary><p className={s.setupHint}>Connect the approved GitHub URL above to open its graph. Start the voice guide to ask about code and documentation. Team Memory answers from approved meeting notes; unclear decisions can be sent to the verified team leader. Camera is off until you start it, and video stays on your device.</p></details>
       </div>
       {error && <p className={s.bad} role="alert">{error}</p>}
       <div className={s.zones} role="group" aria-label="Workspace areas">
-        <button className={`${s.zbtn} ${focus === "team_memory" ? s.zbtnOn : ""}`} disabled={!connected} aria-pressed={focus === "team_memory"} onClick={() => setFocus("team_memory")}><div className={s.label}>← Look left · meeting context</div>Team Memory</button>
-        <button className={`${s.zbtn} ${s.lock} ${focus === "leader_desk" ? s.centerSelected : ""}`} disabled title={me?.zones?.leader_desk?.reason ?? "Leader access requires a verified leader session"}><div className={s.label}>↑ Face forward · access protected</div>Leader Desk</button>
-        <button className={`${s.zbtn} ${focus === "code_navigator" ? s.zbtnOn : ""}`} disabled={!connected} aria-pressed={focus === "code_navigator"} onClick={() => setFocus("code_navigator")}><div className={s.label}>Look right → · codebase</div>Code Navigator</button>
+        <button className={`${s.zbtn} ${focus === "team_memory" ? s.zbtnOn : ""}`} disabled={!connected} aria-pressed={focus === "team_memory"} onClick={() => void selectSpace("team_memory")}><div className={s.label}>← Look left · meeting context</div>Team Memory</button>
+        <button className={`${s.zbtn} ${s.lock} ${focus === "leader_desk" ? s.centerSelected : ""}`} disabled={!connected} aria-pressed={focus === "leader_desk"} onClick={() => void selectSpace("leader_desk")} title={me?.zones?.leader_desk?.reason ?? "Leader access requires a verified leader session"}><div className={s.label}>↑ Face forward · access protected</div>Leader Desk</button>
+        <button className={`${s.zbtn} ${focus === "code_navigator" ? s.zbtnOn : ""}`} disabled={!connected} aria-pressed={focus === "code_navigator"} onClick={() => void selectSpace("code_navigator")}><div className={s.label}>Look right → · codebase</div>Code Navigator</button>
       </div>
 
       {focus === "leader_desk" && <section className={`${s.card} ${s.activeC} ${s.leaderHint}`} role="status"><div><div className={s.label}>Center selected</div><h2>Leader Desk</h2><p>Charan is the team leader. Use the project voice guide above to clear repository doubts. Human-approved decisions require leader verification.</p></div><a className={s.btn} href="/leader">Leader verification ↗</a></section>}

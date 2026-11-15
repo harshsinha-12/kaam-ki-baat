@@ -26,3 +26,23 @@ test("project voice tool works without a meeting task and enforces repository ac
   assert.equal((await runTool(rt,"get_project_context",{call_token:token,question:"authorize"})).status,403);
   assert.equal((await runTool(rt,"get_project_context",{call_token:"invalid"})).status,401);
 });
+test("the same voice session follows current confirmed head selection without leader privilege", async () => {
+  const s=snapshot(),store=new EventStore(null),rt={snapshot:s,store,conversations:new Map()};
+  s.meetings=[{id:"allowed",title:"Team notes",source:"FIXTURE",approvedBy:"test"}];
+  s.passages=[{kind:"meeting",id:"allowed#1",meetingId:"allowed",charStart:0,charEnd:20,text:"Permitted team note",visibility:"participant"},{kind:"meeting",id:"private#1",meetingId:"private",charStart:0,charEnd:12,text:"PRIVATE NOTE",visibility:"participant"}];
+  s.participants[0].meetingIds=["allowed"];
+  const {issueDeviceSession}=await import("../lib/zones/identity");
+  const {ev}=await import("../lib/zones/state");
+  const device=await issueDeviceSession(store,s,{participantId:"member",deviceLabel:"synthetic camera"});
+  const {token,session}=await issueCallSession(store,{participantId:"member",meetingIds:["allowed"],repository:s.repository,consentRecordedBy:"synthetic",scenario:"project-test"});
+  await store.append(ev("project_voice_binding",session.callId,{deviceSessionId:device.session.sessionId,participantId:"member"}));
+  await store.append(ev("focus_input",device.session.sessionId,{provider:"webcam",epoch:1}));
+  for(const [index,zone]of ["team_memory","code_navigator","leader_desk"].entries()){
+    await store.append(ev("focus",device.session.sessionId,{zone,provider:"webcam",seq:index+1,inputEpoch:1}));
+    const r=await runTool(rt,"get_project_context",{call_token:token,question:"What is the context?"});
+    assert.equal(r.status,200);assert.equal(r.body.selectedZone,zone);
+    assert.ok(!JSON.stringify(r.body).includes("PRIVATE NOTE"));
+    if(zone==="team_memory")assert.ok(JSON.stringify(r.body).includes("Permitted team note"));
+  }
+  assert.equal((await store.all()).filter(e=>e.type==="zone"&&["step_up","activation","decision"].includes(e.kind)).length,0);
+});
