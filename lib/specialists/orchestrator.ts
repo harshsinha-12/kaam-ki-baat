@@ -126,8 +126,10 @@ export function handleTurn(
   }
 
   // Interruption recovery: answer first, then return to ONE important unfinished fact.
-  // A fact gets its first attempt in the brief and at most one recovery attempt.
-  const pending = outstandingFacts(c.ledger).filter((f) => f.attempts < 2);
+  // Resume only facts that were never said (e.g. cut off by an interruption),
+  // and skip any fact this answer already covers. Never nag with repeats.
+  const norm = (x: string) => x.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const pending = outstandingFacts(c.ledger).filter((f) => f.attempts === 0 && !norm(spoken).includes(norm(f.fact)));
   const resumed = pending.slice(0, 1);
   if (resumed.length) {
     spoken += ` Also, before I forget: ${resumed[0].fact}`;

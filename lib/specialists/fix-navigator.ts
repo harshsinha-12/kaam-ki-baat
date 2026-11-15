@@ -32,8 +32,9 @@ export function fixNavigator(snapshot: EvidenceSnapshot, findings: CodeFinding[]
 
 function findTest(snapshot: EvidenceSnapshot, target: CodeFinding) {
   const base = target.path.split("/").pop()!.replace(/\.[tj]sx?$/, "");
-  for (const f of snapshot.files) {
-    if (!isTestPath(f.path)) continue;
+  // Real test files first (*.test.*), helpers/fixtures last.
+  const tests = snapshot.files.filter((f) => isTestPath(f.path)).sort((a, b) => Number(/\.test\./.test(b.path)) - Number(/\.test\./.test(a.path)));
+  for (const f of tests) {
     const lines = f.content.split("\n");
     const idx = lines.findIndex((l) => (target.symbol && l.includes(target.symbol)) || l.includes(`/${base}"`) || l.includes(`/${base}'`));
     if (idx >= 0) {

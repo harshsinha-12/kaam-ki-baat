@@ -13,7 +13,8 @@
     "test": "tsx --test tests/*.test.ts",
     "snapshot": "tsx scripts/build-snapshot.ts",
     "snapshot:fixture": "tsx scripts/build-snapshot.ts --project data/demo/project.fixture.json",
-    "call:token": "tsx scripts/create-call.ts"
+    "call:token": "tsx scripts/create-call.ts",
+    "demo:dry": "tsx scripts/demo-dry-run.ts"
   },
   "dependencies": {
     "next": "^15.5.0",

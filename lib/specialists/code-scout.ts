@@ -36,7 +36,7 @@ export function codeScout(snapshot: EvidenceSnapshot, task: Task | undefined, ut
     const pathBonus = terms.some((t) => file.path.toLowerCase().includes(t)) ? 1 : 0;
     const isTest = /(^|\/)tests?\//.test(file.path) || /\.test\./.test(file.path);
     const symbol = enclosingSymbol(lines, best.line);
-    const start = Math.max(1, best.line + 1 - 1);
+    const start = best.line + 1; // exact matching line (1-based) — this is what gets spoken
     const end = Math.min(lines.length, best.line + 1 + 2);
     scored.push({
       kind: "code",

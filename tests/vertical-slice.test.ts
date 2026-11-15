@@ -19,6 +19,7 @@ describe("Code Scout", () => {
     assert.equal(f[0].path, "lib/core/persist-update.ts");
     assert.equal(f[0].match, "confirmed");
     assert.equal(f[0].symbol, "persistVerifiedUpdate");
+    assert.equal(f[0].lineStart, 3); // exact definition line, not the line before
     assert.match(f[0].url, /blob\/1111111aaaaaaa\/lib\/core\/persist-update\.ts#L/);
     assert.equal(f.find((x) => x.path === "lib/other.ts")?.match, "candidate");
   });
@@ -81,5 +82,24 @@ describe("authorization is server-side", () => {
     const w = await runTool(rt, "record_task_update", { call_token: token, task_id: "t_disputed", status: "in_progress", confirmed: true, idempotency_key: "k-abcdefgh" });
     assert.equal(w.body.saved, false);
     assert.match(String(w.body.speak), /couldn't save/);
+  });
+});
+
+describe("regressions found in dry run (2026-11-15, before any real call)", () => {
+  it("interruption recovery resumes the UNSAID fact, not facts already spoken", async () => {
+    const { rt, token } = await setup();
+    await runTool(rt, "get_my_brief", { call_token: token });
+    const nav = await runTool(rt, "get_task_evidence", { call_token: token, question: "wait, where is the code?" });
+    const spoken = String(nav.body.speak);
+    assert.doesNotMatch(spoken.split("before I forget")[1] ?? "", /team agreed/);
+    const ver = await runTool(rt, "get_task_evidence", { call_token: token, question: "ok, did CI pass?" });
+    assert.doesNotMatch(String(ver.body.speak), /before I forget/); // nothing unsaid left to resume
+  });
+  it("Fix Navigator prefers a real *.test.* file over a test helper", async () => {
+    const s = testSnapshot();
+    s.files.push({ path: "tests/helpers/aaa.ts", content: "// persistVerifiedUpdate fixture helper\n" });
+    const { fixNavigator } = await import("../lib/specialists/fix-navigator");
+    const plan = fixNavigator(s, codeScout(s, s.tasks[0], ""));
+    assert.equal(plan.test?.path, "tests/persist-update.test.ts");
   });
 });

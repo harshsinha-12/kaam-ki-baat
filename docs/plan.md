@@ -55,16 +55,17 @@ Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 - **Fix Navigator** — target file + enclosing function + line + nearest test + `npm test -- <file>`; GitHub permalinks pinned to SHA. Never edits code.
 - **Evidence Verifier** — `lib/core/reconcile.ts` (deterministic): ownership state, PR open/merged, checks on the *current* SHA vs stale, last saved update. Never says "works in production".
 
-## 3. Current status — last verified 2026-11-15 ~14:05 IST (Claude, sandbox)
+## 3. Current status — last verified 2026-11-15 ~14:20 IST (Claude, sandbox)
 
 | Thing | State | Evidence |
 | --- | --- | --- |
 | Domain core + 4 runtime tools + 3 specialists | **Implemented** | `lib/**`, commit on PR #2 |
-| Unit + vertical-slice tests | **25/25 pass** (`tsx --test`, Node 22) | run in Claude sandbox |
+| Unit + vertical-slice tests | **28/28 pass** (`tsx --test`, Node 22) | run in Claude sandbox |
 | Core typecheck (`tsconfig.core.json`) | **Pass** | tsc 6.0 in sandbox |
-| Full `npm install` / `npm run typecheck` / `npm run build` (Next.js) | **NOT RUN** — sandbox has no package-registry access | first person with network: run and record here (task X1) |
-| CI workflow | Added (`.github/workflows/ci.yml`); first run pending | GitHub Actions on PR #2 |
-| Fixture snapshot | Builder written; real repo files + real PR #2 + FIXTURE meeting | `npm run snapshot:fixture` |
+| Full `npm run typecheck` (Next types) locally | Not run in sandbox (no registry access); CI ran install + build green on `63317bd` | task X1 re-checks locally |
+| CI workflow (install, core typecheck, tests, Next build) | **Passed** on `63317bd` (2 runs: `check` success; CodeRabbit skipped) | GitHub check-runs API |
+| GitHub adapter (live) | **Works**: read real PR #2 (open, head `63317bd`), changed files, check runs | `npm run snapshot:fixture` → 27 files, 1 PR, 2 checks |
+| Demo dry run (real tool handlers, no Bolna) | Works; output reviewed | `npm run demo:dry` — NOT call evidence |
 | Wispr: approved meeting read end-to-end | **BLOCKED — needs user to pick the meeting** | — |
 | Bolna agent wired to our endpoints | **NOT STARTED** — needs public HTTPS URL (tunnel) | — |
 | Real calls >45 s (need 3) | **0** | — |
@@ -89,6 +90,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 ~14:20 · Claude · `npm run demo:dry` against the real PR #2 snapshot found 4 defects, now fixed with regression tests: (1) interruption recovery repeated already-spoken facts; (2) Fix Navigator pointed at a test helper, not the regression test; (3) GitHub `skipped` checks (CodeRabbit) were mapped to `failure`; (4) the spoken line number was one line early. 28/28 tests pass. These were found BEFORE any call, so they are not the V1 call failure for F1.
 
 - 2026-11-15 ~14:05 · Claude · Merged `main` into PR #2 branch (took main's docs). Replaced zod/vitest with dependency-free core + `tsx --test` (D-024). Added EventStore, call tokens, 3 specialists + orchestrator, 4 tools, board API/UI, snapshot builder, GitHub adapter, CI. Folded `OPUS_START.md` + `IMPLEMENTATION_STATUS.md` into this file.
 

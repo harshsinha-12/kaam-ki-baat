@@ -36,13 +36,14 @@ export function githubClient(repository: string, token = process.env.GITHUB_TOKE
     },
     async checksFor(sha) {
       const data = await get(`/commits/${sha}/check-runs?per_page=100`);
-      return (data.check_runs as any[]).map((c) => ({
+      // skipped / neutral runs carry no verdict about the code: drop them rather than call them failures.
+      return (data.check_runs as any[]).filter((c) => !(c.status === "completed" && ["skipped", "neutral"].includes(c.conclusion))).map((c) => ({
         kind: "check" as const,
         id: `check:${c.id}`,
         repository,
         commitSha: sha,
         name: c.name,
-        conclusion: c.status !== "completed" ? "pending" : c.conclusion === "success" ? "success" : c.conclusion === "cancelled" ? "cancelled" : "failure",
+        conclusion: c.status !== "completed" ? "pending" : c.conclusion === "success" ? "success" : c.conclusion === "cancelled" ? "cancelled" : "failure", // failure | timed_out | action_required
         url: c.html_url,
       }));
     },
