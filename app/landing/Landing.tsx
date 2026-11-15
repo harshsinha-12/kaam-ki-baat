@@ -422,11 +422,12 @@ function Architecture() {
 }
 
 function GraphSection() {
+  const reduced = useContext(ReducedMotion);
   const demos = graphDemo as { q: string; seed: { label: string; path: string; line: number } | null; nodes: string[]; explanation: string[] }[];
   const [i, setI] = useState(0);
   const [ref, inView] = useInView<HTMLDivElement>(0.25);
   const [manual, setManual] = useState(false);
-  useEffect(() => { if (!inView || manual) return; const id = setInterval(() => setI((x) => (x + 1) % demos.length), 5200); return () => clearInterval(id); }, [inView, manual, demos.length]);
+  useEffect(() => { if (reduced || !inView || manual) return; const id = setInterval(() => setI((x) => (x + 1) % demos.length), 5200); return () => clearInterval(id); }, [inView, manual, demos.length, reduced]);
   const d = demos[i];
   const g = graphData as unknown as ViewGraph;
   return (
@@ -436,7 +437,7 @@ function GraphSection() {
         <div className={s.chips}>{demos.map((x, k) => <button key={x.q} type="button" className={`${s.chip} ${k === i ? s.chipOn : ""}`} onClick={() => { setManual(true); setI(k); }}>{x.q}</button>)}</div>
         <div className={s.graphQ}>“{d.q}”</div>
         <ol className={s.graphSteps}>{d.explanation.map((l, k) => <li key={`${i}-${k}`} style={{ "--i": k } as CSSProperties}>{l.replace(/^\d+\.\s*/, "")}</li>)}</ol>
-        <div className={s.cite}>{g.nodes.length} nodes · {g.edges.length} edges · built from {g.repository} @ {g.sha.slice(0, 7)} — answers computed by the graph engine, not written by hand</div>
+        <div className={s.cite}>FIXTURE · static graph preview · {g.nodes.length} nodes · {g.edges.length} edges · selected files from {g.repository} @ {g.sha.slice(0, 7)}. This built-in preview is separate from optional Graphify retrieval.</div>
       </div>
     </div>
   );
@@ -517,8 +518,8 @@ export default function Landing() {
 
         <section id="graph" className={s.section}>
           <Reveal><div className={s.eyebrow}>The codebase, as a graph</div></Reveal>
-          <Reveal i={1}><h2 className={s.h2}>It doesn't grep. It <em>follows the wiring</em>.</h2></Reveal>
-          <Reveal i={2}><p className={s.lede}>Every file, function and test in this repo is a node. Imports, calls and coverage are edges. A question lands on a function, then walks to its callers and its test, and it tells you each hop it took.</p></Reveal>
+          <Reveal i={1}><h2 className={s.h2}>Find a function. <em>Follow the links</em>.</h2></Reveal>
+          <Reveal i={2}><p className={s.lede}>Selected files and symbols form a static graph. Text matching finds a candidate, then import and call hints connect nearby code and tests. These links help navigation; they do not prove runtime behavior or test coverage.</p></Reveal>
           <GraphSection />
         </section>
 
@@ -537,7 +538,7 @@ export default function Landing() {
             <div className={s.statusCol}><h3>Next</h3><ul>
               <li>Verify the configured voice path in a real call</li>
               <li>Three consented phone calls &gt; 45 s</li>
-              <li>Passkey step-up and webcam + AirPods providers</li>
+              <li>Real-device passkey validation, webcam + AirPods providers</li>
               <li>Optional Supabase realtime, once tests match</li>
             </ul></div>
           </div>

@@ -158,10 +158,12 @@ export function queryGraph(g: CodeGraph, question: string, files: { path: string
     { node: seed, via: "match", why: `“${best.hits.join("”, “")}” matched ${seed.kind} ${seed.label}` },
     { node: file, via: "defines", why: `defined in ${seed.path} at line ${seed.line}` },
     ...users.slice(0, 2).map((u) => ({ node: u, via: "uses" as const, why: `called from ${u.path}` })),
-    ...tests.slice(0, 1).map((t) => ({ node: t, via: "tests" as const, why: `covered by ${t.path}` })),
+    ...tests.slice(0, 1).map((t) => ({ node: t, via: "tests" as const, why: `related test file ${t.path} (static link, execution unverified)` })),
   ];
   const ids = new Set(path.map((p) => p.node.id));
-  const match = changedInPr.has(seed.path) ? "confirmed" : "candidate";
+  // Static graph links help locate code; they cannot confirm task semantics,
+  // coverage or completion merely because a file appears in a PR.
+  const match = "candidate";
   return {
     seed,
     path,
@@ -169,7 +171,7 @@ export function queryGraph(g: CodeGraph, question: string, files: { path: string
     match,
     explanation: [
       ...path.map((p, i) => `${i + 1}. ${p.why}`),
-      match === "confirmed" ? "The file is changed in the linked PR, so this is a confirmed match." : "Not linked to the PR, so treat it as a candidate until someone confirms.",
+      changedInPr.has(seed.path) ? "The file appears in the linked PR; this static graph result remains a candidate for review." : "Not linked to the PR, so treat it as a candidate until someone confirms.",
     ],
   };
 }
