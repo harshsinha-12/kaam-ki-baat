@@ -101,6 +101,7 @@ function useCountUp(target: number, run: boolean, ms = 1400) {
 // agent you select; a soft light cone lands on that agent.
 const TURN: Record<Zone, number> = { team_memory: -28, leader_desk: 0, code_navigator: 28 };
 function Listener({ zone }: { zone: Zone }) {
+  const reduced = useContext(ReducedMotion);
   const color = ZONE_HEX[zone];
   const look = zone === "team_memory" ? -1 : zone === "code_navigator" ? 1 : 0;
   return (
@@ -115,7 +116,7 @@ function Listener({ zone }: { zone: Zone }) {
           <rect x="50" y="78" width="20" height="22" rx="8" fill="#38342d" />
           <ellipse cx="60" cy="52" rx="31" ry="36" fill="url(#kkbSkin)" stroke="#34322c" />
           <path d="M29 46 C30 20 50 13 62 14 C80 15 92 27 91 46 C84 34 72 29 60 30 C47 31 36 37 29 46 Z" fill="url(#kkbHair)" />
-          <g style={{ transform: `translateX(${look * 6}px)`, transition: "transform .7s cubic-bezier(.16,1,.3,1)" }}>
+          <g style={{ transform: `translateX(${look * 6}px)`, transition: reduced ? "none" : "transform .7s cubic-bezier(.16,1,.3,1)" }}>
             <ellipse cx="49" cy="55" rx="2.6" ry="3.2" fill="#f2efe6" /><ellipse cx="71" cy="55" rx="2.6" ry="3.2" fill="#f2efe6" />
             <path d="M60 58 q-2 8 1 10" stroke="#4a473f" strokeWidth="1.6" fill="none" strokeLinecap="round" />
             <path d="M53 74 q7 4 14 0" stroke="#5a564c" strokeWidth="1.8" fill="none" strokeLinecap="round" />
@@ -124,7 +125,7 @@ function Listener({ zone }: { zone: Zone }) {
             <g key={x}>
               <rect x={x - 4} y={y - 6} width="8" height="12" rx="4" fill="#f2efe6" />
               <rect x={x - 1.6} y={y + 4} width="3.2" height="10" rx="1.6" fill="#f2efe6" />
-              <circle cx={x} cy={y} r="9" fill="none" stroke={color} strokeOpacity=".55" strokeWidth="1.2"><animate attributeName="r" values="7;12;7" dur="2.4s" repeatCount="indefinite" /><animate attributeName="stroke-opacity" values=".6;0;.6" dur="2.4s" repeatCount="indefinite" /></circle>
+              <circle cx={x} cy={y} r="9" fill="none" stroke={color} strokeOpacity=".55" strokeWidth="1.2">{!reduced && <><animate attributeName="r" values="7;12;7" dur="2.4s" repeatCount="indefinite" /><animate attributeName="stroke-opacity" values=".6;0;.6" dur="2.4s" repeatCount="indefinite" /></>}</circle>
             </g>
           ))}
         </svg>
