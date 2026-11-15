@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import graphData from "../../data/demo/codegraph.json";
+import { graphFreshness } from "../../lib/codegraph/freshness";
 import indexData from "../../data/demo/codesearch.json";
 import { search, type Hit, type SearchIndex, type SearchMode } from "../../lib/codegraph/search";
 
@@ -30,7 +31,8 @@ let STAGE = 0; // read by the render loop; 0 = all
 const visibleNode = (kind: string) => STAGE === 0 || (kind === "file" || kind === "test" ? STAGE >= 1 : STAGE >= 2);
 const visibleEdge = (kind: string) => STAGE === 0 || STAGE >= (EDGE_STAGE[kind] ?? 2);
 
-export function Explorer() {
+export function Explorer({ deployedSha }: { deployedSha?: string } = {}) {
+  const freshness = graphFreshness(G.sha, deployedSha);
   const canvas = useRef<HTMLCanvasElement>(null);
   const pos = useRef(new Map<string, { x: number; y: number }>());
   const cam = useRef({ x: 0, y: 0, k: 1, tx: 0, ty: 0, tk: 1 });
@@ -236,7 +238,10 @@ export function Explorer() {
       {/* legend */}
       <aside style={{ position: "absolute", top: 64, left: 16, width: 250, padding: 16, borderRadius: 16, background: "rgba(10,10,10,.86)", border: "1px solid #1d1d1b", fontSize: 12.5, lineHeight: 1.5, maxHeight: "calc(100vh - 150px)", overflow: "auto" }}>
         <div style={{ fontWeight: 650, fontSize: 14 }}>Code graph</div>
-        <div style={{ color: "#8a877e", margin: "4px 0 10px" }}>Every file, function and test in this repo, built from the pinned commit. The Code Navigator answers from these edges.</div>
+        {freshness !== "current" && <div role="status" style={{ border: "1px solid #6f5b23", borderRadius: 10, padding: 10, marginTop: 10, background: "#2d2615", color: "#f8df99", fontSize: 12 }}>
+          {freshness === "stale" ? `Historical sample: graph @ ${G.sha.slice(0,7)}, deployed code @ ${deployedSha?.slice(0,7)}.` : `Sample graph @ ${G.sha.slice(0,7)}; deployment revision not verified.`} It may omit recent source changes. <a href="/team" style={{ color: "#f8df99", textDecoration: "underline" }}>Connect an approved current snapshot</a> to navigate newer code.
+        </div>}
+        <div style={{ color: "#8a877e", margin: "4px 0 10px" }}>Static graph of selected TypeScript/TSX files and top-level exports, pinned to one commit. Edges are code-navigation hints, not proof of execution or test coverage.</div>
         {Object.entries(KIND).map(([k, v]) => <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 10, height: 10, borderRadius: k === "file" || k === "test" ? 3 : 10, background: v.c }} />{v.label} <span style={{ color: "#5a5852", marginLeft: "auto" }}>{counts[k]}</span></div>)}
         <div style={{ fontWeight: 650, marginTop: 12 }}>Edges</div>
         {Object.entries(EDGE).map(([k, v]) => <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}><svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke={v.c.replace(/[\d.]+\)$/, "1)")} strokeWidth="2" strokeDasharray={v.dash.join(" ")} /></svg>{v.label}</div>)}

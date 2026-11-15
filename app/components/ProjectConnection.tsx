@@ -5,7 +5,7 @@ import type { BolnaWebCall } from "@bolna/web-call";
 import type { ViewGraph } from "./CodeGraphView";
 import { sessionToken } from "../zones/client";
 import s from "../zones/zones.module.css";
-export type ConnectedProject = { repository: string; sha: string; indexedFiles: number; graph: ViewGraph };
+export type ConnectedProject = { repository: string; sha: string; indexedFiles: number; label: "FIXTURE" | "LIVE"; fetchedAt?: string; graph: ViewGraph };
 export function ProjectConnection({ repository, selectedZone, onConnected }: { repository: string; selectedZone: "team_memory" | "leader_desk" | "code_navigator"; onConnected: (project: ConnectedProject) => void }) {
   const [url, setUrl] = useState(`https://github.com/${repository}`);
   const [project, setProject] = useState<ConnectedProject | null>(null);
@@ -49,7 +49,7 @@ export function ProjectConnection({ repository, selectedZone, onConnected }: { r
   return <><section ref={panel} className={s.repoPanel} aria-label="Project and voice connection">
     <div className={s.repoHeading}>
       <div className={s.repoTitle}><span className={s.repoIcon} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a3 3 0 0 1-3-3V5a2 2 0 0 1 2-2Z"/><path d="M4 17a3 3 0 0 1 3-3h12M8 7h7M8 10h4"/></svg></span><div><h2>Project connection</h2><p>Your code and documentation, ready for the conversation.</p></div></div>
-      <span className={s.badge}>{project ? `${project.indexedFiles} files · ${project.sha.slice(0,7)}` : "Select your approved repository"}</span>
+      <span className={s.badge}>{project ? `${project.label ?? "UNKNOWN"} · ${project.indexedFiles} files · ${project.sha.slice(0,7)}` : "Select your approved repository"}</span>
     </div>
     <form className={s.row} onSubmit={e => { e.preventDefault(); void connect(); }}><input className={s.input} type="url" aria-label="GitHub repository URL" value={url} onChange={e => { setUrl(e.target.value); setProject(null); }} placeholder="https://github.com/owner/repository" required disabled={active} /><button className={s.btn} disabled={loading || active}>{loading ? "Connecting…" : project ? "Reconnect" : "Connect repository"}<span aria-hidden="true"> ↗</span></button></form>
     <div className={s.projectActions}>
@@ -62,6 +62,7 @@ export function ProjectConnection({ repository, selectedZone, onConnected }: { r
       </div>
     </div>
     {project && <div className={s.projectFooter}><span>Repository connected · {project.repository}</span><button className={s.textButton} onClick={() => { onConnected(project); document.getElementById("code-navigator")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Open code graph <span aria-hidden="true">↗</span></button></div>}
+    {project?.label === "FIXTURE" && <p className={s.bad} role="status">Sample snapshot only — code and meeting context here do not prove a real Wispr MCP import. Use an authorized LIVE snapshot for real-team answers.</p>}
     <audio ref={audio} autoPlay />{error && <p className={s.bad} role="alert">{error}</p>}
   </section>
   {showDock && <aside className={s.voiceDock} aria-label="Voice chat controls">
