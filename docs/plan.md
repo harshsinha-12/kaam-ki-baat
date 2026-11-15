@@ -25,7 +25,7 @@ Demo script (≈90 s, must be >45 s on Bolna's own log):
 | `codex/demo-readiness` (**PR #8**) | Merged into `main` at `4d72575` on 2026-11-15. | User |
 | `docs/spatial-live-context-v2` (**PR #9**) | Merged into `main` at `c64d8bc` on 2026-11-15. Documentation only. | User |
 | `codex/spatial-website-agent` (**PR #10**) | Merged into `main` at `f7100a6` on 2026-11-15. | User |
-| `codex/graphify-context` | G2: optional Graphify retrieval for code knowledge transfer, based on fetched `origin/main` `2dcbf07` after preserving PRs #11/#12/#14. | User |
+| `codex/graphify-context` ([PR #15](https://github.com/harshsinha-12/kaam-ki-baat/pull/15)) | G2: optional Graphify retrieval for code knowledge transfer, based on fetched `origin/main` `2dcbf07` after preserving PRs #11/#12/#14. | User |
 | `claude/<topic>` | Claude lane work → PR into `main` | — |
 | `codex/<topic>` | Codex lane work → PR into `main` | — |
 
@@ -126,7 +126,7 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | code on `main` via PR #8 (`4d72575`); three-card visual QA not repeated at `f7100a6` | Screenshot in PR |
 | S1 | Bolna spatial browser workspace: meeting context on left, code on right, shared page state and validated browser actions; browser controls first, AirPods later | Codex | merged at `f7100a6` (PR #10). Connect form rendered locally; live validation pending B2/B3 | 50/50 tests this session. Optional six-function config supported; no agent changed or call started |
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
-| G2 | Optional Graphify code graph → bounded, SHA-pinned code retrieval for meeting/task knowledge transfer | Codex | implemented on `codex/graphify-context`; PR pending, merge remains with user | 95/95 tests, full typecheck/build, real local fixture extraction/retrieval, graph-enabled dry run and setup docs; §3d |
+| G2 | Optional Graphify code graph → bounded, SHA-pinned code retrieval for meeting/task knowledge transfer | Codex | implemented and pushed through `8dedcae`; [PR #15](https://github.com/harshsinha-12/kaam-ki-baat/pull/15) open, merge remains with user | 95/95 tests, full typecheck/build, real local fixture extraction/retrieval, graph-enabled dry run and setup docs; §3d |
 
 | Z1 | Zones backend: roles + step-up, focus/activation gate, Team Memory, tickets → leader resolve → delivery/ack, live utterances, code-location pinning, callback dedupe, `request_clarification` phone tool | Claude | done (`claude/leader-escalation-backend`) | 75/75 tests incl. acceptance flow |
 | Z2 | Run `npm ci && npm run typecheck && npm run build` + HTTP smoke for `/api/zones/*` on a machine with registry access | Codex | verified locally on PR #11 review: npm ci, 83/83 tests, full typecheck, build and isolated HTTP smoke pass; merged in PR #11 at `f4b1e71` | Results in §3 |
