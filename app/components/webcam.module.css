@@ -1,11 +1,56 @@
-.tracker { padding: 16px; border: 1px solid #64748b66; border-radius: 12px; color: inherit; }
-.heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.heading span { font-size: .8rem; text-transform: capitalize; }
-.tracker p { line-height: 1.5; }
-.controls { display: flex; flex-wrap: wrap; gap: 8px; }
-.controls button { padding: 9px 12px; border: 1px solid #64748b88; border-radius: 7px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
-.controls button:disabled { opacity: .45; cursor: default; }
-.controls button:focus-visible { outline: 2px solid #38bdf8; outline-offset: 3px; }
-.readout { font-variant-numeric: tabular-nums; font-size: .9rem; }
-.hint { font-size: .8rem; opacity: .8; }
+.tracker {
+  --wc-ink: var(--ink, #f2efe6); --wc-muted: var(--mute, #9a968c); --wc-line: var(--line, #2b2a26);
+  --wc-blue: var(--left, #7cc4ff); --wc-gold: var(--center, #f5c451); --wc-coral: var(--right, #ff8a65);
+  position: relative; min-width: 0; padding: clamp(18px, 3vw, 26px); margin-top: 16px;
+  border: 1px solid var(--wc-line); border-radius: 18px; background: var(--card, #121211); color: var(--wc-ink);
+  font-family: var(--sans, Inter, ui-sans-serif, system-ui, sans-serif); font-size: 14px;
+}
+.heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+.titleGroup { display: flex; align-items: center; gap: 12px; }
+.cameraIcon { width: 42px; height: 42px; display: grid; place-items: center; flex: 0 0 auto; border: 1px solid var(--wc-line); border-radius: 12px; color: var(--wc-gold); background: #f5c45108; }
+.cameraIcon svg { width: 23px; height: 23px; }
+.eyebrow { display: block; font: 10px var(--mono, ui-monospace, Menlo, monospace); letter-spacing: .12em; text-transform: uppercase; color: var(--wc-muted); }
+.titleGroup h4 { margin: 5px 0 0; font-size: 16px; font-weight: 600; letter-spacing: -.02em; line-height: 1.3; }
+.statusBadge { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--wc-line); border-radius: 999px; padding: 6px 10px; color: var(--wc-muted); font-size: 11px; white-space: nowrap; }
+.statusBadge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.tracker[data-webcam-status="tracking"] .statusBadge { color: #6fdc8c; border-color: #6fdc8c33; background: #6fdc8c09; }
+.tracker[data-webcam-status="calibrating"] .statusBadge, .tracker[data-webcam-status="starting"] .statusBadge { color: var(--wc-gold); }
+.tracker[data-webcam-status="lost"] .statusBadge { color: var(--wc-coral); }
+.tracker[data-webcam-status="unavailable"] .statusBadge { color: #ff9b91; border-color: #ff9b9133; }
+.tracker .message { margin: 18px 0; font-size: 13px; line-height: 1.6; color: var(--wc-muted); max-width: 76ch; }
+.orientation { padding: 14px; border: 1px solid var(--wc-line); border-radius: 12px; background: #0b0b0c80; }
+.zoneRail { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.zone { --zone-color: var(--wc-blue); padding: 10px 12px; border: 1px solid transparent; border-radius: 9px; transition: background .2s ease-out, border-color .2s ease-out; }
+.zone[data-zone="leader_desk"] { --zone-color: var(--wc-gold); }
+.zone[data-zone="code_navigator"] { --zone-color: var(--wc-coral); }
+.zone span { display: block; margin-bottom: 4px; color: var(--wc-muted); font: 10px var(--mono, ui-monospace, Menlo, monospace); }
+.zone strong { display: block; font-size: 13px; font-weight: 550; line-height: 1.4; }
+.zone[data-selected="true"] { border-color: color-mix(in srgb, var(--zone-color) 40%, transparent); background: color-mix(in srgb, var(--zone-color) 7%, transparent); }
+.zone[data-selected="true"][data-tracking="true"] strong { color: var(--zone-color); }
+.zone[data-selected="true"][data-tracking="false"] { opacity: .6; }
+.poseTrack { position: relative; height: 2px; margin: 16px 5% 12px; background: linear-gradient(90deg, #7cc4ff80, #f5c45170, #ff8a6580); border-radius: 2px; }
+.neutralMark { position: absolute; left: 50%; top: -3px; width: 1px; height: 8px; background: #9a968c80; }
+.poseMarker { position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--wc-ink); box-shadow: 0 0 0 4px #f2efe612; transform: translateX(-50%); transition: left .12s ease-out; }
+.readout { display: flex; justify-content: space-between; gap: 12px; padding-top: 4px; color: var(--wc-muted); font-size: 11px; line-height: 1.5; }
+.angle { font: 11px var(--mono, ui-monospace, Menlo, monospace); font-variant-numeric: tabular-nums; color: var(--wc-ink); white-space: nowrap; }
+.controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.tracker .controls button { display: inline-flex; align-items: center; justify-content: center; gap: 14px; min-height: 40px; padding: 9px 15px; border: 1px solid var(--wc-line); border-radius: 999px; background: transparent; color: var(--wc-ink); font: inherit; font-size: 12px; font-weight: 550; cursor: pointer; transition: border-color .2s, background .2s; }
+.tracker .controls button:hover:not(:disabled) { border-color: var(--wc-muted); background: #f2efe609; }
+.tracker .controls .primary { background: var(--wc-ink); color: #0b0b0c; border-color: var(--wc-ink); }
+.tracker .controls .primary:hover:not(:disabled) { background: #fff; color: #0b0b0c; border-color: #fff; }
+.tracker .controls .stop { margin-left: auto; color: var(--wc-muted); }
+.tracker .controls button:disabled { opacity: .35; cursor: default; }
+.tracker .controls button:focus-visible { outline: 2px solid var(--wc-gold); outline-offset: 3px; }
+.privacy { display: flex; align-items: center; gap: 7px; padding-top: 17px; margin-top: 18px; border-top: 1px solid var(--wc-line); color: var(--wc-muted); font-size: 11px; line-height: 1.5; }
+.privacy svg { width: 15px; height: 15px; flex: 0 0 auto; color: #6fdc8c; }
+.tracker .hint { margin: 7px 0 0; color: var(--wc-muted); font-size: 10px; line-height: 1.6; }
 .decoder { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+@media (max-width: 580px) {
+  .tracker { padding: 16px; }
+  .orientation { padding: 9px; }
+  .zone { padding: 8px 5px; }
+  .zone strong { font-size: 11px; }
+  .zone span { font-size: 9px; }
+  .tracker .controls .stop { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .zone, .poseMarker, .tracker .controls button { transition: none; } }
