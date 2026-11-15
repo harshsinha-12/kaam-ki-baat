@@ -44,7 +44,6 @@
 .privacy { display: flex; align-items: center; gap: 7px; padding-top: 17px; margin-top: 18px; border-top: 1px solid var(--wc-line); color: var(--wc-muted); font-size: 11px; line-height: 1.5; }
 .privacy svg { width: 15px; height: 15px; flex: 0 0 auto; color: #6fdc8c; }
 .tracker .hint { margin: 7px 0 0; color: var(--wc-muted); font-size: 10px; line-height: 1.6; }
-.decoder { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 @media (max-width: 580px) {
   .tracker { padding: 16px; }
   .orientation { padding: 9px; }
@@ -54,3 +53,33 @@
   .tracker .controls .stop { margin-left: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .zone, .poseMarker, .tracker .controls button { transition: none; } }
+
+.preview { position:relative; background:#080908; border:1px solid var(--wc-line); border-radius:10px; overflow:hidden; width:180px; aspect-ratio:16/10; margin-bottom:16px; }
+.cameraPreview { display:block; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
+.previewPlaceholder { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:7px; font-size:12px; color:var(--wc-ink); background:radial-gradient(ellipse at center,#24251e,#10110f); }
+.previewPlaceholder span { font-size:9px; color:var(--wc-muted); }
+.previewLabel { position:absolute; left:7px; top:7px; padding:3px 5px; font-size:8px; background:#0009; color:#fff; border-radius:4px; }
+.headPosition { position:absolute; bottom:10px; width:18px; height:18px; border:2px solid var(--wc-gold); border-radius:50%; transform:translateX(-50%); box-shadow:0 0 0 4px #0005; transition:left .12s ease-out; }
+.trackingDetails { margin-top:14px; }
+.trackingDetails > summary { cursor:pointer; color:var(--wc-muted); font-size:10px; }
+.trackingDetails .orientation { margin-top:12px; }
+.tracker:not(.compactTracker) .trackingDetails > summary { display:none; }
+.compactTracker { grid-column:1/-1; display:grid; grid-template-columns:150px minmax(0,1fr) auto; gap:4px 18px; align-items:center; margin:0; padding:12px; border-radius:10px; background:#0c0d0c; }
+.compactTracker .preview { grid-row:1/4; width:150px; margin:0; }
+.compactTracker .heading { align-self:end; gap:8px; }
+.compactTracker .cameraIcon,.compactTracker .eyebrow { display:none; }
+.compactTracker .titleGroup h4 { margin:0; font-size:12px; }
+.compactTracker .statusBadge { font-size:9px; padding:4px 7px; }
+.compactTracker .message { font-size:10px; margin:0; grid-column:2; line-height:1.6; }
+.compactTracker .controls { grid-column:3; grid-row:1/4; margin:0; gap:6px; }
+.compactTracker .controls button { border-radius:8px; font-size:11px; padding:8px 10px; min-height:36px; }
+.compactTracker .controls .stop { margin:0; }
+.compactTracker .trackingDetails { grid-column:2/-1; margin:0; }
+.compactTracker .trackingDetails[open] { grid-column:1/-1; padding-top:10px; }
+.compactTracker .privacy { padding-top:10px; margin-top:10px; }
+.compactTracker .hint { font-size:10px; }
+@media(max-width:1180px) { .compactTracker { grid-template-columns:130px 1fr; gap:8px 14px; }.compactTracker .preview { width:130px; grid-row:1/4; }.compactTracker .controls { grid-column:2; grid-row:auto; }.compactTracker .trackingDetails { grid-column:1/-1; }.compactTracker .heading { align-self:auto; } }
+@media(max-width:600px) { .compactTracker { grid-template-columns:92px 1fr; gap:8px 12px; padding:10px; }.compactTracker .preview { width:92px; aspect-ratio:1; grid-row:1/3; }.compactTracker .heading { gap:6px; }.compactTracker .titleGroup h4 { font-size:11px; }.compactTracker .controls { grid-column:1/-1; flex-wrap:wrap; }.compactTracker .controls button { flex:1; padding:8px; font-size:10px; }.previewPlaceholder { font-size:10px; }.previewPlaceholder span { display:none; }.compactTracker .statusBadge { font-size:8px; }.headPosition { width:13px; height:13px; } }
+@media(prefers-reduced-motion:reduce) { .headPosition { transition:none; } }
+
+@media(min-width:1181px) { .compactTracker { grid-template-columns:110px minmax(0,1fr) auto; padding:8px; gap:3px 14px; }.compactTracker .preview { width:110px; }.compactTracker .trackingDetails { font-size:9px; } }

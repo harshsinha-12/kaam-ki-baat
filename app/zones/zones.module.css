@@ -76,3 +76,123 @@
 .voiceDock { position:fixed; right:20px; bottom:20px; z-index:20; width:min(390px,calc(100vw - 40px)); box-sizing:border-box; padding:16px; border:1px solid #62543b; border-radius:16px; background:#171610; color:var(--ink); box-shadow:0 12px 45px #0009; display:grid; gap:12px; }
 .dockHeader { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; }.dockHeader strong { font-size:14px; font-weight:550; }.voiceDock label { color:var(--mute); font-size:12px; }.voiceDock small { color:var(--mute); font-size:11px; line-height:1.6; }.voiceDock p { margin:0; font-size:12px; }
 @media(max-width:700px){.voiceDock{right:12px;bottom:12px;width:calc(100vw - 24px);}.page{padding-bottom:200px;}}
+
+/* Teammate workspace: compact controls leave the evidence in view. */
+.teamPage { padding:22px clamp(16px,3vw,48px) 28px; font-family:var(--font-sans),ui-sans-serif,system-ui,sans-serif; color-scheme:dark; }
+.teamPage, .teamPage * { box-sizing:border-box; }
+.workspaceShell { max-width:1680px; margin:0 auto; }
+.teamPage .top { padding-bottom:18px; margin-bottom:0; border-bottom:1px solid var(--line); }
+.teamPage .title { font-size:19px; letter-spacing:-.045em; }
+.teamPage .workspaceName { font-size:15px; letter-spacing:-.02em; margin-left:8px; }
+.teamPage .top .meta { display:flex; gap:10px; align-items:center; font-size:10px; overflow-wrap:anywhere; }
+.teamPage .label { font-size:10px; letter-spacing:.13em; }
+.teamPage .welcome { padding:24px 0; }
+.teamPage .welcome h2 { font-size:clamp(26px,2.5vw,36px); font-weight:550; margin:6px 0 8px; }
+.teamPage .welcome p { font-size:13px; }
+.teamPage .connection { font-size:12px; padding:9px 13px; background:#121312; }
+.teamPage .btn { min-height:40px; padding:10px 16px; border-radius:10px; font:550 12px var(--font-sans),system-ui,sans-serif; transition:background .15s,border-color .15s; white-space:nowrap; }
+.teamPage .btn:hover:not(:disabled) { background:#242420; border-color:#5c5a52; }
+.teamPage .primary { background:var(--ink); color:var(--bg); }
+.teamPage .primary:hover:not(:disabled) { background:#fff; border-color:#fff; }
+.teamPage .input { border-radius:9px; font-size:13px; padding:11px 13px; }
+.teamPage .input:focus-visible { outline:2px solid var(--left); outline-offset:2px; }
+.teamPage .repoPanel { padding:18px 20px 0; background:linear-gradient(110deg,#171715,#121211 70%); border-radius:14px; margin-bottom:12px; }
+.repoTitle { display:flex; align-items:center; gap:12px; }
+.repoIcon,.micIcon { display:grid; place-items:center; width:36px; height:36px; flex-shrink:0; border:1px solid #35342e; border-radius:10px; color:#c9c5ba; background:#1e1e1a; }
+.repoIcon svg,.micIcon svg { width:19px; height:19px; }
+.teamPage .repoHeading { margin-bottom:14px; }
+.teamPage .repoHeading h2 { font-size:14px; font-weight:600; }
+.teamPage .repoHeading p { font-size:12px; }
+.teamPage .badge { color:#c3beb1; white-space:nowrap; font-size:10px; padding:5px 9px; }
+.teamPage .repoPanel > .row .btn { background:#252520; border-color:#39382f; }
+.teamPage .projectActions { margin:16px -20px 0; padding:14px 20px; gap:20px; border-top:1px solid var(--line); background:#0c0c0b45; border-radius:0 0 14px 14px; }
+.voiceSummary { display:flex; align-items:center; gap:10px; min-width:180px; }
+.voiceSummary > div { display:grid; gap:4px; }
+.voiceSummary strong { font-size:12px; font-weight:550; }
+.micIcon { width:32px; height:36px; border:0; background:transparent; }
+.micIcon[data-active=true] { color:var(--ok); }
+.teamPage .voiceStatus { font-size:10px; color:var(--mute); }
+.teamPage .voiceStatus[data-active=true] { color:var(--ok); }
+.voiceContext { display:grid; gap:5px; padding-left:20px; border-left:1px solid var(--line); }
+.voiceContext .label { font-size:8px; letter-spacing:.1em; }
+.voiceContext strong { font-size:11px; font-weight:500; }
+.voiceActions { display:flex; align-items:center; gap:18px; margin-left:auto; }
+.teamPage .projectActions label,.teamPage .voiceDock label { display:flex; align-items:center; gap:7px; font-size:10px; line-height:1.5; max-width:200px; }
+.projectActions input[type=checkbox], .voiceDock input[type=checkbox] { accent-color:var(--ink); width:14px; height:14px; margin:0; flex-shrink:0; }
+.teamPage .endCall { border-color:#74413b; color:#ffb0a3; background:#321d18; }
+.projectFooter { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:10px 0; border-top:1px solid var(--line); color:var(--mute); font-size:10px; overflow-wrap:anywhere; }
+.textButton { border:0; background:none; color:var(--ink); padding:4px 0; font:inherit; cursor:pointer; flex-shrink:0; }
+.textButton:hover { text-decoration:underline; text-underline-offset:4px; }
+.textButton:focus-visible { outline:2px solid var(--left); outline-offset:3px; }
+.audioMeter { display:flex; align-items:center; gap:10px; color:var(--mute); }
+.audioMeter > span { font-size:10px; white-space:nowrap; }
+.audioMeter[data-active=true] { color:var(--ok); }
+.waveform { display:flex; gap:2px; height:34px; align-items:center; }
+.waveform span { width:3px; background:currentColor; border-radius:3px; opacity:.7; transition:height 90ms linear; }
+.teamPage .workspaceHeading { display:flex; justify-content:space-between; align-items:center; gap:16px; margin:22px 0 14px; }
+.workspaceHeading h2 { margin:5px 0 0; font-weight:500; font-size:18px; letter-spacing:-.035em; }
+.workspaceHint { color:var(--mute); font-size:11px; }
+.teamPage .zones { position:static; gap:10px; padding:0; background:transparent; margin-bottom:14px; }
+.teamPage .zbtn { --zone:var(--left); display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px; background:#111210; min-width:0; transition:background .15s,border-color .15s; }
+.teamPage .zbtn[data-zone=leader_desk] { --zone:var(--center); }
+.teamPage .zbtn[data-zone=code_navigator] { --zone:var(--right); }
+.teamPage .zbtn > svg { flex-shrink:0; }
+.teamPage .zbtn > span:not(.zoneKey) { display:grid; text-align:left; gap:4px; }
+.teamPage .zbtn strong { font-size:13px; font-weight:550; }
+.teamPage .zbtn small { font-size:10px; color:var(--mute); }
+.zoneKey { margin-left:auto; border:1px solid var(--line); width:24px; height:24px; display:grid; place-items:center; border-radius:6px; font-size:12px; color:var(--mute); }
+.teamPage .zbtnOn,.teamPage .centerSelected { border-color:color-mix(in srgb,var(--zone) 65%,transparent); background:color-mix(in srgb,var(--zone) 6%,#111210); box-shadow:none; }
+.teamPage .zbtnOn strong,.teamPage .centerSelected strong { color:var(--zone); }
+.teamPage .zbtn:hover:not(:disabled) { border-color:var(--zone); background:color-mix(in srgb,var(--zone) 8%,#111210); }
+.teamPage .lock { opacity:.8; }
+.teamPage .grid { gap:14px; align-items:start; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); }
+.teamPage .card { --zone:var(--left); padding:22px; min-width:0; border-radius:14px; background:#111210; scroll-margin-top:20px; }
+.teamPage .card[data-zone=code_navigator] { --zone:var(--right); }
+.teamPage .active,.teamPage .activeR { border-color:color-mix(in srgb,var(--zone) 45%,var(--line)); box-shadow:0 4px 24px #0002; }
+.cardHeading { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:16px; }
+.zoneNumber { font:9px var(--font-mono),ui-monospace,monospace; letter-spacing:.1em; color:var(--zone); }
+.cardTag { color:var(--mute); font-size:9px; border:1px solid var(--line); padding:4px 8px; border-radius:5px; }
+.teamPage .h { font-weight:550; font-size:22px; letter-spacing:-.035em; margin:0 0 6px; }
+.cardDescription { margin:0 0 18px; font-size:12px; color:var(--mute); }
+.teamPage .empty { min-height:170px; padding:28px 0 12px; }
+.teamPage .empty .label { color:#b7b1a3; font-size:9px; }
+.teamPage .empty p { max-width:44ch; font-size:12px; line-height:1.8; }
+.teamPage .setupRow { display:block; margin:16px 0 0; scroll-margin-top:20px; }
+.teamPage .setupDisclosure { padding:0; border-radius:10px; background:#10100f; }
+.teamPage .setupDisclosure summary { display:flex; align-items:center; gap:14px; padding:13px 16px; list-style:none; font-size:12px; }
+.teamPage .setupDisclosure summary::after { content:'+'; margin-left:auto; color:var(--mute); font-size:16px; }
+.teamPage .setupDisclosure[open] summary::after { content:'−'; }
+.teamPage .setupDisclosure summary small { color:var(--mute); font-size:11px; }
+.teamPage .setupDisclosure summary:focus-visible { outline:2px solid var(--left); outline-offset:3px; }
+.teamPage .setupHint { padding:0 16px 14px; margin:0; font-size:12px; }
+.workspaceFooter { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:24px; padding-top:16px; border-top:1px solid var(--line); color:#777469; font-size:10px; }
+.workspaceFooter > span:first-child { color:#b5b0a4; font-weight:550; }
+.teamPage .voiceDock { border-color:#454439; background:#171713; }
+.voiceDock .audioMeter { justify-content:space-between; }
+@media(min-width:1500px) { .teamPage .empty { min-height:210px; } }
+@media(max-width:1180px) { .projectActions { gap:14px; }.voiceContext { display:none; }.voiceActions { gap:10px; }.voiceActions label { max-width:150px; }.audioMeter > span { display:none; } }
+@media(max-width:900px) { .teamPage .projectActions { gap:12px; }.voiceSummary { min-width:150px; }.voiceSummary .voiceStatus { max-width:150px; }.waveform { gap:1px; }.waveform span { width:2px; }.voiceActions { flex-wrap:wrap; justify-content:flex-end; }.teamPage .grid { grid-template-columns:1fr; }.teamPage .zbtn { padding:10px; gap:8px; }.teamPage .zbtn strong { font-size:12px; }.zoneKey { display:none; } }
+@media(max-width:600px) { .teamPage .top { gap:12px; }.teamPage .top .meta { font-size:9px; }.teamPage .welcome { gap:12px; padding:20px 0; }.teamPage .welcome h2 { font-size:28px; }.teamPage .connection { font-size:10px; }.teamPage .repoPanel { padding:14px 14px 0; }.teamPage .repoHeading { gap:10px; }.teamPage .repoHeading p { line-height:1.6; }.teamPage .repoHeading > .badge { margin-left:48px; }.teamPage .repoPanel > .row { flex-wrap:nowrap; }.teamPage .repoPanel > .row .input { flex-basis:auto; width:100%; font-size:11px; }.teamPage .repoPanel > .row .btn { padding:9px; font-size:11px; white-space:normal; }.teamPage .projectActions { margin:14px -14px 0; padding:12px 14px; }.voiceActions { margin:0; width:100%; flex-wrap:nowrap; justify-content:space-between; }.teamPage .projectActions label { width:auto; max-width:200px; }.voiceSummary { flex:1; }.teamPage .audioMeter > span { display:none; }.workspaceHint { display:none; }.teamPage .workspaceHeading { margin-top:20px; }.workspaceHeading h2 { font-size:17px; }.teamPage .zones { gap:6px; }.teamPage .zbtn { flex-direction:column; align-items:flex-start; gap:8px; padding:12px 10px; }.teamPage .zbtn strong { font-size:11px; }.teamPage .zbtn small { font-size:9px; line-height:1.5; }.teamPage .zbtn > svg { width:28px; height:28px; }.teamPage .card { padding:17px; }.teamPage .h { font-size:21px; }.teamPage .empty { min-height:140px; }.workspaceFooter { align-items:flex-start; flex-direction:column; gap:6px; }.projectFooter { font-size:9px; }.teamPage .setupDisclosure summary { gap:10px; }.teamPage .setupDisclosure summary small { font-size:10px; } }
+@media(prefers-reduced-motion:reduce) { .waveform span,.teamPage .btn,.teamPage .zbtn { transition:none; } }
+
+/* Keep routine setup to two slim rows on larger screens. */
+.teamPage .top { padding-bottom:12px; }
+.teamPage .welcome { padding:15px 0; }
+.teamPage .welcome h2 { font-size:28px; line-height:1.15; }
+.teamPage .workspaceHeading .textButton { font-size:11px; color:#c4beb0; }
+.teamPage[data-expanded=true] .welcome { display:none; }
+.teamPage[data-expanded=true] .repoPanel { margin-top:12px; padding-top:0; }
+.teamPage[data-expanded=true] .repoHeading,.teamPage[data-expanded=true] .repoPanel > .row,.teamPage[data-expanded=true] .projectFooter { display:none; }
+.teamPage[data-expanded=true] .projectActions { margin-top:0; border-top:0; }
+@media(min-width:901px) {
+  .teamPage .repoPanel { display:grid; grid-template-columns:260px minmax(0,1fr); gap:0 24px; padding-top:14px; }
+  .teamPage .repoHeading { align-items:flex-start; flex-direction:column; justify-content:center; gap:5px; margin:0; }
+  .teamPage .repoHeading p { display:none; }
+  .teamPage .repoHeading .badge { border:0; padding:0; margin-left:48px; font-size:9px; }
+  .teamPage .repoIcon { width:32px; height:32px; }
+  .teamPage .repoTitle { gap:10px; }
+  .teamPage .repoPanel > .row { align-self:center; }
+  .teamPage .projectActions { grid-column:1/-1; margin-top:12px; padding-top:10px; padding-bottom:10px; }
+  .teamPage .projectFooter,.teamPage .repoPanel > .bad { grid-column:1/-1; }
+}
+@media(max-width:600px) { .teamPage .welcome { padding:16px 0; }.teamPage .workspaceHeading h2 { font-size:15px; }.teamPage .workspaceHeading .textButton { font-size:10px; max-width:110px; text-align:right; }.teamPage .workspaceHeading { gap:8px; } }
