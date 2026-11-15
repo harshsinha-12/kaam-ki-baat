@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { BolnaWebCall } from "@bolna/web-call";
 import { evidenceUrl, type ActionReceipt, type PageState, type PendingAction, type Space, type SpatialContext } from "@/lib/spatial/contracts";
 import { executeBrowserAction } from "@/lib/spatial/browser-actions";
+import type { ConfirmedFocus } from "@/lib/focus/input-contracts";
+import { FocusInputControls } from "./FocusInputControls";
 import styles from "./spatial.module.css";
 
 const INITIAL_PAGE: PageState = { space: "meeting", selectedEvidence: null, visibleTargets: [] };
@@ -16,6 +18,7 @@ export function SpatialWorkspace() {
   const [tokenInput, setTokenInput] = useState("");
   const [token, setToken] = useState("");
   const [context, setContext] = useState<SpatialContext | null>(null);
+  const [centerSelected, setCenterSelected] = useState(false);
   const [page, setPage] = useState<PageState>(INITIAL_PAGE);
   const pageRef = useRef(page);
   const [error, setError] = useState("");
@@ -27,8 +30,13 @@ export function SpatialWorkspace() {
   const startingRef = useRef(false);
   const [consent, setConsent] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const updatePage = useCallback((next: PageState) => { pageRef.current = next; setPage(next); }, []);
-  const selectSpace = (space: Space) => updatePage({ ...pageRef.current, space, selectedEvidence: null });
+  const updatePage = useCallback((next: PageState) => { setCenterSelected(false); pageRef.current = next; setPage(next); }, []);
+  const selectSpace = (space: Space) => { setCenterSelected(false); updatePage({ ...pageRef.current, space, selectedEvidence: null }); };
+  const followFocus = useCallback((focus: ConfirmedFocus) => {
+    if (!focus.zone) return;
+    setCenterSelected(focus.zone === "leader_desk");
+    if (focus.zone !== "leader_desk") updatePage({ ...pageRef.current, space: focus.zone === "team_memory" ? "meeting" : "code", selectedEvidence: null });
+  }, [updatePage]);
 
   useEffect(() => {
     if (!token) return;
@@ -124,8 +132,10 @@ export function SpatialWorkspace() {
   return <section className={styles.workspace} aria-label="Spatial workspace">
     <div className={styles.heading}>
       <div><h2>One conversation. Two spaces.</h2><p>Meeting context on your left. Codebase on your right. Bolna keeps the conversation.</p></div>
-      <span className={styles.badge}>Browser controls · AirPods later</span>
+      <span className={styles.badge}>Manual · Webcam · AirPods companion</span>
     </div>
+    <FocusInputControls onConfirmedFocus={followFocus} />
+    {centerSelected && <section className={styles.panel} aria-label="Leader Desk selection"><h3>Leader Desk selected</h3><p>Center selection grants no access. Activate explicitly after leader verification to use the desk.</p><a href="/leader">Open leader verification</a></section>}
     {!token ? <form className={styles.connect} onSubmit={e => {
       e.preventDefault(); setError(""); setToken(tokenInput.trim()); setTokenInput("");
     }}>
@@ -135,15 +145,15 @@ export function SpatialWorkspace() {
       <p>Use the token from <code>npm run call:token</code>. It stays in this tab’s memory. The board key alone does not unlock meeting passages.</p>
     </form> : <>
       <nav className={styles.spaces} aria-label="Choose a workspace">
-        <button aria-pressed={page.space === "meeting"} onClick={() => selectSpace("meeting")}><strong>{SPACES[0].title}</strong><small>{SPACES[0].hint}</small></button>
-        <button disabled title="Leader authentication and passkey verification are not implemented"><strong>Leader Desk · locked</strong><small>Center · future leader access</small></button>
-        <button aria-pressed={page.space === "code"} onClick={() => selectSpace("code")}><strong>{SPACES[1].title}</strong><small>{SPACES[1].hint}</small></button>
+        <button aria-pressed={!centerSelected && page.space === "meeting"} onClick={() => selectSpace("meeting")}><strong>{SPACES[0].title}</strong><small>{SPACES[0].hint}</small></button>
+        <button aria-pressed={centerSelected} onClick={() => setCenterSelected(true)}><strong>Leader Desk</strong><small>Center · leader verification required</small></button>
+        <button aria-pressed={!centerSelected && page.space === "code"} onClick={() => selectSpace("code")}><strong>{SPACES[1].title}</strong><small>{SPACES[1].hint}</small></button>
       </nav>
       {!context ? <p role="status">Connecting your workspace…</p> : <>
         <p className={styles.provenance}><b>{context.snapshot.label}</b> · {context.snapshot.repository} @ <code>{context.snapshot.pinnedSha.slice(0, 7)}</code> · fetched {context.snapshot.fetchedAt}<br />
           {context.task ? `${context.task.title} · ownership: ${context.task.ownership}` : "No task is authorized for this session."}
         </p>
-        <section hidden={page.space !== "meeting"} data-spatial-id="meeting" tabIndex={-1} className={styles.panel} aria-label="Meeting context">
+        <section hidden={centerSelected || page.space !== "meeting"} data-spatial-id="meeting" tabIndex={-1} className={styles.panel} aria-label="Meeting context">
           <h3>What was agreed</h3><p>Approved passages for your current task. These are excerpts, not a complete transcript.</p>
           {context.meetings.length === 0 && <p>No approved meeting passage is available for this task.</p>}
           {context.meetings.map(m => <article key={m.id}><h4>{m.title} <small>({m.source})</small></h4>{m.passages.map(p => <blockquote key={p.id}><p>{p.text}</p><footer>{p.speaker ?? "Unknown speaker"} · {p.id} · characters {p.charStart}–{p.charEnd}</footer></blockquote>)}</article>)}
@@ -167,7 +177,7 @@ export function SpatialWorkspace() {
           <h4>Not yet acknowledged</h4>
           {context.outstanding.length ? context.outstanding.map(o => <p key={o.id}>{o.fact} <small>(said {o.attempts}×)</small></p>) : <p>No outstanding facts.</p>}
         </section>
-        <section hidden={page.space !== "code"} data-spatial-id="code" tabIndex={-1} className={styles.panel} aria-label="Codebase">
+        <section hidden={centerSelected || page.space !== "code"} data-spatial-id="code" tabIndex={-1} className={styles.panel} aria-label="Codebase">
           <h3>What the repository shows</h3><p>Evidence at the pinned commit. Ask Bolna to find, locate, or verify code using the existing specialists.</p>
           <div className={styles.cards}>{context.cards.map(c => <article key={c.id} data-spatial-id={c.id} tabIndex={-1} className={page.selectedEvidence === c.id ? styles.selected : ""}>
             <h4>{c.label}</h4><p>{c.summary}</p>

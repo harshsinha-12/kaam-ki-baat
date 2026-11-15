@@ -32,4 +32,11 @@
 .turn { border-bottom: 1px solid #343e4c; padding: 10px 0; }
 .footer { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-top: 20px; font-size: 12px; color: #adb9c9; }
 .error { color: #ff9f9f; }
+.inputPanel { margin-top: 18px; padding: 16px; border: 1px solid #475569; border-radius: 10px; }
+.inputPanel h3 { margin: 0 0 12px; }
+.inputSelector { display: flex; gap: 18px; flex-wrap: wrap; border: 0; padding: 0; }
+.inputSelector legend { font-size: 13px; color: #adb9c9; margin-bottom: 8px; }
+.inputSelector label { display: flex; align-items: center; gap: 5px; }
+.manualZones { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+.manualZones button[aria-pressed=true] { border-color: #f0b429; background: #30291a; }
 @media (max-width: 580px) { .workspace { padding: 16px; } .spaces { grid-template-columns: 1fr; } .footer { flex-wrap: wrap; } }
