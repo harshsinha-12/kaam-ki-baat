@@ -13,6 +13,14 @@ type Graph = { nodes: GNode[]; edges: { from: string; to: string }[]; sha: strin
 const C = { ink: "#f2efe6", mute: "#8e93b0", left: "#7cc4ff", center: "#f5c451", right: "#ff8a65", ok: "#6fdc8c", wispr: "#b48cff" };
 
 // Key nodes, positioned in a 100x100 space (x, y).
+// Brand marks drawn beside their nodes. Graphify has no image asset here, so it gets a text badge.
+const LOGOS: Record<string, { img: HTMLImageElement | null; text: string }> = {};
+if (typeof window !== "undefined") {
+  const load = (src: string) => { const i = new Image(); i.src = src; return i; };
+  LOGOS.wispr = { img: load("/brand/wispr-flow.png"), text: "Wispr Flow" };
+  LOGOS.q = { img: load("/brand/bolna.png"), text: "Bolna" };
+  LOGOS.graph = { img: null, text: "◆ graphify" };
+}
 const KEY = [
   { id: "q", label: "“woh bug wala code kahan hai?”", sub: "Harsh, on a call", x: 50, y: 8, c: C.ink, r: 7 },
   { id: "agent", label: "Kaam Ki Baat", sub: "understands the words", x: 50, y: 30, c: C.center, r: 9 },
@@ -133,6 +141,16 @@ export function DemoGraph({ graph }: { graph: Graph }) {
         ctx.textAlign = k.id === "q" || k.id === "agent" ? "center" : left ? "right" : "left";
         const ty = k.id === "q" ? y - 14 : k.id === "agent" ? y + 24 : y + 4;
         ctx.fillText(k.label, k.id === "q" || k.id === "agent" ? x : tx, ty);
+        // brand marks: Wispr Flow (meeting source), Bolna (the call), Graphify (code graph)
+        const logo = LOGOS[k.id];
+        if (logo) {
+          ctx.globalAlpha = on ? 1 : 0.55;
+          const h = 22, img = logo.img, w = img && img.complete && img.naturalWidth ? (img.naturalWidth / img.naturalHeight) * h : 0;
+          const lx = k.id === "q" ? x - w / 2 : left ? tx - w : tx, ly = k.id === "q" ? y - 50 : ty - 34;
+          if (w) { ctx.drawImage(img!, lx, ly, w, h); }
+          else { ctx.fillStyle = "#1b1a17"; ctx.beginPath(); ctx.roundRect(left ? tx - 78 : tx, ly, 78, h, 6); ctx.fill(); ctx.fillStyle = k.c; ctx.font = "600 11px ui-monospace, Menlo, monospace"; ctx.textAlign = left ? "right" : "left"; ctx.fillText(logo.text, left ? tx - 8 : tx + 8, ly + 15); }
+          ctx.globalAlpha = 1;
+        }
         if (on && cur) {
           ctx.font = "11px ui-monospace, Menlo, monospace"; ctx.fillStyle = C.mute;
           ctx.fillText(k.sub, k.id === "q" || k.id === "agent" ? x : tx, ty + 15);

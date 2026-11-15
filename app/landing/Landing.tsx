@@ -310,17 +310,20 @@ function DoubtLoop() {
     <div className={s.loopGrid}>
       <div>
         <Reveal><div className={s.eyebrow}>The doubt loop</div></Reveal>
-        <Reveal i={1}><h2 className={s.h2}>Every team runs it. <em>Nobody</em> owns it.</h2></Reveal>
-        <Reveal i={2}><p className={s.lede}>The decision was spoken, then never written down properly. The code changed, but nobody checked which commit. The one person who knows is busy. So people guess, and guesses ship.</p></Reveal>
-        <Reveal i={3}><div className={s.timer}>{reduced ? "Unresolved questions can leave teammates waiting for a sourced answer." : <>Illustrative waiting timer: <b>{Math.floor(sec / 60)}:{String(sec % 60).padStart(2, "0")}</b>. Unresolved questions can leave teammates blocked.</>}</div></Reveal>
+        <Reveal i={1}><h2 className={s.h2}>Decided at three. <em>Forgotten</em> by five.</h2></Reveal>
+        <Reveal i={2}><p className={s.lede}>Someone says “I’ll own it.” By evening Slack asks “wait, who owns this?”, the lead is in back-to-back calls, a teammate guesses, and the guess ships. Watch the loop go round.</p></Reveal>
+        <Reveal i={3}><div className={s.timer}>{reduced ? "Unresolved questions can leave teammates waiting for a sourced answer." : <>Harsh has been blocked for <b>{Math.floor(sec / 60)}:{String(sec % 60).padStart(2, "0")}</b> <span className={s.timerNote}>· illustrative</span></>}</div></Reveal>
       </div>
       <svg viewBox="0 0 360 340" className={s.loopSvg} role="img" aria-label="Meeting, ping, waiting, guess, rework — and back again">
         <circle cx={cx} cy={cy} r={R} className={s.loopPath} />
+        {!reduced && <circle cx={cx} cy={cy} r={R} className={s.loopTrail} transform={`rotate(-90 ${cx} ${cy})`} />}
+        <text x={cx} y={cy - 4} textAnchor="middle" className={s.loopCore}>round {Math.floor(sec / 9) + 1}</text>
+        <text x={cx} y={cy + 14} textAnchor="middle" className={s.loopMute}>same question, again</text>
         {nodes.map((n, i) => {
           const a = (i / nodes.length) * Math.PI * 2 - Math.PI / 2;
           const x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
           return (
-            <g key={n.t}>
+            <g key={n.t} className={s.loopStep} style={{ "--i": i, transformOrigin: `${x}px ${y}px` } as CSSProperties}>
               <rect x={x - 62} y={y - 22} width="124" height="44" rx="12" className={s.loopNode} />
               <text x={x} y={y - 3} textAnchor="middle" className={s.loopLabel}>{n.t}</text>
               <text x={x} y={y + 13} textAnchor="middle" className={s.loopMute}>{n.m}</text>
@@ -461,12 +464,21 @@ const GUARDS: { front: ReactNode; back: ReactNode }[] = [
 ];
 
 function Guards() {
+  const reduced = useContext(ReducedMotion);
   const [flip, setFlip] = useState<Set<number>>(new Set());
+  const [touched, setTouched] = useState(false);
+  const [gref, gInView] = useInView<HTMLDivElement>(0.3);
+  // In view and untouched: flip one card at a time — the chatbot answer, struck out, turns into ours.
+  useEffect(() => {
+    if (reduced || !gInView || touched) return;
+    let n = 0; const id = setInterval(() => { setFlip(new Set([n % GUARDS.length])); n++; }, 2400);
+    return () => clearInterval(id);
+  }, [gInView, touched, reduced]);
   return (
-    <div className={s.guards}>
+    <div ref={gref} className={s.guards}>
       {GUARDS.map((g, i) => (
         <button key={i} type="button" className={`${s.guard} ${flip.has(i) ? s.flipped : ""}`} aria-pressed={flip.has(i)}
-          onClick={() => setFlip((f) => { const n = new Set(f); n.has(i) ? n.delete(i) : n.add(i); return n; })}>
+          onClick={() => { setTouched(true); setFlip((f) => { const n = new Set(f); n.has(i) ? n.delete(i) : n.add(i); return n; }); }}>
           <div className={s.guardInner}>
             <div className={s.face} data-spot style={{ "--spot": "#ff6b6b" } as CSSProperties}>{g.front}<div className={s.flipHint}>what a chatbot says · tap to see ours →</div></div>
             <div className={`${s.face} ${s.back}`} data-spot style={{ "--spot": "#6fdc8c" } as CSSProperties}>{g.back}<div className={s.flipHint}>what Kaam Ki Baat says</div></div>
@@ -580,11 +592,11 @@ function GraphSection() {
 
 const HEARD_SAMPLE = "umm, code freeze 3:30, nahi matlab, final time kab hai?";
 const HEARS = [
-  { k: "HEARD", t: "Wispr hears it", b: "Meeting notes come from Wispr Flow, and live speech from an app you opt into. Fillers and “no, sorry” self-corrections are cleaned up.",
+  { k: "HEARD", t: "Wispr hears it", never: "Never listens to anyone who hasn’t switched it on.", b: "Meeting notes come from Wispr Flow, and live speech from an app you opt into. Fillers and “no, sorry” self-corrections are cleaned up.",
     ui: "heard" },
-  { k: "UNDERSTOOD", t: "It works out what you mean", b: "“Freeze kab hai” becomes the open freeze decision. “Woh code” becomes the function you were just talking about.", ui: "mean" },
-  { k: "DECIDED", t: "The evidence decides", b: "Fixed rules check the source: who said it, whether it was proposed or approved, and whether the PR is open or merged.", ui: "decide" },
-  { k: "ANSWERED", t: "An agent answers, with the line", b: "One short sentence in Hindi or English, spoken by Bolna. The cited passage or code line opens on screen.", ui: "answer" },
+  { k: "UNDERSTOOD", t: "It works out what you mean", never: "Never guesses a decision. If the words fit two, it asks which one.", b: "“Freeze kab hai” becomes the open freeze decision. “Woh code” becomes the function you were just talking about.", ui: "mean" },
+  { k: "DECIDED", t: "The evidence decides", never: "Never lets the AI decide. Fixed rules do; the AI only explains.", b: "Fixed rules check the source: who said it, whether it was proposed or approved, and whether the PR is open or merged.", ui: "decide" },
+  { k: "ANSWERED", t: "An agent answers, with the line", never: "Never says “saved” until the change is read back.", b: "One short sentence in Hindi or English, spoken by Bolna. The cited passage or code line opens on screen.", ui: "answer" },
 ];
 
 function HearsUI({ ui, on }: { ui: string; on: boolean }) {
@@ -593,7 +605,7 @@ function HearsUI({ ui, on }: { ui: string; on: boolean }) {
     const u = understand(HEARD_SAMPLE);
     return (
       <div className={`${s.hUi} ${s.hDark}`}>
-        <div className={s.hTop}><span className={s.live}>● LISTENING</span><span className={s.tagPill}>EN</span><span className={s.tagPill}>हिं</span><span className={`${s.tagPill} ${s.tagHot}`}>Hinglish</span></div>
+        <div className={s.hTop}><span className={s.flowBar} aria-label="Wispr Flow is listening"><span className={s.flowBars}>{[0, 1, 2, 3, 4].map((b) => <i key={b} style={{ "--b": b } as CSSProperties} className={on ? s.flowBarsOn : ""} />)}</span>Flow</span><span className={s.live}>listening</span><span className={s.tagPill}>EN</span><span className={s.tagPill}>हिं</span><span className={`${s.tagPill} ${s.tagHot}`}>Hinglish</span></div>
         <div className={s.wave} aria-hidden>{Array.from({ length: 14 }, (_, i) => <i key={i} style={{ "--i": i } as CSSProperties} className={on ? s.waveOn : ""} />)}</div>
         <div className={s.hText}>{u.heard}</div>
         <div className={s.editTags}>{u.edits.map((e, i) => <span key={i} className={s.editTag} style={{ "--i": i } as CSSProperties}>{e.kind === "filler" ? `filler · ${e.text}` : e.kind === "correction" ? `correction · ${e.text.replace(/^umm,?\s*/i, "")}` : e.kind}</span>)}</div>
@@ -637,6 +649,11 @@ function Hears() {
         <div className={s.railFill} style={{ width: `${(i / (HEARS.length - 1)) * 100}%` }} />
         <div className={s.railDot} style={{ left: `${(i / (HEARS.length - 1)) * 100}%` }} />
         {HEARS.map((h, k) => <span key={h.k} className={s.railLabel} style={{ left: `${(k / (HEARS.length - 1)) * 100}%` }}>{h.k}</span>)}
+      </div>
+      <div className={s.hNow} aria-live="polite" key={i}>
+        <span className={s.hNowStep}>{String(i + 1).padStart(2, "0")} · {HEARS[i].k.toLowerCase()}</span>
+        <span className={s.hNowDoes}>{HEARS[i].t}</span>
+        <span className={s.hNowNever}>✕ {HEARS[i].never}</span>
       </div>
       <div className={s.hGrid}>
         {HEARS.map((h, k) => (

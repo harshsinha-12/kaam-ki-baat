@@ -339,3 +339,34 @@
 .voiceOn { opacity: 1; transform: translate(-50%, 0) scale(1); }
 .nod { animation: nod 1.6s ease-in-out infinite; }
 @keyframes nod { 0%, 100% { translate: 0 0; } 50% { translate: 0 2px; } }
+
+/* ---- motion pass (claude/workspace-motion) ---- */
+/* doubt loop: a trail chases the dot; each stop lights up as the dot reaches it (9 s lap, 1.8 s per stop) */
+.loopTrail { fill: none; stroke: var(--warn); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 90 727; opacity: .55; animation: loopChase 9s linear infinite; filter: drop-shadow(0 0 6px rgba(255,107,107,.6)); }
+@keyframes loopChase { from { stroke-dashoffset: 90; } to { stroke-dashoffset: -727; } }
+.loopStep { animation: loopLight 9s linear infinite; animation-delay: calc(var(--i) * 1.8s - .25s); }
+@keyframes loopLight { 0%, 22%, 100% { transform: scale(1); } 3%, 14% { transform: scale(1.08); } }
+.loopStep .loopNode { animation: loopNodeLit 9s linear infinite; animation-delay: inherit; }
+@keyframes loopNodeLit { 0%, 22%, 100% { stroke: var(--line); fill: var(--card); } 3%, 14% { stroke: var(--warn); fill: #1d1312; } }
+.loopCore { font: 600 15px var(--sans, Inter); fill: var(--ink); }
+.timerNote { opacity: .55; }
+/* Wispr Flow bar: the pill with live bars that appears while dictating */
+.flowBar { display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px 4px 8px; border-radius: 999px; background: #f2efe6; color: #0b0b0c; font: 600 11px var(--mono); letter-spacing: .04em; margin-right: 8px; box-shadow: 0 6px 18px -8px rgba(242,239,230,.7); }
+.flowBars { display: inline-flex; align-items: center; gap: 2px; height: 12px; }
+.flowBars i { width: 2.5px; height: 4px; border-radius: 2px; background: #0b0b0c; display: block; }
+.flowBarsOn { animation: flowBar .9s ease-in-out infinite; animation-delay: calc(var(--b) * .12s); }
+@keyframes flowBar { 0%, 100% { height: 4px; } 50% { height: 12px; } }
+/* "now / never" strip under the rail: says what is happening and what will not */
+.hNow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 18px; margin: 4px 0 22px; padding: 14px 18px; border-radius: 14px; border: 1px solid var(--line); background: #0b0b0a; animation: hNowIn .5s var(--out) both; }
+@keyframes hNowIn { from { opacity: 0; transform: translateY(8px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+.hNowStep { font: 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--center); }
+.hNowDoes { font-size: 17px; font-weight: 600; color: var(--ink); }
+.hNowNever { font-size: 14px; color: #ff8a8a; margin-left: auto; }
+.hOn .hUi > * { animation: hNowIn .55s var(--out) both; }
+.hOn .hUi > *:nth-child(2) { animation-delay: .08s; } .hOn .hUi > *:nth-child(3) { animation-delay: .16s; } .hOn .hUi > *:nth-child(4) { animation-delay: .24s; } .hOn .hUi > *:nth-child(5) { animation-delay: .32s; }
+/* refuses to fake: strike draws across the chatbot answer, then the card turns */
+.face s { text-decoration: none; background: linear-gradient(#ff6b6b, #ff6b6b) 0 58% / 0 2px no-repeat; transition: background-size .6s var(--out); }
+.guard:hover .face s, .flipped .face s { background-size: 100% 2px; }
+.flipped .guardInner { box-shadow: 0 24px 60px -30px rgba(111,220,140,.45); border-radius: 18px; }
+.guardInner { transition: transform .8s cubic-bezier(.2,.8,.2,1.15), box-shadow .6s; }
+@media (prefers-reduced-motion: reduce) { .loopTrail, .loopStep, .loopStep .loopNode, .flowBarsOn, .hNow, .hOn .hUi > * { animation: none !important; } .guardInner, .face s { transition: none; } }
