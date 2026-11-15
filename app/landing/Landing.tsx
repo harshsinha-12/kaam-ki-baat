@@ -672,7 +672,7 @@ export default function Landing() {
               <a href="#zones" className={`${s.btn} ${s.primary}`}>See how it thinks ↓</a>
               <a href={REPO} className={s.btn} target="_blank" rel="noreferrer">GitHub</a>
             </div>
-            <div className={s.kbdHint}>Try it: focus the stage and press <span className={s.kbd}>←</span><span className={s.kbd}>↑</span><span className={s.kbd}>→</span>, or click a zone.</div>
+            <div className={s.kbdHint}>AirPods head motion · Webcam tracking · Keyboard + tap<br />Try the preview: focus the stage and press <span className={s.kbd}>←</span><span className={s.kbd}>↑</span><span className={s.kbd}>→</span>, or click a zone.</div>
           </div>
           <HeroStage />
         </header>
@@ -694,7 +694,7 @@ export default function Landing() {
         <section id="zones" className={s.section}>
           <Reveal><div className={s.eyebrow}>Three agents, one voice</div></Reveal>
           <Reveal i={1}><h2 className={s.h2}>Where you look decides <em>who</em> answers.</h2></Reveal>
-          <Reveal i={2}><p className={s.lede}>Inspired by Air Agents' idea of agents placed around you. Keyboard and tap controls work now. Webcam input and a native AirPods companion are planned. A turn only selects an agent; you still choose to talk.</p></Reveal>
+          <Reveal i={2}><p className={s.lede}>Choose your workspace with AirPods head motion, webcam tracking, or keyboard and tap controls. Calibrate facing forward, then turn left, center, or right to select an agent. You still choose when to talk.</p></Reveal>
           <ZonesDive />
         </section>
 
@@ -727,19 +727,19 @@ export default function Landing() {
         <section id="how" className={s.section}>
           <Reveal><div className={s.eyebrow}>How it works</div></Reveal>
           <Reveal i={1}><h2 className={s.h2}>Sources in. <em>Evidence</em> out.</h2></Reveal>
-          <Reveal i={2}><p className={s.lede}>The Wispr MCP supplies reviewed meeting passages from one approved meeting. GitHub supplies SHA-pinned code. Live speech stays provisional. Fixed rules decide status; the language model only explains.</p></Reveal>
+          <Reveal i={2}><p className={s.lede}>The Wispr MCP supplies reviewed meeting passages from one approved meeting. GitHub supplies SHA-pinned code. AirPods and webcam head motion select your zone; a click or keypress activates it. Live speech stays provisional. Fixed rules decide status; the language model only explains.</p></Reveal>
           <Architecture />
           <div className={s.statusGrid}>
             <div className={s.statusCol}><h3>Works now</h3><ul>
               <li>Evidence engine, three zones, leader escalation with read-back</li>
               <li>Live GitHub reads: PRs, changed files, check runs</li>
               <li>Bolna runtime tools (HTTPS), tested locally with fixtures</li>
-              <li>Head-turn selector logic with dwell + hysteresis</li>
+              <li>AirPods motion companion + webcam controls, with calibration and dwell</li>
             </ul></div>
             <div className={s.statusCol}><h3>Next</h3><ul>
               <li>Verify the configured voice path in a real call</li>
               <li>Three consented phone calls &gt; 45 s</li>
-              <li>Real-device passkey validation, webcam + AirPods providers</li>
+              <li>Real-device passkey validation</li>
               <li>Optional Supabase realtime, once tests match</li>
             </ul></div>
           </div>
