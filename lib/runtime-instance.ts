@@ -1,5 +1,4 @@
-import path from "node:path";
-import { EventStore } from "./store/event-store";
+import { EventStore, eventsLogPath } from "./store/event-store";
 import { loadSnapshot } from "./evidence/load";
 import type { Runtime } from "./tools/runtime";
 
@@ -10,7 +9,7 @@ const g = globalThis as unknown as { __kkbRuntime?: Runtime };
 export function getRuntime(): Runtime {
   if (!g.__kkbRuntime) {
     g.__kkbRuntime = {
-      store: new EventStore(path.resolve(process.env.KKB_EVENTS_FILE ?? "data/runtime/events.jsonl")),
+      store: new EventStore(eventsLogPath()),
       snapshot: loadSnapshot(),
       conversations: new Map(),
     };

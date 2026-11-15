@@ -1,13 +1,22 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { persistVerifiedUpdate, type SavedUpdate, type UpdateRepository } from "../lib/core/persist-update";
-import { EventStore } from "../lib/store/event-store";
+import { EventStore, eventsLogPath } from "../lib/store/event-store";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
 const raw = { taskId: "t1", intendedStatus: "blocked", confirmation: true, idempotencyKey: "call-001-a" };
 const base = { authorizedTaskIds: new Set(["t1"]), generateId: () => "id-1", now: () => "2026-11-15T08:00:00.000Z" };
+
+describe("events log path", () => {
+  it("treats a blank events-file setting as the default log", () => {
+    assert.equal(eventsLogPath(""), path.resolve("data/runtime/events.jsonl"));
+    assert.equal(eventsLogPath("   "), path.resolve("data/runtime/events.jsonl"));
+    assert.equal(eventsLogPath(undefined), path.resolve("data/runtime/events.jsonl"));
+    assert.equal(eventsLogPath("custom/events.jsonl"), path.resolve("custom/events.jsonl"));
+  });
+});
 
 describe("tool postconditions", () => {
   it("refuses unauthorized identity", async () => {
