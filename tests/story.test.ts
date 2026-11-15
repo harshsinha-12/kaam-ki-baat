@@ -32,6 +32,12 @@ test("a head-turn question finds the input area, an explicit PR number wins", ()
   assert.match(t.sentences[0], /^Pull request 24/);
 });
 
+test("short keywords like CI still find their area", () => {
+  assert.equal(matchAreas(story, "Did CI pass?")[0].id, "evidence");
+  assert.equal(traceTrail(story, "what did PR #24 do?").lead, 0);
+  assert.equal(traceTrail(story, "who approves on the leader desk?").lead, 1);
+});
+
 test("an unrelated question says so instead of guessing", () => {
   const t = traceTrail(story, "zzz qqq");
   assert.equal(t.prs.length, 0);

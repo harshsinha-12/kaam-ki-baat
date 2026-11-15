@@ -53,7 +53,7 @@ export function Story() {
     return null;
   }, [trail, area, chapter]);
   const focusArea = trail?.areas[0]?.id ?? area;
-  const activePR = trail && step >= 1 ? trail.prs[Math.min(step - 1, trail.prs.length - 1)] : selectedPR;
+  const activePR = trail && trail.prs.length && step >= trail.lead ? trail.prs[Math.min(step - trail.lead, trail.prs.length - 1)] : selectedPR;
 
   const stop = () => { if (timer.current) clearTimeout(timer.current); timer.current = null; };
   useEffect(() => stop, []);
@@ -192,13 +192,13 @@ export function Story() {
             {S.prs.map((p, i) => {
               const x = xOf(i), isLit = !lit || lit.has(p.number), isActive = activePR?.number === p.number;
               const ks = p.areas.map((a) => AREA_INDEX.get(a) ?? 0);
-              const deepest = Math.max(...ks);
+              const deepest = ks.length ? Math.max(...ks) : -1;
               return (
                 <g key={p.number} style={{ cursor: "pointer", transition: "opacity .45s" }} opacity={isLit ? 1 : 0.13}
                   onClick={() => { stop(); setStep(-1); setSelectedPR(p); }}>
                 <g className="kkb-col" style={{ "--i": i } as CSSProperties}>
                   <rect x={x - GAP / 2} y={56} width={GAP} height={H - 70} fill="transparent" />
-                  <line x1={x} x2={x} y1={TRUNK_Y} y2={laneY(deepest)} stroke={isActive ? INK : "#2a2925"} strokeWidth={isActive ? 1.6 : 1} strokeDasharray={isActive ? undefined : "2 4"} />
+                  <line x1={x} x2={x} y1={TRUNK_Y} y2={deepest < 0 ? TRUNK_Y : laneY(deepest)} stroke={isActive ? INK : "#2a2925"} strokeWidth={isActive ? 1.6 : 1} strokeDasharray={isActive ? undefined : "2 4"} />
                   {p.areas.map((a) => { const k = AREA_INDEX.get(a) ?? 0; const color = AREA.get(a)?.color ?? INK;
                     return <circle key={a} cx={x} cy={laneY(k)} r={isActive ? 8 : 6} fill={color} stroke={BG} strokeWidth={2} />; })}
                   <circle cx={x} cy={TRUNK_Y} r={isActive ? 10 : 7} fill={isActive ? INK : BG} stroke={INK} strokeWidth={2} className={isActive ? "kkb-pulse" : undefined} />
@@ -210,7 +210,7 @@ export function Story() {
             })}
 
             {/* trail along the focus lane */}
-            {trailD && <path key={trailD} className="kkb-trail" d={trailD} fill="none" stroke={AREA.get(focusArea!)?.color} strokeWidth={3} strokeLinejoin="round" style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,.25))" }} />}
+            {trailD && <path key={trailD} className="kkb-trail" d={trailD} fill="none" stroke={AREA.get(focusArea!)?.color} strokeWidth={3} strokeLinejoin="round" pointerEvents="none" style={{ filter: "drop-shadow(0 0 6px rgba(255,255,255,.25))" }} />}
           </svg>
         </div>
 
