@@ -10,3 +10,6 @@ data/private/
 data/runtime/
 *.tsbuildinfo
 graphify-out/
+
+# Local Vercel project metadata and downloaded environment files
+.vercel/
