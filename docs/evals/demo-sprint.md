@@ -45,7 +45,7 @@ R2 fix commit `6dd6411` preloads the exact authorized `current_task_id` and tell
 
 ## Early close-out — user requested completion as soon as possible
 
-Closed before the planned minute-60 checkpoint at 15:53 IST. Software commit `f64a2fd` on top of main `6bd9852` passed **163/163 synthetic tests**, full typecheck and production build after isolated `npm ci`. Relative Markdown links and `git diff --check` pass. The eight E1 tests include a real CLI subprocess, missing/malformed evidence, concurrent immutable retries, persisted read-back mismatches and scope checks. No device pass is inferred from these tests. No extra agents, calls, live-provider changes, merges or deployment were performed by E1.
+Closed before the planned minute-60 checkpoint at 15:53 IST. Software commit `a89ae05` on top of main `f4a7561` passed **164/164 synthetic tests**, full typecheck and production build after isolated `npm ci`. Relative Markdown links and `git diff --check` pass. The eight E1 tests include a real CLI subprocess, missing/malformed evidence, concurrent immutable retries, persisted read-back mismatches and scope checks. No device pass is inferred from these tests. No extra agents, calls, live-provider changes, merges or deployment were performed by E1.
 
 | Call acceptance | Status | Evidence / limit |
 | --- | --- | --- |
@@ -57,5 +57,7 @@ Closed before the planned minute-60 checkpoint at 15:53 IST. Software commit `f6
 | Persisted task-update read-back during call | unverified | No saved-update record or save tool in the captured call window. Independent evaluator tests are synthetic, not live-save evidence. |
 | Evaluation saved and retry read back | passed | Private content-addressed bundle retains duration, consent reference, version, scenario, captured source, scoped tools and absent-write evidence. Unchanged retry returned the same run. |
 | Focused fix reviewed before another call | passed, code/regression review | R2 exact-task-ID regression failed before and passed after; linked private review saved. Voice improvement remains unverified. |
+
+I4 independently recorded production-browser FIXTURE checks for manual panel selection, member center lock, explicit activation read-back, fresh-provider gating, camera-denial state and absent AirPods heartbeat. These verify browser/API behavior with fixture data; they do not establish webcam/AirPods motion end-to-end.
 
 D1–D4 webcam results above apply to the earlier user-operated component check. **Final integrated-head D1–D7 remain unverified on-device.** D5–D7 are unverified even on the earlier component check. All AirPods D1–D7 remain **unverified**, explicitly deferred without hardware. The next useful validation is one consenting integrated-device replay covering activation, physical loss and provider switching, followed by the same approved-source call scenario with explicit save/read-back. Repository-onboarding calls use a different scenario/source and cannot establish comparable V1→V2 improvement.
