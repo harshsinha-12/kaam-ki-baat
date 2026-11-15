@@ -1,0 +1,11 @@
+.tracker { padding: 16px; border: 1px solid #64748b66; border-radius: 12px; color: inherit; }
+.heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.heading span { font-size: .8rem; text-transform: capitalize; }
+.tracker p { line-height: 1.5; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.controls button { padding: 9px 12px; border: 1px solid #64748b88; border-radius: 7px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.controls button:disabled { opacity: .45; cursor: default; }
+.controls button:focus-visible { outline: 2px solid #38bdf8; outline-offset: 3px; }
+.readout { font-variant-numeric: tabular-nums; font-size: .9rem; }
+.hint { font-size: .8rem; opacity: .8; }
+.decoder { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
