@@ -101,7 +101,7 @@ export function Explorer() {
         const a = pos.current.get(e.from), b = pos.current.get(e.to); if (!a || !b) continue;
         if (!visibleEdge(e.kind)) continue;
         const lit = hl.has(e.from) && hl.has(e.to); const st = EDGE[e.kind] ?? EDGE.defines;
-        ctx.strokeStyle = lit ? "#f5c451" : any ? "rgba(140,150,190,.06)" : st.c; ctx.lineWidth = (lit ? 2.4 : 0.8) / cm.k;
+        ctx.strokeStyle = lit ? "#f5c451" : any ? "rgba(150,150,140,.06)" : st.c; ctx.lineWidth = (lit ? 2.4 : 0.8) / cm.k;
         ctx.setLineDash(lit ? [] : st.dash.map((d) => d / cm.k)); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
       ctx.setLineDash([]);
@@ -117,7 +117,7 @@ export function Explorer() {
         else { ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 6.283); ctx.fill(); }
         if (sel) { ctx.strokeStyle = "#f5c451"; ctx.lineWidth = 2 / cm.k; ctx.beginPath(); ctx.arc(p.x, p.y, r + 5 + Math.sin(t * 4) * 1.5, 0, 6.283); ctx.stroke(); }
         if (lit || sel || cm.k > 1.5 || (!any && G.godNodes.includes(n.id))) {
-          ctx.globalAlpha = lit || sel ? 1 : any ? 0.3 : 0.85; ctx.fillStyle = lit || sel ? "#f2efe6" : "rgba(220,224,245,.8)";
+          ctx.globalAlpha = lit || sel ? 1 : any ? 0.3 : 0.85; ctx.fillStyle = lit || sel ? "#f2efe6" : "rgba(230,226,215,.8)";
           ctx.font = `${(lit || sel ? 600 : 400)} ${12 / cm.k}px Inter, system-ui, sans-serif`;
           ctx.fillText(n.kind === "file" || n.kind === "test" ? n.path : `${n.label}()`, p.x + r + 5 / cm.k, p.y + 4 / cm.k);
         }
@@ -215,55 +215,56 @@ export function Explorer() {
   const counts = useMemo(() => Object.fromEntries(Object.keys(KIND).map((k) => [k, G.nodes.filter((n) => n.kind === k).length])), []);
 
   return (
-    <div style={{ position: "relative", height: "100vh", background: "radial-gradient(120% 120% at 60% 20%, #1a2142 0%, #10142a 55%, #0b0d1c 100%)", color: "#f2efe6", fontFamily: "var(--font-sans), Inter, system-ui, sans-serif", overflow: "hidden" }}>
+    <div style={{ position: "relative", height: "100vh", background: "#000", color: "#f2efe6", fontFamily: "var(--font-sans), Inter, system-ui, sans-serif", overflow: "hidden" }}>
       <canvas ref={canvas} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", cursor: "grab" }} aria-label="Code graph of this repository" />
       {/* top bar */}
       <div style={{ position: "absolute", top: 14, left: 16, right: 16, display: "flex", gap: 10, alignItems: "center", pointerEvents: "none" }}>
-        <a href="/" style={{ pointerEvents: "auto", color: "#c9cde6", textDecoration: "none", fontSize: 13, padding: "7px 12px", border: "1px solid #2a3157", borderRadius: 10, background: "rgba(16,20,42,.8)" }}>← Kaam Ki Baat</a>
-        <span style={{ fontSize: 13, color: "#8e93b0" }}>Code graph · {G.repository} @ {G.sha.slice(0, 7)}</span>
+        <a href="/" style={{ pointerEvents: "auto", color: "#d6d2c6", textDecoration: "none", fontSize: 13, padding: "7px 12px", border: "1px solid #262522", borderRadius: 10, background: "rgba(10,10,10,.8)" }}>← Kaam Ki Baat</a>
+        <span style={{ fontSize: 13, color: "#8a877e" }}>Code graph · {G.repository} @ {G.sha.slice(0, 7)}</span>
+        <a href="/story" style={{ pointerEvents: "auto", color: "#d6d2c6", textDecoration: "none", fontSize: 13, padding: "7px 12px", border: "1px solid #262522", borderRadius: 10, background: "rgba(10,10,10,.8)" }}>How the codebase grew →</a>
         <form onSubmit={(e) => { e.preventDefault(); runSearch(); }} style={{ marginLeft: "auto", display: "flex", gap: 6, pointerEvents: "auto" }}>
-          <div style={{ display: "flex", border: "1px solid #2a3157", borderRadius: 10, overflow: "hidden" }}>
+          <div style={{ display: "flex", border: "1px solid #262522", borderRadius: 10, overflow: "hidden" }}>
             {(["semantic", "keyword"] as SearchMode[]).map((m) => (
-              <button key={m} type="button" onClick={() => { setMode(m); runSearch(q, m); }} style={{ padding: "7px 10px", fontSize: 12, border: 0, cursor: "pointer", background: mode === m ? "#f0d35c" : "rgba(16,20,42,.85)", color: mode === m ? "#10142a" : "#c9cde6" }}>{m}</button>
+              <button key={m} type="button" onClick={() => { setMode(m); runSearch(q, m); }} style={{ padding: "7px 10px", fontSize: 12, border: 0, cursor: "pointer", background: mode === m ? "#f0d35c" : "rgba(10,10,10,.85)", color: mode === m ? "#000" : "#d6d2c6" }}>{m}</button>
             ))}
           </div>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask in plain words, or type a function / file name…" aria-label="Search the code"
-            style={{ width: "min(46vw, 520px)", padding: "8px 12px", borderRadius: 10, border: "1px solid #2a3157", background: "rgba(16,20,42,.85)", color: "#f2efe6", fontSize: 13.5 }} />
-          <button type="submit" style={{ padding: "8px 14px", borderRadius: 10, border: 0, background: "#f0d35c", color: "#10142a", fontWeight: 650, cursor: "pointer" }}>Search</button>
+            style={{ width: "min(46vw, 520px)", padding: "8px 12px", borderRadius: 10, border: "1px solid #262522", background: "rgba(10,10,10,.85)", color: "#f2efe6", fontSize: 13.5 }} />
+          <button type="submit" style={{ padding: "8px 14px", borderRadius: 10, border: 0, background: "#f0d35c", color: "#000", fontWeight: 650, cursor: "pointer" }}>Search</button>
         </form>
       </div>
       {/* legend */}
-      <aside style={{ position: "absolute", top: 64, left: 16, width: 250, padding: 16, borderRadius: 16, background: "rgba(16,20,42,.86)", border: "1px solid #232a48", fontSize: 12.5, lineHeight: 1.5, maxHeight: "calc(100vh - 150px)", overflow: "auto" }}>
+      <aside style={{ position: "absolute", top: 64, left: 16, width: 250, padding: 16, borderRadius: 16, background: "rgba(10,10,10,.86)", border: "1px solid #1d1d1b", fontSize: 12.5, lineHeight: 1.5, maxHeight: "calc(100vh - 150px)", overflow: "auto" }}>
         <div style={{ fontWeight: 650, fontSize: 14 }}>Code graph</div>
-        <div style={{ color: "#8e93b0", margin: "4px 0 10px" }}>Every file, function and test in this repo, built from the pinned commit. The Code Navigator answers from these edges.</div>
-        {Object.entries(KIND).map(([k, v]) => <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 10, height: 10, borderRadius: k === "file" || k === "test" ? 3 : 10, background: v.c }} />{v.label} <span style={{ color: "#5d6283", marginLeft: "auto" }}>{counts[k]}</span></div>)}
+        <div style={{ color: "#8a877e", margin: "4px 0 10px" }}>Every file, function and test in this repo, built from the pinned commit. The Code Navigator answers from these edges.</div>
+        {Object.entries(KIND).map(([k, v]) => <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 10, height: 10, borderRadius: k === "file" || k === "test" ? 3 : 10, background: v.c }} />{v.label} <span style={{ color: "#5a5852", marginLeft: "auto" }}>{counts[k]}</span></div>)}
         <div style={{ fontWeight: 650, marginTop: 12 }}>Edges</div>
         {Object.entries(EDGE).map(([k, v]) => <div key={k} style={{ display: "flex", alignItems: "center", gap: 8 }}><svg width="22" height="6"><line x1="0" y1="3" x2="22" y2="3" stroke={v.c.replace(/[\d.]+\)$/, "1)")} strokeWidth="2" strokeDasharray={v.dash.join(" ")} /></svg>{v.label}</div>)}
-        <div style={{ color: "#5d6283", marginTop: 10 }}>{G.nodes.length} nodes · {G.edges.length} edges · computed from the files</div>
+        <div style={{ color: "#5a5852", marginTop: 10 }}>{G.nodes.length} nodes · {G.edges.length} edges · computed from the files</div>
         {hits.length > 0 && <>
           <div style={{ fontWeight: 650, marginTop: 12 }}>Results · {mode}</div>
           {hits.map((h, i) => (
             <button key={h.id} onClick={() => { setSelected(byId.get(h.id) ?? null); highlight.current = new Set([h.id]); flyTo([h.id], 2); }} style={{ display: "block", width: "100%", textAlign: "left", background: selected?.id === h.id ? "rgba(240,211,92,.12)" : "transparent", border: 0, color: "#f2efe6", padding: "5px 6px", borderRadius: 8, cursor: "pointer", fontSize: 12.5 }}>
-              <span style={{ color: KIND[h.kind]?.c }}>{i + 1}. {h.label}</span> <span style={{ color: "#5d6283" }}>{h.path.split("/").slice(-2).join("/")}:{h.line}</span>
+              <span style={{ color: KIND[h.kind]?.c }}>{i + 1}. {h.label}</span> <span style={{ color: "#5a5852" }}>{h.path.split("/").slice(-2).join("/")}:{h.line}</span>
             </button>
           ))}
         </>}
       </aside>
       {/* details */}
       {selected && (
-        <aside style={{ position: "absolute", top: 64, right: 16, width: 300, padding: 18, borderRadius: 16, background: "rgba(16,20,42,.92)", border: "1px solid #232a48", fontSize: 13 }}>
-          <button onClick={() => setSelected(null)} aria-label="Close" style={{ position: "absolute", top: 10, right: 12, background: "none", border: 0, color: "#8e93b0", cursor: "pointer", fontSize: 16 }}>×</button>
+        <aside style={{ position: "absolute", top: 64, right: 16, width: 300, padding: 18, borderRadius: 16, background: "rgba(10,10,10,.92)", border: "1px solid #1d1d1b", fontSize: 13 }}>
+          <button onClick={() => setSelected(null)} aria-label="Close" style={{ position: "absolute", top: 10, right: 12, background: "none", border: 0, color: "#8a877e", cursor: "pointer", fontSize: 16 }}>×</button>
           <div style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: KIND[selected.kind]?.c }}>{KIND[selected.kind]?.label ?? selected.kind}</div>
           <div style={{ fontFamily: "var(--font-serif), Georgia, serif", fontSize: 24, margin: "4px 0 8px", wordBreak: "break-word" }}>{selected.kind === "file" || selected.kind === "test" ? selected.path.split("/").pop() : selected.label}</div>
-          <div style={{ fontFamily: "var(--font-mono), ui-monospace, monospace", fontSize: 12, color: "#a9adc6", background: "#0e1226", borderRadius: 10, padding: "8px 10px" }}>{selected.path}:{selected.line} @ {G.sha.slice(0, 7)}</div>
-          <div style={{ color: "#8e93b0", margin: "12px 0 6px" }}>Connections ({conns.length})</div>
+          <div style={{ fontFamily: "var(--font-mono), ui-monospace, monospace", fontSize: 12, color: "#aaa69a", background: "#050505", borderRadius: 10, padding: "8px 10px" }}>{selected.path}:{selected.line} @ {G.sha.slice(0, 7)}</div>
+          <div style={{ color: "#8a877e", margin: "12px 0 6px" }}>Connections ({conns.length})</div>
           {conns.map((e, i) => { const other = byId.get(e.from === selected.id ? e.to : e.from); return other && (
-            <button key={i} onClick={() => { setSelected(other); highlight.current = new Set([selected.id, other.id]); flyTo([other.id], 2); }} style={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 8, background: "#141a33", border: 0, borderRadius: 8, padding: "6px 8px", marginBottom: 4, color: "#e4e6f5", cursor: "pointer", fontSize: 12.5 }}>
-              <span>{e.from === selected.id ? "→" : "←"} {other.kind === "file" || other.kind === "test" ? other.path.split("/").pop() : other.label}</span><span style={{ color: "#5d6283" }}>{e.kind}</span>
+            <button key={i} onClick={() => { setSelected(other); highlight.current = new Set([selected.id, other.id]); flyTo([other.id], 2); }} style={{ display: "flex", width: "100%", justifyContent: "space-between", gap: 8, background: "#121211", border: 0, borderRadius: 8, padding: "6px 8px", marginBottom: 4, color: "#ece8dc", cursor: "pointer", fontSize: 12.5 }}>
+              <span>{e.from === selected.id ? "→" : "←"} {other.kind === "file" || other.kind === "test" ? other.path.split("/").pop() : other.label}</span><span style={{ color: "#5a5852" }}>{e.kind}</span>
             </button>); })}
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <a href={`https://github.com/${G.repository}/blob/${G.sha}/${selected.path}#L${selected.line}`} target="_blank" rel="noreferrer" style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #2a3157", color: "#f2efe6", textDecoration: "none", fontSize: 12.5 }}>Open at commit ↗</a>
-            <button onClick={tour} style={{ padding: "8px 12px", borderRadius: 10, border: 0, background: "#f0d35c", color: "#10142a", fontWeight: 650, cursor: "pointer", fontSize: 12.5 }}>Trace the route →</button>
+            <a href={`https://github.com/${G.repository}/blob/${G.sha}/${selected.path}#L${selected.line}`} target="_blank" rel="noreferrer" style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #262522", color: "#f2efe6", textDecoration: "none", fontSize: 12.5 }}>Open at commit ↗</a>
+            <button onClick={tour} style={{ padding: "8px 12px", borderRadius: 10, border: 0, background: "#f0d35c", color: "#000", fontWeight: 650, cursor: "pointer", fontSize: 12.5 }}>Trace the route →</button>
           </div>
         </aside>
       )}
@@ -271,10 +272,10 @@ export function Explorer() {
       <div aria-live="polite" style={{ position: "absolute", left: "50%", bottom: 70, transform: "translateX(-50%)", maxWidth: "min(760px, 90vw)", textAlign: "center", fontFamily: "var(--font-serif), Georgia, serif", fontSize: 20, textShadow: "0 2px 12px #000" }}>{caption}</div>
       <div style={{ position: "absolute", left: "50%", bottom: 18, transform: "translateX(-50%)", display: "flex", gap: 6 }}>
         {[["+", () => { cam.current.tk = Math.min(4, cam.current.tk * 1.3); }], ["−", () => { cam.current.tk = Math.max(0.25, cam.current.tk / 1.3); }], ["Fit", () => { highlight.current = new Set(path); fit(); }]].map(([l, f]) => (
-          <button key={l as string} onClick={f as () => void} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #2a3157", background: "rgba(16,20,42,.86)", color: "#f2efe6", cursor: "pointer" }}>{l as string}</button>
+          <button key={l as string} onClick={f as () => void} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #262522", background: "rgba(10,10,10,.86)", color: "#f2efe6", cursor: "pointer" }}>{l as string}</button>
         ))}
-        <button onClick={building ? stop : build} style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid #2a3157", background: "rgba(16,20,42,.86)", color: "#f2efe6", cursor: "pointer" }}>{building ? "■ Stop" : "▶ How the graph is built"}</button>
-        <button onClick={touring ? stop : tour} style={{ padding: "8px 14px", borderRadius: 10, border: 0, background: "#f0d35c", color: "#10142a", fontWeight: 650, cursor: "pointer" }}>{touring ? "■ Stop" : "▶ How the answer was chosen"}</button>
+        <button onClick={building ? stop : build} style={{ padding: "8px 14px", borderRadius: 10, border: "1px solid #262522", background: "rgba(10,10,10,.86)", color: "#f2efe6", cursor: "pointer" }}>{building ? "■ Stop" : "▶ How the graph is built"}</button>
+        <button onClick={touring ? stop : tour} style={{ padding: "8px 14px", borderRadius: 10, border: 0, background: "#f0d35c", color: "#000", fontWeight: 650, cursor: "pointer" }}>{touring ? "■ Stop" : "▶ How the answer was chosen"}</button>
       </div>
     </div>
   );

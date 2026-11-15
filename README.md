@@ -40,6 +40,14 @@ Call it and ask, in Hindi, English or both. Three agents sit around you; a head 
 
 Live site: <https://kaam-ki-baat-one.vercel.app/> · Demo meeting and three-call test plan: [docs/demo/meeting-notes.md](docs/demo/meeting-notes.md)
 
+**How the codebase grew:** [`/story`](https://kaam-ki-baat-one.vercel.app/story) shows every merged PR on one line, with lanes for Team Memory, Leader Desk, Code Navigator and the rest. Ask "who approves when the leader wasn't clear?" and it traces PR #9 → #11 → #16 → #18, in sentences the voice agent can read out (`GET /api/story?q=…`). Rebuild with `npm run story`.
+
+### Deploy your own copy on Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fharshsinha-12%2Fkaam-ki-baat&project-name=kaam-ki-baat&repository-name=kaam-ki-baat)
+
+The button copies this repo into your GitHub account and deploys it to your Vercel; after that, every push to your copy's `main` redeploys. The landing page, `/story` and `/graph` need no environment variables. Live calls and the board need the keys in `.env.example`. To keep the original project in sync instead, set `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` as repository secrets and `.github/workflows/deploy-vercel.yml` deploys every merge to `main`.
+
 ## Start here (plain version)
 
 1. Read [architecture.md](docs/architecture.md). It explains the problem, the direction, and the build order.
