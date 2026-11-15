@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CodeGraphView, type ViewGraph } from "../components/CodeGraphView";
+import { ProjectConnection, type ConnectedProject } from "../components/ProjectConnection";
 import { FocusInputControls } from "../components/FocusInputControls";
 import type { ConfirmedFocus } from "@/lib/focus/input-contracts";
 import { CodeFocus } from "../components/CodeFocus";
@@ -55,6 +56,10 @@ export default function Team() {
     } catch { setError("This browser could not save the session. Allow session storage and try again."); }
   };
   const connected = Boolean(me?.participant);
+  const connectProject = useCallback((project: ConnectedProject) => {
+    setGa({ graph: project.graph, sha: project.sha, repository: project.repository, seed: null, match: "candidate", explanation: [], subgraph: { nodes: [] } });
+    setFocus("code_navigator");
+  }, []);
   const followFocus = useCallback((next: ConfirmedFocus) => {
     if (next.zone) setFocus(next.zone);
   }, []);
@@ -104,8 +109,8 @@ export default function Team() {
       <section className={s.welcome} aria-labelledby="workspace-heading">
         <div>
           <div className={s.label}>From team decisions to your next step</div>
-          <h2 id="workspace-heading">A little context. A clear way forward.</h2>
-          <p>Recall what your team agreed, find the code behind it, and ask your leader when the evidence is unclear.</p>
+          <h2 id="workspace-heading">Your project, in context.</h2>
+          <p>Connect your repository. Ask a question. Follow the code.</p>
         </div>
         <div className={s.connection} role="status"><span className={connected ? s.ok : s.warn}>●</span> {connecting ? "Checking your session…" : connected ? `Connected as ${me!.participant!.name}` : "Connect your personal session"}</div>
       </section>
@@ -116,17 +121,11 @@ export default function Team() {
           <button className={`${s.btn} ${s.primary}`} disabled={!sessionLink.trim() || connecting}>Connect</button>
         </form>
       </section>}
-      <div className={s.guide} aria-label="How to use the workspace">
-        <div><span className={s.step}>01</span><b>Remember the agreement</b><p>Ask Team Memory about decisions or ownership. Each answer shows its sources and uncertainty.</p></div>
-        <div><span className={s.step}>02</span><b>Find the implementation</b><p>Describe what you need in Code Navigator. Follow the graph to the exact file and pinned source.</p></div>
-        <div><span className={s.step}>03</span><b>Resolve an open question</b><p>If the notes do not settle it, send the question to your leader. Their answer appears here.</p></div>
+      {connected && <ProjectConnection repository={me!.snapshot?.repository ?? "harshsinha-12/kaam-ki-baat"} onConnected={connectProject} />}
+      <div className={s.setupRow}>
+        <details className={s.setupDisclosure}><summary>Camera &amp; head tracking</summary><p className={s.setupHint}>Choose Webcam, start camera, then calibrate facing forward. Look left for meeting context, center for the leader, and right for code. Head movement highlights; activation is explicit.</p>{connected ? <FocusInputControls key={me!.participant!.name} onConfirmedFocus={followFocus} /> : <p>Connect your personal session to enable camera controls.</p>}</details>
+        <details className={s.setupDisclosure}><summary>How to use this workspace</summary><p className={s.setupHint}>Connect the approved GitHub URL above to open its graph. Start the voice guide to ask about code and documentation. Team Memory answers from approved meeting notes; unclear decisions can be sent to the verified team leader. Camera is off until you start it, and video stays on your device.</p></details>
       </div>
-      <section className={s.motionIntro}>
-        <div><div className={s.label}>Look left. Look right. Keep your place.</div><h2>Move your head to highlight a space.</h2><p>Choose <b>Webcam</b> below, start the camera, then look straight ahead and calibrate. Turn left for meeting context, face forward for the Leader Desk, or turn right for code. Hold briefly to select.</p></div>
-        <span className={s.badge}>Camera off until you start it</span>
-      </section>
-      {connected && <FocusInputControls key={me!.participant!.name} onConfirmedFocus={followFocus} />}
-      <div className={s.workspaceTools}><p>Head movement highlights a space. Activate explicitly to take action. Leader access stays protected.</p><a href="/board">Open phone-call evidence ↗</a></div>
       {error && <p className={s.bad} role="alert">{error}</p>}
       <div className={s.zones} role="group" aria-label="Workspace areas">
         <button className={`${s.zbtn} ${focus === "team_memory" ? s.zbtnOn : ""}`} disabled={!connected} aria-pressed={focus === "team_memory"} onClick={() => setFocus("team_memory")}><div className={s.label}>← Look left · meeting context</div>Team Memory</button>
@@ -134,7 +133,7 @@ export default function Team() {
         <button className={`${s.zbtn} ${focus === "code_navigator" ? s.zbtnOn : ""}`} disabled={!connected} aria-pressed={focus === "code_navigator"} onClick={() => setFocus("code_navigator")}><div className={s.label}>Look right → · codebase</div>Code Navigator</button>
       </div>
 
-      {focus === "leader_desk" && <section className={`${s.card} ${s.activeC} ${s.leaderHint}`} role="status"><div><div className={s.label}>Center selected</div><h2>Leader Desk</h2><p>Your head movement selected this space. A verified leader session is required to open it; selection does not grant access.</p></div><a className={s.btn} href="/leader">Leader verification ↗</a></section>}
+      {focus === "leader_desk" && <section className={`${s.card} ${s.activeC} ${s.leaderHint}`} role="status"><div><div className={s.label}>Center selected</div><h2>Leader Desk</h2><p>Charan is the team leader. Use the project voice guide above to clear repository doubts. Human-approved decisions require leader verification.</p></div><a className={s.btn} href="/leader">Leader verification ↗</a></section>}
       <div className={s.grid}>
         <section className={`${s.card} ${focus === "team_memory" ? s.active : ""}`}>
           <div className={s.label}>Team Memory · meeting context</div>
@@ -165,7 +164,7 @@ export default function Team() {
           </div>
         </section>
 
-        <section className={`${s.card} ${focus === "code_navigator" ? s.activeR : ""}`}>
+        <section id="code-navigator" className={`${s.card} ${focus === "code_navigator" ? s.activeR : ""}`}>
           <div className={s.label}>Code Navigator · graph of this repo</div>
           <div className={s.h}>Where is it in the code?</div>
           <div className={s.row}>
