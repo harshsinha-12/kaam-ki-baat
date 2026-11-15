@@ -1,0 +1,1 @@
+export default function Home(){return <main><h1>Kaam Ki Baat</h1><p>Meeting mein bola. Repo mein bana?</p><p>Evidence-backed briefings with Code Scout, Fix Navigator, and Evidence Verifier.</p><p><strong>Foundation only:</strong> live Wispr, GitHub and Bolna runtimes are not yet connected. Read docs/OPUS_START.md.</p></main>}
