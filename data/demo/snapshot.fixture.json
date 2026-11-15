@@ -2,12 +2,12 @@
   "label": "FIXTURE",
   "note": "FIXTURE: contains synthetic or offline data — not live evidence",
   "repository": "harshsinha-12/kaam-ki-baat",
-  "pinnedSha": "71f9277efc7413b55c0674c2033a015f84cd060c",
-  "fetchedAt": "2026-11-15T09:57:21.769Z",
+  "pinnedSha": "edf5d0fb09e4ca9eec11e6a06e9e7a1e422c436c",
+  "fetchedAt": "2026-11-15T10:10:38.543Z",
   "meetings": [
     {
       "id": "kkb-sync-2026-11-15",
-      "title": "Kaam Ki Baat — demo sync",
+      "title": "Kaam Ki Baat — kickoff and architecture",
       "date": "2026-11-15",
       "source": "FIXTURE",
       "approvedBy": "p_lead"
@@ -20,38 +20,38 @@
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Charan",
       "charStart": 0,
-      "charEnd": 69,
-      "text": "Agenda: Kaam Ki Baat demo at 4. Who owns what, and what's still open.",
+      "charEnd": 119,
+      "text": "Okay Harsh, we have three hours. Before we touch code, let's agree what we start with: one problem, one user, one demo.",
       "visibility": "participant"
     },
     {
       "kind": "meeting",
       "id": "kkb#2",
       "meetingId": "kkb-sync-2026-11-15",
-      "speaker": "Charan",
-      "charStart": 70,
-      "charEnd": 210,
-      "text": "Decision: the Leader Desk opens only on my laptop, with Touch ID. A head turn or the camera only selects an agent, it never proves who I am.",
+      "speaker": "Harsh",
+      "charStart": 120,
+      "charEnd": 159,
+      "text": "Agreed. So what exactly is the problem?",
       "visibility": "participant"
     },
     {
       "kind": "meeting",
       "id": "kkb#3",
       "meetingId": "kkb-sync-2026-11-15",
-      "speaker": "Harsh",
-      "charStart": 211,
-      "charEnd": 276,
-      "text": "Agreed. I'll use Team Memory and the Code Navigator from my side.",
+      "speaker": "Charan",
+      "charStart": 160,
+      "charEnd": 353,
+      "text": "Teams decide things in meetings and then lose them. A week later nobody can say who owns it, whether the code exists, whether the PR is merged, or whether the tests passed on the latest commit.",
       "visibility": "participant"
     },
     {
       "kind": "meeting",
       "id": "kkb#4",
       "meetingId": "kkb-sync-2026-11-15",
-      "speaker": "Charan",
-      "charStart": 277,
-      "charEnd": 382,
-      "text": "Decision: the agent says saved only after the update is read back from the store. A timeout is a failure.",
+      "speaker": "Harsh",
+      "charStart": 354,
+      "charEnd": 396,
+      "text": "And then someone pings the lead and waits.",
       "visibility": "participant"
     },
     {
@@ -59,9 +59,9 @@
       "id": "kkb#5",
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Charan",
-      "charStart": 383,
-      "charEnd": 491,
-      "text": "Harsh, can you run the three test calls, each over 45 seconds, and write the evaluation note after each one?",
+      "charStart": 397,
+      "charEnd": 582,
+      "text": "Exactly. The user is an engineer on a small team, like you, sitting on a doubt that blocks the task. The other user is the lead, like me, answering the same question for the fifth time.",
       "visibility": "participant"
     },
     {
@@ -69,9 +69,9 @@
       "id": "kkb#6",
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Harsh",
-      "charStart": 492,
-      "charEnd": 548,
-      "text": "Yes, I'll take the three calls and the evaluation notes.",
+      "charStart": 583,
+      "charEnd": 623,
+      "text": "Is this really common, or is it just us?",
       "visibility": "participant"
     },
     {
@@ -79,9 +79,9 @@
       "id": "kkb#7",
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Charan",
-      "charStart": 549,
-      "charEnd": 598,
-      "text": "I'll handle the leader approvals during the demo.",
+      "charStart": 624,
+      "charEnd": 838,
+      "text": "It's common. Microsoft's Work Trend Index says 55% of people find next steps unclear after meetings. Atlassian's developer experience report says 69% of developers lose eight or more hours a week to inefficiencies.",
       "visibility": "participant"
     },
     {
@@ -89,9 +89,9 @@
       "id": "kkb#8",
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Harsh",
-      "charStart": 599,
-      "charEnd": 683,
-      "text": "Should the code graph agent sit on the left side? It explains how it found the code.",
+      "charStart": 839,
+      "charEnd": 971,
+      "text": "And Stack Overflow's survey says 61% spend more than half an hour a day just searching for answers. So the waiting is the real cost.",
       "visibility": "participant"
     },
     {
@@ -99,29 +99,29 @@
       "id": "kkb#9",
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Charan",
-      "charStart": 684,
-      "charEnd": 725,
-      "text": "Maybe. Let's decide after the first call.",
+      "charStart": 972,
+      "charEnd": 1133,
+      "text": "Right. So the solution: a voice teammate. Wispr Flow gives us what was said in the meeting, GitHub gives us what was built, and Bolna lets you just call and ask.",
       "visibility": "participant"
     },
     {
       "kind": "meeting",
       "id": "kkb#10",
       "meetingId": "kkb-sync-2026-11-15",
-      "speaker": "Charan",
-      "charStart": 726,
-      "charEnd": 792,
-      "text": "Someone should record the demo film before four. Not sure who yet.",
+      "speaker": "Harsh",
+      "charStart": 1134,
+      "charEnd": 1174,
+      "text": "How do we stop it from making things up?",
       "visibility": "participant"
     },
     {
       "kind": "meeting",
       "id": "kkb#11",
       "meetingId": "kkb-sync-2026-11-15",
-      "speaker": "Harsh",
-      "charStart": 793,
-      "charEnd": 846,
-      "text": "Open question: do we freeze the code at 3:30 or 3:45?",
+      "speaker": "Charan",
+      "charStart": 1175,
+      "charEnd": 1369,
+      "text": "Fixed rules decide status, not the model. Proposed is not accepted, an open PR is not merged, and a check on an older commit is stale. If it doesn't know, it asks the leader instead of guessing.",
       "visibility": "participant"
     },
     {
@@ -129,9 +129,9 @@
       "id": "kkb#12",
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Harsh",
-      "charStart": 847,
-      "charEnd": 997,
-      "text": "Bug from yesterday's call: the agent said saved even though the write had timed out. I want the code agent to show me exactly which line decides that.",
+      "charStart": 1370,
+      "charEnd": 1391,
+      "text": "And the three agents?",
       "visibility": "participant"
     },
     {
@@ -139,9 +139,159 @@
       "id": "kkb#13",
       "meetingId": "kkb-sync-2026-11-15",
       "speaker": "Charan",
-      "charStart": 998,
-      "charEnd": 1109,
-      "text": "Good test for the code agent. Harsh, you own the fix. Start from persistVerifiedUpdate and check the read-back.",
+      "charStart": 1392,
+      "charEnd": 1619,
+      "text": "Left is Team Memory, for what we decided. Front is the Leader Desk, which only I can open, from my laptop with Touch ID. Right is the Code Navigator, which uses a graph of the repo to point at the exact file, function and line.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#14",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 1620,
+      "charEnd": 1691,
+      "text": "A head turn picks one, and I can also press A for left and L for right?",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#15",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 1692,
+      "charEnd": 1770,
+      "text": "Yes. But turning your head only selects an agent. It never proves who you are.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#16",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 1771,
+      "charEnd": 1881,
+      "text": "One more rule: the agent says saved only after the update is read back from the store. A timeout is a failure.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#17",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 1882,
+      "charEnd": 1974,
+      "text": "That reminds me, on yesterday's test call it said saved even though the write had timed out.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#18",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 1975,
+      "charEnd": 2094,
+      "text": "Then that's your first task. You own the fix. Start from persistVerifiedUpdate and check the timeout and the read-back.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#19",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 2095,
+      "charEnd": 2139,
+      "text": "Okay, I'll take the saved-after-timeout bug.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#20",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 2140,
+      "charEnd": 2247,
+      "text": "Can you also run the three test calls, each longer than 45 seconds, with an evaluation note after each one?",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#21",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 2248,
+      "charEnd": 2298,
+      "text": "Yes, I'll run the three calls and write the notes.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#22",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 2299,
+      "charEnd": 2348,
+      "text": "I'll handle the leader approvals during the demo.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#23",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 2349,
+      "charEnd": 2399,
+      "text": "Should the code graph agent move to the left side?",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#24",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 2400,
+      "charEnd": 2441,
+      "text": "Maybe. Let's decide after the first call.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#25",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 2442,
+      "charEnd": 2508,
+      "text": "Someone should record the demo film before four. Not sure who yet.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#26",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 2509,
+      "charEnd": 2559,
+      "text": "Last thing: do we freeze the code at 3:30 or 3:45?",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#27",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 2560,
+      "charEnd": 2638,
+      "text": "Let's not decide that now. Ask me through the agent later, that's a good test.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#28",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 2639,
+      "charEnd": 2732,
+      "text": "Okay. I'm on board with the whole plan. Let's test it now and see what I actually understood.",
       "visibility": "participant"
     }
   ],
@@ -212,7 +362,7 @@
     },
     {
       "path": "app/team/page.tsx",
-      "content": "\"use client\";\nimport { useCallback, useEffect, useRef, useState } from \"react\";\nimport { CodeGraphView, type ViewGraph } from \"../components/CodeGraphView\";\nimport { key, zone } from \"../zones/client\";\nimport s from \"../zones/zones.module.css\";\n\n// Teammate workspace: LEFT Team Memory (doubts + escalation) and RIGHT Code\n// Navigator (graph). CENTER is visible but locked unless the server says otherwise.\n// ← / → (or click) selects; selection is sent as a low-privilege focus event.\n\ntype Me = { participant?: { name: string }; role?: string; zones?: Record<string, { allowed: boolean; reason?: string }>; snapshot?: { label: string; pinnedSha: string; repository: string }; error?: string };\ntype Mem = { kind: string; speak: string; offerEscalation: boolean; sources: { kind: string; label: string }[]; question: string; provisional: { text: string }[]; pendingTicket?: { id: string } | null };\ntype GA = { explanation: string[]; match: string; seed: { label: string; path: string; line: number } | null; subgraph: { nodes: string[] }; graph: ViewGraph; sha: string; repository: string };\ntype Ticket = { id: string; question: string; state: string; answer?: { statement: string; conditions?: string; approvedBy: string; decisionVersion: number } };\n\nexport default function Team() {\n  const [me, setMe] = useState<Me | null>(null);\n  const [focus, setFocus] = useState<\"team_memory\" | \"code_navigator\">(\"team_memory\");\n  const seq = useRef(0);\n  const [q, setQ] = useState(\"Who owns the codebase graph agent?\");\n  const [mem, setMem] = useState<Mem | null>(null);\n  const [sent, setSent] = useState<string | null>(null);\n  const [cq, setCq] = useState(\"where do we read back before saying saved\");\n  const [ga, setGa] = useState<GA | null>(null);\n  const [error, setError] = useState(\"\");\n  const [inbox, setInbox] = useState<{ answered: Ticket[]; pending: Ticket[] }>({ answered: [], pending: [] });\n\n  useEffect(() => { zone<Me>(\"me\").then((r) => setMe(r.data)).catch(() => setError(\"Cannot connect. Try again.\")); }, []);\n  const select = useCallback((z: \"team_memory\" | \"code_navigator\" | \"leader_desk\") => {\n    seq.current = Math.max(Date.now(), seq.current + 1);\n    void zone(\"focus\", { zone: z, provider: \"manual\", seq: seq.current }).catch(() => setError(\"Focus could not be saved. Try again.\"));\n    if (z !== \"leader_desk\") setFocus(z);\n  }, []);\n  useEffect(() => {\n    const k = (e: KeyboardEvent) => {\n      if ((e.target as HTMLElement).tagName === \"INPUT\") return;\n      if (e.key === \"ArrowLeft\") select(\"team_memory\");\n      if (e.key === \"ArrowRight\") select(\"code_navigator\");\n      if (e.key === \"ArrowUp\") select(\"leader_desk\");\n    };\n    window.addEventListener(\"keydown\", k);\n    return () => window.removeEventListener(\"keydown\", k);\n  }, [select]);\n  // Answers from the leader arrive here, also after a reconnect.\n  useEffect(() => {\n    const poll = () => zone<{ answered: Ticket[]; pending: Ticket[] }>(\"deliveries\").then((r) => r.status === 200 && r.data.answered && setInbox({ answered: r.data.answered, pending: r.data.pending })).catch(() => setError(\"Answers could not refresh. Retrying…\"));\n    poll(); const id = setInterval(poll, 3000); return () => clearInterval(id);\n  }, []);\n\n  const ask = async () => {\n    setSent(null); setError(\"\"); setMem(null);\n    try { const r = await zone<Mem>(\"memory_ask\", { question: q });\n      if (r.status !== 200 || !r.data.kind) throw new Error(r.data.error ?? \"Memory unavailable\");\n      setMem(r.data);\n    } catch (e) { setError((e as Error).message); }\n  };\n  const escalate = async () => {\n    try { const r = await zone<{ ticket: Ticket }>(\"ticket_create\", { question: mem?.question ?? q, confirmed: true, idempotency_key: key() });\n      setSent(r.data.ticket ? `Sent to the leader as ${r.data.ticket.id}. I won't guess; you'll see the answer here.` : r.data.error ?? \"not sent\");\n    } catch { setError(\"Question could not be sent. Try again.\"); }\n  };\n  const navigate = async () => {\n    setError(\"\"); setGa(null);\n    try { const r = await zone<GA>(\"code_graph_query\", { question: cq });\n      if (r.status !== 200 || !r.data.graph || !r.data.subgraph) throw new Error(r.data.error ?? \"Code graph unavailable\");\n      setGa(r.data);\n    } catch (e) { setError((e as Error).message); }\n  };\n\n  if (me?.error) return <main className={s.page}><p>Open this page from your personal session link (<code>npm run session:issue</code>). {me.error}</p></main>;\n\n  return (\n    <main className={s.page}>\n      <div className={s.top}>\n        <h1 className={s.title}>Kaam Ki Baat · {me?.participant?.name ?? \"…\"}</h1>\n        <div className={s.meta}>{me?.snapshot && <><span className={s.badge}>{me.snapshot.label}</span> {me.snapshot.repository} @ {me.snapshot.pinnedSha.slice(0, 7)}</>}</div>\n      </div>\n      {error && <p className={s.bad} role=\"alert\">{error}</p>}\n      <div className={s.zones} role=\"tablist\" aria-label=\"Agents (← ↑ →)\">\n        <button className={`${s.zbtn} ${focus === \"team_memory\" ? s.zbtnOn : \"\"}`} onClick={() => select(\"team_memory\")}><div className={s.label}>← left</div>Team Memory</button>\n        <button className={`${s.zbtn} ${s.lock}`} onClick={() => select(\"leader_desk\")} title={me?.zones?.leader_desk?.reason}><div className={s.label}>↑ front · locked</div>Leader Desk</button>\n        <button className={`${s.zbtn} ${focus === \"code_navigator\" ? s.zbtnOn : \"\"}`} onClick={() => select(\"code_navigator\")}><div className={s.label}>right →</div>Code Navigator</button>\n      </div>\n\n      <div className={s.grid}>\n        <section className={`${s.card} ${focus === \"team_memory\" ? s.active : \"\"}`}>\n          <div className={s.label}>Team Memory</div>\n          <div className={s.h}>What did we decide?</div>\n          <div className={s.row}>\n            <input className={s.input} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === \"Enter\" && ask()} aria-label=\"Ask Team Memory\" />\n            <button className={`${s.btn} ${s.primary}`} onClick={ask}>Ask</button>\n          </div>\n          {mem && (\n            <div className={s.answer}>\n              <div className={mem.kind === \"confirmed\" ? s.ok : mem.kind === \"conditional\" ? s.warn : s.bad}>● {mem.kind.replace(\"_\", \" \")}</div>\n              <div style={{ marginTop: 6 }}>{mem.speak}</div>\n              <div className={s.src}>{mem.sources.map((x, i) => <span key={i}>{x.kind} · {x.label}</span>)}{mem.provisional.map((p, i) => <span key={`p${i}`} className={s.warn}>live (provisional) · {p.text}</span>)}</div>\n              {mem.offerEscalation && !mem.pendingTicket && !sent && <button className={s.btn} style={{ marginTop: 12 }} onClick={escalate}>Yes, ask the leader</button>}\n              {sent && <p className={s.meta} style={{ marginTop: 10 }}>{sent}</p>}\n            </div>\n          )}\n          <div className={s.list}>\n            {inbox.answered.map((t) => (\n              <div key={t.id} className={s.item}>\n                <div className={s.ok}>Leader answered · v{t.answer?.decisionVersion}</div>\n                <div>“{t.question}” → <b>{t.answer?.statement}</b>{t.answer?.conditions ? `, on condition that ${t.answer.conditions}` : \"\"}</div>\n                {t.state !== \"acknowledged\" && <button className={s.btn} style={{ marginTop: 8 }} onClick={() => { void zone(\"delivery_ack\", { ticket_id: t.id }).then(r => { if (r.status !== 200) setError(r.data.error ?? \"Acknowledgement failed\"); }).catch(() => setError(\"Acknowledgement failed. Try again.\")); }}>Got it</button>}\n              </div>\n            ))}\n            {inbox.pending.map((t) => <div key={t.id} className={s.item}><span className={s.warn}>Pending with the leader</span> · {t.question}</div>)}\n          </div>\n        </section>\n\n        <section className={`${s.card} ${focus === \"code_navigator\" ? s.activeR : \"\"}`}>\n          <div className={s.label}>Code Navigator · graph of this repo</div>\n          <div className={s.h}>Where is it in the code?</div>\n          <div className={s.row}>\n            <input className={s.input} value={cq} onChange={(e) => setCq(e.target.value)} onKeyDown={(e) => e.key === \"Enter\" && navigate()} aria-label=\"Ask Code Navigator\" />\n            <button className={`${s.btn} ${s.primary}`} onClick={navigate}>Find</button>\n          </div>\n          {ga ? <CodeGraphView graph={ga.graph} highlight={ga.subgraph.nodes} height={360} /> : <p className={s.meta}>Ask to load the authorized snapshot graph. Static imports and call links are hints; check the pinned source.</p>}\n          {ga && (\n            <>\n              {ga.seed && <a className={s.meta} href={`https://github.com/${ga.repository}/blob/${ga.sha}/${ga.seed.path}#L${ga.seed.line}`} target=\"_blank\" rel=\"noreferrer\">{ga.seed.path}:{ga.seed.line} @ {ga.sha.slice(0, 7)} ↗ · <span className={ga.match === \"confirmed\" ? s.ok : s.warn}>{ga.match}</span></a>}\n              <ol className={s.steps}>{ga.explanation.map((l, i) => <li key={i}>{l.replace(/^\\d+\\.\\s*/, \"\")}</li>)}</ol>\n            </>\n          )}\n        </section>\n      </div>\n    </main>\n  );\n}\n"
+      "content": "\"use client\";\nimport { useCallback, useEffect, useRef, useState } from \"react\";\nimport { CodeGraphView, type ViewGraph } from \"../components/CodeGraphView\";\nimport { key, zone } from \"../zones/client\";\nimport s from \"../zones/zones.module.css\";\n\n// Teammate workspace: LEFT Team Memory (doubts + escalation) and RIGHT Code\n// Navigator (graph). CENTER is visible but locked unless the server says otherwise.\n// ← / → (or click) selects; selection is sent as a low-privilege focus event.\n\ntype Me = { participant?: { name: string }; role?: string; zones?: Record<string, { allowed: boolean; reason?: string }>; snapshot?: { label: string; pinnedSha: string; repository: string }; error?: string };\ntype Mem = { kind: string; speak: string; offerEscalation: boolean; sources: { kind: string; label: string }[]; question: string; provisional: { text: string }[]; pendingTicket?: { id: string } | null };\ntype GA = { explanation: string[]; match: string; seed: { label: string; path: string; line: number } | null; subgraph: { nodes: string[] }; graph: ViewGraph; sha: string; repository: string };\ntype Ticket = { id: string; question: string; state: string; answer?: { statement: string; conditions?: string; approvedBy: string; decisionVersion: number } };\n\nexport default function Team() {\n  const [me, setMe] = useState<Me | null>(null);\n  const [focus, setFocus] = useState<\"team_memory\" | \"code_navigator\">(\"team_memory\");\n  const seq = useRef(0);\n  const [q, setQ] = useState(\"Who owns the codebase graph agent?\");\n  const [mem, setMem] = useState<Mem | null>(null);\n  const [sent, setSent] = useState<string | null>(null);\n  const [cq, setCq] = useState(\"where do we read back before saying saved\");\n  const [ga, setGa] = useState<GA | null>(null);\n  const [error, setError] = useState(\"\");\n  const [inbox, setInbox] = useState<{ answered: Ticket[]; pending: Ticket[] }>({ answered: [], pending: [] });\n\n  useEffect(() => { zone<Me>(\"me\").then((r) => setMe(r.data)).catch(() => setError(\"Cannot connect. Try again.\")); }, []);\n  const select = useCallback((z: \"team_memory\" | \"code_navigator\" | \"leader_desk\") => {\n    seq.current = Math.max(Date.now(), seq.current + 1);\n    void zone(\"focus\", { zone: z, provider: \"manual\", seq: seq.current }).catch(() => setError(\"Focus could not be saved. Try again.\"));\n    if (z !== \"leader_desk\") setFocus(z);\n  }, []);\n  useEffect(() => {\n    const k = (e: KeyboardEvent) => {\n      if ((e.target as HTMLElement).tagName === \"INPUT\") return;\n      // A / L = select AND activate (explicit keyboard activation, the fallback when no camera or AirPods)\n      if (e.key === \"a\" || e.key === \"A\") { select(\"team_memory\"); zone(\"activate\", { zone: \"team_memory\", method: \"keyboard\" }); }\n      if (e.key === \"l\" || e.key === \"L\") { select(\"code_navigator\"); zone(\"activate\", { zone: \"code_navigator\", method: \"keyboard\" }); }\n      if (e.key === \"ArrowLeft\") select(\"team_memory\");\n      if (e.key === \"ArrowRight\") select(\"code_navigator\");\n      if (e.key === \"ArrowUp\") select(\"leader_desk\");\n    };\n    window.addEventListener(\"keydown\", k);\n    return () => window.removeEventListener(\"keydown\", k);\n  }, [select]);\n  // Answers from the leader arrive here, also after a reconnect.\n  useEffect(() => {\n    const poll = () => zone<{ answered: Ticket[]; pending: Ticket[] }>(\"deliveries\").then((r) => r.status === 200 && r.data.answered && setInbox({ answered: r.data.answered, pending: r.data.pending })).catch(() => setError(\"Answers could not refresh. Retrying…\"));\n    poll(); const id = setInterval(poll, 3000); return () => clearInterval(id);\n  }, []);\n\n  const ask = async () => {\n    setSent(null); setError(\"\"); setMem(null);\n    try { const r = await zone<Mem>(\"memory_ask\", { question: q });\n      if (r.status !== 200 || !r.data.kind) throw new Error(r.data.error ?? \"Memory unavailable\");\n      setMem(r.data);\n    } catch (e) { setError((e as Error).message); }\n  };\n  const escalate = async () => {\n    try { const r = await zone<{ ticket: Ticket }>(\"ticket_create\", { question: mem?.question ?? q, confirmed: true, idempotency_key: key() });\n      setSent(r.data.ticket ? `Sent to the leader as ${r.data.ticket.id}. I won't guess; you'll see the answer here.` : r.data.error ?? \"not sent\");\n    } catch { setError(\"Question could not be sent. Try again.\"); }\n  };\n  const navigate = async () => {\n    setError(\"\"); setGa(null);\n    try { const r = await zone<GA>(\"code_graph_query\", { question: cq });\n      if (r.status !== 200 || !r.data.graph || !r.data.subgraph) throw new Error(r.data.error ?? \"Code graph unavailable\");\n      setGa(r.data);\n    } catch (e) { setError((e as Error).message); }\n  };\n\n  if (me?.error) return <main className={s.page}><p>Open this page from your personal session link (<code>npm run session:issue</code>). {me.error}</p></main>;\n\n  return (\n    <main className={s.page}>\n      <div className={s.top}>\n        <h1 className={s.title}>Kaam Ki Baat · {me?.participant?.name ?? \"…\"}</h1>\n        <div className={s.meta}>{me?.snapshot && <><span className={s.badge}>{me.snapshot.label}</span> {me.snapshot.repository} @ {me.snapshot.pinnedSha.slice(0, 7)}</>}</div>\n      </div>\n      {error && <p className={s.bad} role=\"alert\">{error}</p>}\n      <div className={s.zones} role=\"tablist\" aria-label=\"Agents (← ↑ →)\">\n        <button className={`${s.zbtn} ${focus === \"team_memory\" ? s.zbtnOn : \"\"}`} onClick={() => select(\"team_memory\")}><div className={s.label}>← left · press A</div>Team Memory</button>\n        <button className={`${s.zbtn} ${s.lock}`} onClick={() => select(\"leader_desk\")} title={me?.zones?.leader_desk?.reason}><div className={s.label}>↑ front · locked</div>Leader Desk</button>\n        <button className={`${s.zbtn} ${focus === \"code_navigator\" ? s.zbtnOn : \"\"}`} onClick={() => select(\"code_navigator\")}><div className={s.label}>right → · press L</div>Code Navigator</button>\n      </div>\n\n      <div className={s.grid}>\n        <section className={`${s.card} ${focus === \"team_memory\" ? s.active : \"\"}`}>\n          <div className={s.label}>Team Memory</div>\n          <div className={s.h}>What did we decide?</div>\n          <div className={s.row}>\n            <input className={s.input} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === \"Enter\" && ask()} aria-label=\"Ask Team Memory\" />\n            <button className={`${s.btn} ${s.primary}`} onClick={ask}>Ask</button>\n          </div>\n          {mem && (\n            <div className={s.answer}>\n              <div className={mem.kind === \"confirmed\" ? s.ok : mem.kind === \"conditional\" ? s.warn : s.bad}>● {mem.kind.replace(\"_\", \" \")}</div>\n              <div style={{ marginTop: 6 }}>{mem.speak}</div>\n              <div className={s.src}>{mem.sources.map((x, i) => <span key={i}>{x.kind} · {x.label}</span>)}{mem.provisional.map((p, i) => <span key={`p${i}`} className={s.warn}>live (provisional) · {p.text}</span>)}</div>\n              {mem.offerEscalation && !mem.pendingTicket && !sent && <button className={s.btn} style={{ marginTop: 12 }} onClick={escalate}>Yes, ask the leader</button>}\n              {sent && <p className={s.meta} style={{ marginTop: 10 }}>{sent}</p>}\n            </div>\n          )}\n          <div className={s.list}>\n            {inbox.answered.map((t) => (\n              <div key={t.id} className={s.item}>\n                <div className={s.ok}>Leader answered · v{t.answer?.decisionVersion}</div>\n                <div>“{t.question}” → <b>{t.answer?.statement}</b>{t.answer?.conditions ? `, on condition that ${t.answer.conditions}` : \"\"}</div>\n                {t.state !== \"acknowledged\" && <button className={s.btn} style={{ marginTop: 8 }} onClick={() => { void zone(\"delivery_ack\", { ticket_id: t.id }).then(r => { if (r.status !== 200) setError(r.data.error ?? \"Acknowledgement failed\"); }).catch(() => setError(\"Acknowledgement failed. Try again.\")); }}>Got it</button>}\n              </div>\n            ))}\n            {inbox.pending.map((t) => <div key={t.id} className={s.item}><span className={s.warn}>Pending with the leader</span> · {t.question}</div>)}\n          </div>\n        </section>\n\n        <section className={`${s.card} ${focus === \"code_navigator\" ? s.activeR : \"\"}`}>\n          <div className={s.label}>Code Navigator · graph of this repo</div>\n          <div className={s.h}>Where is it in the code?</div>\n          <div className={s.row}>\n            <input className={s.input} value={cq} onChange={(e) => setCq(e.target.value)} onKeyDown={(e) => e.key === \"Enter\" && navigate()} aria-label=\"Ask Code Navigator\" />\n            <button className={`${s.btn} ${s.primary}`} onClick={navigate}>Find</button>\n          </div>\n          {ga ? <CodeGraphView graph={ga.graph} highlight={ga.subgraph.nodes} height={360} /> : <p className={s.meta}>Ask to load the authorized snapshot graph. Static imports and call links are hints; check the pinned source.</p>}\n          {ga && (\n            <>\n              {ga.seed && <a className={s.meta} href={`https://github.com/${ga.repository}/blob/${ga.sha}/${ga.seed.path}#L${ga.seed.line}`} target=\"_blank\" rel=\"noreferrer\">{ga.seed.path}:{ga.seed.line} @ {ga.sha.slice(0, 7)} ↗ · <span className={ga.match === \"confirmed\" ? s.ok : s.warn}>{ga.match}</span></a>}\n              <ol className={s.steps}>{ga.explanation.map((l, i) => <li key={i}>{l.replace(/^\\d+\\.\\s*/, \"\")}</li>)}</ol>\n            </>\n          )}\n        </section>\n      </div>\n    </main>\n  );\n}\n"
     },
     {
       "path": "app/zones/client.ts",
@@ -565,21 +715,12 @@
   "checks": [
     {
       "kind": "check",
-      "id": "check:132773365351",
+      "id": "check:132774095969",
       "repository": "harshsinha-12/kaam-ki-baat",
-      "commitSha": "71f9277efc7413b55c0674c2033a015f84cd060c",
+      "commitSha": "edf5d0fb09e4ca9eec11e6a06e9e7a1e422c436c",
       "name": "check",
       "conclusion": "success",
-      "url": "https://github.com/harshsinha-12/kaam-ki-baat/actions/runs/43701481721/job/132773365351"
-    },
-    {
-      "kind": "check",
-      "id": "check:132773357339",
-      "repository": "harshsinha-12/kaam-ki-baat",
-      "commitSha": "71f9277efc7413b55c0674c2033a015f84cd060c",
-      "name": "check",
-      "conclusion": "success",
-      "url": "https://github.com/harshsinha-12/kaam-ki-baat/actions/runs/43701479490/job/132773357339"
+      "url": "https://github.com/harshsinha-12/kaam-ki-baat/actions/runs/43701718563/job/132774095969"
     },
     {
       "kind": "check",
@@ -615,7 +756,7 @@
       "title": "lock the Leader Desk to Charan's laptop with Touch ID",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#2"
+        "kkb#15"
       ],
       "assignment": {
         "state": "accepted",
@@ -631,7 +772,7 @@
       "title": "handle leader approvals during the demo",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#7"
+        "kkb#22"
       ],
       "assignment": {
         "state": "accepted",
@@ -646,7 +787,7 @@
       "title": "only say saved after the update is read back from the store",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#4"
+        "kkb#16"
       ],
       "assignment": {
         "state": "accepted",
@@ -663,8 +804,8 @@
       "title": "run three test calls over 45 seconds with an evaluation note after each",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#5",
-        "kkb#6"
+        "kkb#20",
+        "kkb#21"
       ],
       "assignment": {
         "state": "accepted",
@@ -681,8 +822,8 @@
       "title": "move the code graph agent to the left side",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#8",
-        "kkb#9"
+        "kkb#23",
+        "kkb#24"
       ],
       "assignment": {
         "state": "proposed",
@@ -698,7 +839,7 @@
       "title": "record the demo film before four",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#10"
+        "kkb#25"
       ],
       "assignment": {
         "state": "mentioned"
@@ -712,7 +853,8 @@
       "title": "decide the code freeze time, 3:30 or 3:45",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#11"
+        "kkb#26",
+        "kkb#27"
       ],
       "assignment": {
         "state": "unknown"
@@ -726,8 +868,9 @@
       "title": "fix the bug where the agent said saved after a timed-out write",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#12",
-        "kkb#13"
+        "kkb#17",
+        "kkb#18",
+        "kkb#19"
       ],
       "assignment": {
         "state": "accepted",

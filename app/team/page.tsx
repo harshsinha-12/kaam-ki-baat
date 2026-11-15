@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CodeGraphView, type ViewGraph } from "../components/CodeGraphView";
+import { CodeFocus } from "../components/CodeFocus";
 import { key, zone } from "../zones/client";
 import s from "../zones/zones.module.css";
 
@@ -136,6 +137,7 @@ export default function Team() {
               <ol className={s.steps}>{ga.explanation.map((l, i) => <li key={i}>{l.replace(/^\d+\.\s*/, "")}</li>)}</ol>
             </>
           )}
+          <CodeFocus />
         </section>
       </div>
     </main>
