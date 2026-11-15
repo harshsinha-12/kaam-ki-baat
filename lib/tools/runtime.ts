@@ -12,7 +12,7 @@ import { handleTurn, startConversation, type Conversation } from "../specialists
 import { acknowledge, createTicket, deliveries, markDelivered } from "../zones/escalation";
 import type { Actor } from "../zones/identity";
 import { askTeamMemory, nameOf } from "../zones/memory";
-import { contextVersion, latestActivatedZone } from "../zones/state";
+import { contextVersion, latestActivatedZone, focusState, focusInput, zoneEvents } from "../zones/state";
 import { getCodeGraph } from "../codegraph/load";
 import { queryGraph } from "../codegraph/graph";
 import { explainFirstPrinciples } from "../codegraph/explain";
@@ -79,9 +79,28 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
   const callId = caller.session.callId;
   switch (tool) {
     case "get_project_context": {
+      const events = await rt.store.all();
+      const binding = zoneEvents(events, "project_voice_binding").find(e => e.key === callId && e.data.participantId === caller.participant.id);
+      let selectedZone = "code_navigator";
+      if (binding && typeof binding.data.deviceSessionId === "string") {
+        const device = zoneEvents(events, "device_session").find(e => e.key === binding.data.deviceSessionId && e.data.participantId === caller.participant.id && Date.parse(String(e.data.expiresAt)) > Date.now());
+        if (device) {
+          const focus = focusState(events, device.key), input = focusInput(events, device.key);
+          if (focus.zone && focus.provider === input.provider && focus.inputEpoch === input.epoch) selectedZone = focus.zone;
+        }
+      }
+      const question = String(body.question ?? "What does this project do?").slice(0, 2000);
+      if (selectedZone === "team_memory") {
+        const permitted = new Set(caller.session.meetingIds.filter(id => caller.participant.meetingIds.includes(id)));
+        const memory = askTeamMemory(rt.snapshot, events, callActor(caller), question);
+        const passages = rt.snapshot.passages.filter(p => permitted.has(p.meetingId)).slice(0, 12).map(p => ({ id:p.id, meetingId:p.meetingId, speaker:p.speaker, text:p.text, charStart:p.charStart, charEnd:p.charEnd }));
+        return ok({ selectedZone, question, memory, passages, speak: memory.speak, evidenceIds: passages.map(p => p.id), instructions: "Team Memory is selected. Answer from the permitted meeting passages and confirmed decisions. Separate accepted, proposed and unknown ownership. Do not replace missing meeting evidence with guesses from code. Offer to ask the human leader if uncertain." });
+      }
       if (caller.participant.repoAccess === false) return { status: 403, body: { ok: false, error: "Repository access denied" } };
-      const context = projectContext(rt.snapshot, String(body.question ?? "What does this project do?").slice(0, 2000));
-      return ok({ ...context, speak: context.passages.length ? "I found the relevant repository sources. I will explain them and mention any uncertainty." : "I could not find an answer in the approved repository files.", evidenceIds: context.passages.map(p => `${p.path}:${p.lineStart}`) });
+      const context = projectContext(rt.snapshot, question);
+      return ok({ ...context, selectedZone, leaderName:"Charan", ownership: selectedZone === "leader_desk" ? rt.snapshot.tasks.filter(t => caller.taskIds.has(t.id)).map(t => ({ task:t.title, assignment:t.assignment })) : undefined,
+        instructions: context.instructions + (selectedZone === "leader_desk" ? " Leader Desk is selected: explain ownership, open questions and next steps from permitted sources as an AI guide for Charan’s team. You are not the human Charan, do not approve decisions, and do not claim new assignments are saved." : " Code Navigator is selected: explain implementation with exact files, symbols and source links. Graph matches are candidates, not proof of completion."),
+        speak: context.passages.length ? "I found the relevant repository sources. I will explain them and mention any uncertainty." : "I could not find an answer in the approved repository files.", evidenceIds: context.passages.map(p => `${p.path}:${p.lineStart}`) });
     }
     case "get_my_brief": {
       // Leader answers waiting for this person come first (delivery after reconnect).
