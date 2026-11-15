@@ -8,6 +8,10 @@ import type { Specialist } from "../core/spatial-specialists";
 import type { EventStore } from "../store/event-store";
 import { evidenceVerifier } from "../specialists/evidence-verifier";
 import { handleTurn, startConversation, type Conversation } from "../specialists/orchestrator";
+import { acknowledge, createTicket, deliveries, markDelivered } from "../zones/escalation";
+import type { Actor } from "../zones/identity";
+import { askTeamMemory, nameOf } from "../zones/memory";
+import { contextVersion } from "../zones/state";
 
 // The four runtime tools Bolna calls during a phone call (D-013). Framework-free:
 // app/api/tools/[tool]/route.ts is a thin HTTP wrapper around these.
@@ -19,7 +23,7 @@ export interface Runtime {
 }
 
 export type ToolResponse = { status: number; body: Record<string, unknown> };
-export const TOOL_NAMES = ["get_my_brief", "get_task_evidence", "get_changes", "record_task_update"] as const;
+export const TOOL_NAMES = ["get_my_brief", "get_task_evidence", "get_changes", "record_task_update", "request_clarification"] as const;
 export type ToolName = (typeof TOOL_NAMES)[number];
 
 export async function runTool(rt: Runtime, tool: ToolName, body: Record<string, unknown>): Promise<ToolResponse> {
@@ -27,6 +31,12 @@ export async function runTool(rt: Runtime, tool: ToolName, body: Record<string, 
   if (!auth.ok) return { status: auth.status, body: { ok: false, error: auth.reason, speak: "I can't verify who I'm speaking with, so I can't share project details." } };
   const caller = auth.caller;
   const res = await dispatch(rt, tool, caller, body);
+  // A clarification answer counts as acknowledged only when the caller explicitly
+  // acknowledged it in the communication ledger (not merely because it was spoken).
+  const conv = rt.conversations.get(caller.session.callId);
+  for (const item of conv?.ledger.items ?? []) {
+    if (item.id.startsWith("clar:") && item.acknowledged) await acknowledge(rt.store, callActor(caller), item.id.slice(5));
+  }
   await rt.store.append({
     type: "tool_call",
     at: new Date().toISOString(),
@@ -37,6 +47,19 @@ export async function runTool(rt: Runtime, tool: ToolName, body: Record<string, 
     evidenceIds: (res.body.evidenceIds as string[] | undefined) ?? [],
   });
   return res;
+}
+
+/** Phone callers are never leaders for privileged actions (no step-up on PSTN). */
+export function callActor(caller: Caller): Actor {
+  return {
+    participant: caller.participant,
+    role: caller.participant.role ?? "member",
+    repoAccess: caller.participant.repoAccess ?? true,
+    sessionId: caller.session.callId,
+    channel: "call",
+    stepUpFresh: false,
+    meetingIds: caller.participant.meetingIds.filter((m) => caller.session.meetingIds.includes(m)),
+  };
 }
 
 function pickTask(rt: Runtime, caller: Caller, requested?: unknown): Task | undefined {
@@ -50,8 +73,22 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
   const callId = caller.session.callId;
   switch (tool) {
     case "get_my_brief": {
+      // Leader answers waiting for this person come first (delivery after reconnect).
+      const actor = callActor(caller);
+      const waiting = (await deliveries(rt.store, actor)).answered;
+      const answerFacts = waiting.map((t) => ({
+        id: `clar:${t.id}`,
+        fact: `The leader answered your question "${t.question}": ${t.answer!.statement}${t.answer!.conditions ? `, on condition that ${t.answer!.conditions}` : ""} (approved by ${nameOf(rt.snapshot, t.answer!.approvedBy)}).`,
+      }));
+      for (const t of waiting) await markDelivered(rt.store, actor, t.id);
       const task = pickTask(rt, caller);
-      if (!task) return ok({ speak: `Hi ${caller.participant.name}. I don't see any task from the approved meeting assigned to you.`, tasks: [] });
+      if (!task) {
+        const conv = startConversation(callId, caller.participant.id, null, answerFacts);
+        for (const f of answerFacts) conv.ledger = markAttempted(conv.ledger, f.id);
+        conv.lastSpokenFactIds = answerFacts.map((f) => f.id);
+        rt.conversations.set(callId, conv);
+        return ok({ speak: `Hi ${caller.participant.name}. ${answerFacts.map((f) => f.fact).join(" ")} ${answerFacts.length ? "" : "I don't see any task from the approved meeting assigned to you. "}Ask me about any team decision, or where the code is.`.replace(/\s+/g, " ").trim(), tasks: [], deliveredClarifications: waiting.map((t) => t.id), evidenceIds: waiting.map((t) => t.id) });
+      }
       const meeting = rt.snapshot.meetings.find((m) => m.id === task.meetingId);
       const passage = rt.snapshot.passages.find((p) => task.passageIds.includes(p.id));
       const v = evidenceVerifier(rt.snapshot, task, await rt.store.latestUpdate(task.id));
@@ -60,13 +97,15 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
         { id: "status", fact: v.statements[0] ?? "There's no code evidence yet." },
         { id: "next", fact: v.statements.slice(1, 3).join(" ") || "Next step: open the code and confirm it does what the meeting said." },
       ];
-      let conv = startConversation(callId, caller.participant.id, task.id, facts);
+      let conv = startConversation(callId, caller.participant.id, task.id, [...answerFacts, ...facts]);
+      for (const f of answerFacts) conv.ledger = markAttempted(conv.ledger, f.id);
       conv.ledger = markAttempted(markAttempted(conv.ledger, "decision"), "status");
-      conv.lastSpokenFactIds = ["decision", "status"];
+      conv.lastSpokenFactIds = [...answerFacts.map((f) => f.id), "decision", "status"];
       conv.cards.evidence_verifier = { ...conv.cards.evidence_verifier, status: "has_reply", summary: v.statements.join(" ") };
       rt.conversations.set(callId, conv);
       return ok({
-        speak: `Hi ${caller.participant.name}. ${facts[0].fact} ${facts[1].fact} Want me to show you exactly where the code is?`,
+        speak: `Hi ${caller.participant.name}. ${answerFacts.map((f) => f.fact).join(" ")} ${facts[0].fact} ${facts[1].fact} Want me to show you exactly where the code is?`.replace(/\s+/g, " "),
+        deliveredClarifications: waiting.map((t) => t.id),
         task: { id: task.id, title: task.title, ownership: v.reconciled.ownership, pr: v.reconciled.pr, checks: v.reconciled.checks, sha: short(v.reconciled.currentSha) },
         source: { meetingId: task.meetingId, passageId: passage?.id, speaker: passage?.speaker, label: rt.snapshot.label },
         pending: ["next"],
@@ -74,6 +113,15 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       });
     }
     case "get_task_evidence": {
+      if (body.focus === "memory" || body.focus === "team_memory") {
+        const events = await rt.store.all();
+        const a = askTeamMemory(rt.snapshot, events, callActor(caller), String(body.question ?? body.utterance ?? ""));
+        return ok({
+          speak: a.speak, specialist: "team_memory", kind: a.kind, offerEscalation: a.offerEscalation,
+          sources: a.sources, contextVersion: contextVersion(events), pendingTicket: "pendingTicket" in a ? a.pendingTicket?.id ?? null : null,
+          evidenceIds: a.sources.map((x) => x.id),
+        });
+      }
       const task = pickTask(rt, caller, body.task_id ?? body.taskId);
       if ((body.task_id ?? body.taskId) && !task) return { status: 403, body: { ok: false, error: "task not authorized", speak: "That task isn't one I can share with you." } };
       const conv = rt.conversations.get(callId) ?? startConversation(callId, caller.participant.id, task?.id ?? null, []);
@@ -106,6 +154,19 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       return ok({
         speak: changes.length ? `${changes.length} update${changes.length > 1 ? "s" : ""} since then.` : "Nothing has changed on your tasks since then.",
         since, changes, snapshotFetchedAt: rt.snapshot.fetchedAt, evidenceIds: [],
+      });
+    }
+    case "request_clarification": {
+      // Only after the caller explicitly agreed to send the question to the leader.
+      const x = await createTicket(rt.store, rt.snapshot, callActor(caller), body);
+      if (!x.ok) return { status: x.status, body: { ok: false, error: x.reason, speak: `I didn't send it — ${x.reason}.` } };
+      return ok({
+        ticketId: x.ticket.id, replayed: x.replayed, state: x.ticket.state,
+        speak: x.ticket.answer
+          ? `That question was already saved and the leader has answered: ${x.ticket.answer.statement}${x.ticket.answer.conditions ? `, on condition that ${x.ticket.answer.conditions}` : ""}.`
+          : x.ticket.state === "withdrawn" ? "That question was previously saved and has been withdrawn. I haven't opened another ticket."
+          : "Saved and read back. Your question is pending for the leader. I won't guess the answer; ask for it again after it's approved.",
+        evidenceIds: [x.ticket.id],
       });
     }
     case "record_task_update": {
