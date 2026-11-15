@@ -16,7 +16,9 @@
     "snapshot": "tsx scripts/build-snapshot.ts",
     "snapshot:fixture": "tsx scripts/build-snapshot.ts --project data/demo/project.fixture.json",
     "call:token": "tsx scripts/create-call.ts",
-    "demo:dry": "tsx scripts/demo-dry-run.ts"
+    "demo:dry": "tsx scripts/demo-dry-run.ts",
+    "session:issue": "tsx scripts/issue-session.ts",
+    "leader:code": "tsx scripts/issue-session.ts"
   },
   "dependencies": {
     "@bolna/web-call": "3.0.1",

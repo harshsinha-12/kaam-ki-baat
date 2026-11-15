@@ -1,0 +1,59 @@
+import type { EventStore } from "../store/event-store";
+import { ACTIVATION_METHODS, FOCUS_PROVIDERS, ZONES, type ActivationMethod, type FocusProvider, type Zone } from "./contracts";
+import type { Actor } from "./identity";
+import { ev, focusState } from "./state";
+
+// Server side of FocusInput. Providers (AirPods companion, webcam, manual) send
+// low-privilege selection events. Selection never grants anything; activation
+// is a separate, explicit act that is authorized here.
+
+export type FocusResult =
+  | { ok: true; zone: Zone; seq: number; locked: boolean; lockReason?: string }
+  | { ok: false; status: 400 | 409; reason: string };
+
+export function zoneAccess(actor: Actor, zone: Zone): { allowed: true } | { allowed: false; reason: string } {
+  if (zone === "leader_desk") {
+    if (actor.role !== "leader") return { allowed: false, reason: "Leader Desk is for the verified team leader only" };
+    if (!actor.stepUpFresh) return { allowed: false, reason: "leader must re-verify (step-up) before using the Leader Desk" };
+  }
+  if (zone === "code_navigator" && !actor.repoAccess) return { allowed: false, reason: "no access to the repository" };
+  return { allowed: true };
+}
+
+export async function recordFocus(store: EventStore, actor: Actor, body: Record<string, unknown>): Promise<FocusResult> {
+  const zone = body.zone as Zone;
+  const provider = body.provider as FocusProvider;
+  const seq = Number(body.seq);
+  if (!ZONES.includes(zone)) return { ok: false, status: 400, reason: "unknown zone" };
+  if (!FOCUS_PROVIDERS.includes(provider)) return { ok: false, status: 400, reason: "unknown focus provider" };
+  if (!Number.isInteger(seq) || seq < 1) return { ok: false, status: 400, reason: "seq must be a positive integer" };
+  if (Object.keys(body).some((k) => !["zone", "provider", "seq", "confidence", "session_token", "sessionToken"].includes(k)))
+    return { ok: false, status: 400, reason: "unexpected fields in focus event" }; // e.g. a forged "role" or "activate"
+  const access = zoneAccess(actor, zone);
+  return store.appendGuarded<FocusResult>((events) => {
+    const last = focusState(events, actor.sessionId);
+    if (seq <= last.seq) return { reject: { ok: false, status: 409, reason: `stale or duplicate focus event (seq ${seq} <= ${last.seq})` } };
+    return {
+      append: ev("focus", actor.sessionId, { zone, provider, seq, confidence: Number(body.confidence ?? 1) }),
+      result: { ok: true, zone, seq, locked: !access.allowed, lockReason: access.allowed ? undefined : access.reason },
+    };
+  });
+}
+
+export type ActivationResult = { ok: true; zone: Zone } | { ok: false; status: 400 | 403 | 409; reason: string };
+
+export async function activateZone(store: EventStore, actor: Actor, body: Record<string, unknown>): Promise<ActivationResult> {
+  const zone = body.zone as Zone;
+  const method = body.method as ActivationMethod;
+  if (!ZONES.includes(zone)) return { ok: false, status: 400, reason: "unknown zone" };
+  if (!ACTIVATION_METHODS.includes(method)) return { ok: false, status: 400, reason: "activation must be explicit (tap, click, keyboard, voice command or double nod)" };
+  const access = zoneAccess(actor, zone);
+  if (!access.allowed) return { ok: false, status: 403, reason: access.reason };
+  return store.appendGuarded<ActivationResult>((events) => {
+    const f = focusState(events, actor.sessionId);
+    // Activation applies to the zone the user has SELECTED; manual providers select and activate in one gesture.
+    if (f.zone !== zone && method !== "click" && method !== "tap" && method !== "keyboard")
+      return { reject: { ok: false, status: 409, reason: "activate the zone you have selected" } };
+    return { append: ev("activation", actor.sessionId, { zone, method }), result: { ok: true, zone } };
+  });
+}
