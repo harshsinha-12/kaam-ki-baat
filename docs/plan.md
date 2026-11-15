@@ -40,6 +40,15 @@ Before starting: `git fetch && git checkout -b codex/<topic> origin/main`. Rebas
 | Shared — edit in small, separate commits and note it in §5 | both | `lib/contracts.ts`, `package.json`, `docs/plan.md`, `docs/decisions.md` |
 | Private data — **never committed** | user + whichever agent imports | `data/private/**`, `data/runtime/**`, `.env.local` |
 
+### A1 — AirPods native companion sprint (2026-11-15, 10:00 UTC)
+
+- Owner: Tab 3 / Codex; `native/airpods/**` including build/run instructions. Isolated branch `codex/airpods-companion`, worktree `/Users/harshsinha/kaam-ki-baat-airpods`, fetched main `146e277`. **Implemented; integration-ready**. Native code is committed separately from this shared checkpoint. Preserve other tabs' work.
+- Interface agreed with Tab 4: authenticated `GET /api/zones/focus-input` returns `{ok:true,input:{provider,epoch},focus:{zone,provider,seq}}`; native sends `POST /api/zones/focus` `{zone,provider:"airpods",seq:focus.seq+1,confidence:1,inputEpoch}` only while AirPods owns input. Epoch change/409 discards pending selection and requires fresh dwell. Existing `Authorization: Session <device token>` only; no server keys or hardware identity. Motion selects only; activation remains an explicit browser action. Tab 4 owns session/source switching and backend changes.
+- Status contract confirmed with Tab 4: `POST /api/zones/focus-input-status` `{inputEpoch,state,calibrated,lastSampleAt}` every 2s while selected; browser marks stale after 6s. No raw motion leaves the Mac. Local UI always shows permission, connection and calibration.
+- Prerequisites verified: macOS 27.0.1 arm64, Xcode SDK 27.2, Swift 6.4.2; CMHeadphoneMotionManager available macOS 14+. **Hardware blocker:** Bluetooth/audio inventory has no connected headphones; real left/center/right verification cannot run yet. Read-only CoreMotion probe: authorization `notDetermined` (0), `isDeviceMotionAvailable=true` (capability only), no samples requested/received. User confirms no AirPods are available and defers hardware testing; finish implementation with hardware verification explicitly outstanding. Synthetic tests will be labeled separately.
+
+- Verification (2026-11-15, native files): 18 Swift tests, debug/release builds, packaged plist/ad-hoc signature validation, launch/close smoke, visual window inspection and short-token form validation pass. Swift URLSession → actual Tab 4 `runZoneAction`/`EventStore` over an isolated synthetic localhost fixture passes: identity, nullable/ISO heartbeat, persisted left/center/right focus, global sequence, stale epoch/status refusal and no activation. API `7418d4c` compatible; `inputEpoch` read-back checked. No raw yaw sent, provider switching owned by browser. No full Next route test or physical headphones/permission/disconnect verification. Run `native/airpods/run.sh`; detailed later hardware acceptance in `native/airpods/README.md`. No calls, merge or deployment.
+
 ## 2. How the system works (one screen)
 
 ```
