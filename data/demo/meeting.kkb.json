@@ -1,0 +1,82 @@
+{
+  "_label": "FIXTURE (reconstructed): decisions the lead dictated with Wispr Flow into the build chat on 2026-11-15. Not a Wispr Notetaker record \u2014 the Wispr MCP returned no meeting or note for this project and cannot read dictation history.",
+  "meeting": {
+    "id": "kkb-sync-2026-11-15",
+    "title": "Kaam Ki Baat build sync (reconstructed from dictated instructions)",
+    "date": "2026-11-15",
+    "source": "FIXTURE",
+    "approvedBy": "p_lead"
+  },
+  "passages": [
+    {
+      "kind": "meeting",
+      "id": "kkb#1",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Lead",
+      "charStart": 0,
+      "charEnd": 142,
+      "text": "Decision: only the lead can open the Leader Desk, and only from the lead's own device. A head turn or a camera never proves who the leader is.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#2",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Lead",
+      "charStart": 143,
+      "charEnd": 296,
+      "text": "The teammate uses the other two agents: the doubt agent for what happened in the meeting and what was approved, and the code agent for where the code is.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#3",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Lead",
+      "charStart": 297,
+      "charEnd": 420,
+      "text": "We need at least three consenting phone calls, each strictly longer than 45 seconds, logged with their Bolna execution IDs.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#4",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Teammate",
+      "charStart": 421,
+      "charEnd": 498,
+      "text": "Okay, I'll take the three test calls and the evaluation notes after each one.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#5",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Lead",
+      "charStart": 499,
+      "charEnd": 597,
+      "text": "The agent may only say saved after the update is read back from the store. A timeout is a failure.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#6",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Lead",
+      "charStart": 598,
+      "charEnd": 737,
+      "text": "Maybe the left side should become a codebase graph agent, like Graphify, so it can explain how it found the issue. Let's decide that later.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#7",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Lead",
+      "charStart": 738,
+      "charEnd": 804,
+      "text": "Someone should record the demo film before four. Not sure who yet.",
+      "visibility": "participant"
+    }
+  ]
+}

@@ -21,7 +21,9 @@
     "demo:dry": "tsx scripts/demo-dry-run.ts",
     "session:issue": "tsx scripts/issue-session.ts",
     "leader:code": "tsx scripts/issue-session.ts",
-    "smoke:zones": "tsx scripts/smoke-zones.ts"
+    "smoke:zones": "tsx scripts/smoke-zones.ts",
+    "graph": "tsx scripts/build-codegraph.ts",
+    "graph:eval": "tsx scripts/eval-codegraph.ts"
   },
   "dependencies": {
     "@bolna/web-call": "3.0.1",

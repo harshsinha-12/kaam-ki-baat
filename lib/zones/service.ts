@@ -7,6 +7,9 @@ import { hmacCodeVerifier, resolveDeviceActor, stepUp, type StepUpVerifier } fro
 import { ingestUtterance, setConsent } from "./live";
 import { askTeamMemory, nameOf } from "./memory";
 import { contextVersion, focusState, latestConsent } from "./state";
+import { assertPasskey, issueChallenge, registerPasskey } from "./webauthn";
+import { getCodeGraph } from "../codegraph/load";
+import { queryGraph } from "../codegraph/graph";
 
 // Framework-free dispatcher for the browser / native companion API
 // (app/api/zones/[action]/route.ts). Deny by default: every action resolves the
@@ -21,6 +24,7 @@ export interface ZoneRuntime {
 export const ZONE_ACTIONS = [
   "me", "focus", "activate", "consent", "utterance", "memory_ask", "ticket_create", "ticket_withdraw", "ticket_call_leader",
   "deliveries", "delivery_seen", "delivery_ack", "code_navigate", "leader_step_up", "leader_presence", "leader_inbox", "leader_resolve",
+  "passkey_options", "passkey_register", "passkey_assert", "code_graph_query",
 ] as const;
 export type ZoneAction = (typeof ZONE_ACTIONS)[number];
 
@@ -74,6 +78,20 @@ export async function runZoneAction(rt: ZoneRuntime, action: ZoneAction, token: 
     }
     case "leader_presence": { const x = await setPresence(rt.store, actor, body); return x.ok ? r(200, x) : r(403, { ok: false, error: x.reason }); }
     case "leader_inbox": { const x = await leaderInbox(rt.store, rt.snapshot, actor); return x.ok ? r(200, x) : fail(x); }
+    case "passkey_options": {
+      if (actor.role !== "leader") return r(403, { ok: false, error: "only the leader uses a passkey here" });
+      return r(200, { ok: true, ...(await issueChallenge(rt.store, actor, body.purpose === "register" ? "register" : "assert")) });
+    }
+    case "passkey_register": { const x = await registerPasskey(rt.store, actor, body); return x.ok ? r(200, x) : r(403, { ok: false, error: x.reason }); }
+    case "passkey_assert": { const x = await assertPasskey(rt.store, actor, body); return x.ok ? r(200, x) : r(403, { ok: false, error: x.reason }); }
+    case "code_graph_query": {
+      const access = zoneAccess(actor, "code_navigator");
+      if (!access.allowed) return r(403, { ok: false, error: access.reason });
+      const g = getCodeGraph(rt.snapshot);
+      const pr = rt.snapshot.pullRequests[0];
+      const a = queryGraph(g, String(body.question ?? ""), rt.snapshot.files, new Set(pr?.changedFiles ?? []));
+      return r(200, { ok: true, ...a, sha: g.sha, repository: g.repository, label: rt.snapshot.label });
+    }
     case "leader_resolve": { const x = await resolveTicket(rt.store, rt.snapshot, actor, body); return x.ok ? r(200, x) : fail(x); }
   }
 }

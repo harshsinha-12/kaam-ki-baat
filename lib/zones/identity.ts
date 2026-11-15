@@ -4,6 +4,7 @@ import type { EvidenceSnapshot, Participant } from "../contracts";
 import type { EventStore } from "../store/event-store";
 import type { DeviceSession, Role } from "./contracts";
 import { deviceSessionByHash, ev, latestStepUp, zoneEvents } from "./state";
+import { credentials } from "./webauthn";
 
 // Server-owned identity for the spatial zones. A client may present an opaque
 // session token; role, repo access and leader step-up are derived here only.
@@ -49,6 +50,8 @@ export async function resolveDeviceActor(store: EventStore, snapshot: EvidenceSn
   const participant = snapshot.participants.find((p) => p.id === session.participantId);
   if (!participant) return { ok: false, status: 403, reason: "participant not authorized" };
   const up = latestStepUp(events, session.sessionId);
+  // Once the leader has enrolled a device passkey, only a passkey step-up counts.
+  const passkeyOnly = credentials(events, participant.id).length > 0;
   return {
     ok: true,
     actor: {
@@ -57,7 +60,7 @@ export async function resolveDeviceActor(store: EventStore, snapshot: EvidenceSn
       repoAccess: participant.repoAccess ?? true,
       sessionId: session.sessionId,
       channel: "device",
-      stepUpFresh: Boolean(up && new Date(up.expiresAt) > now && participant.role === "leader"),
+      stepUpFresh: Boolean(up && new Date(up.expiresAt) > now && participant.role === "leader" && (!passkeyOnly || up.method === "passkey")),
       meetingIds: participant.meetingIds,
     },
   };
@@ -95,6 +98,8 @@ export function hmacCodeVerifier(secret: string | undefined): StepUpVerifier {
 export async function stepUp(store: EventStore, actor: Actor, verifier: StepUpVerifier, proof: unknown, now = new Date()) {
   if (actor.role !== "leader") return { ok: false as const, reason: "only the verified leader can unlock the Leader Desk" };
   if (actor.channel !== "device") return { ok: false as const, reason: "step-up must happen on an authenticated device" };
+  if (credentials(await store.all(), actor.participant.id).length > 0)
+    return { ok: false as const, reason: "a device passkey is enrolled — unlock with your passkey on that device" };
   const expiresAt = new Date(now.getTime() + STEP_UP_MINUTES * 60_000).toISOString();
   type Result = { ok: true; expiresAt: string } | { ok: false; reason: string };
   return store.appendGuarded<Result>((events) => {
