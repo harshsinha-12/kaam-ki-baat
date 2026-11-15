@@ -9,6 +9,7 @@ import { CodeFocus, type CodeSourceRequest } from "../components/CodeFocus";
 import type { CodeSourceFocus } from "@/lib/codegraph/source";
 import { key, sessionToken, zone } from "../zones/client";
 import s from "../zones/zones.module.css";
+import { FlowRail, type FlowStage } from "./FlowRail";
 
 // Teammate workspace: LEFT Team Memory (doubts + escalation) and RIGHT Code
 // Navigator (graph). CENTER is visible but locked unless the server says otherwise.
@@ -123,8 +124,13 @@ export default function Team() {
     finally { setFinding(false); }
   };
 
+  // Where the user's current question is on its way (drives the flow rail).
+  const flowBranch: "leader" | "code" | null = focus === "code_navigator" || ga?.seed ? "code" : focus === "leader_desk" || sent || inbox.pending.length ? "leader" : null;
+  const flowStage: FlowStage = ga?.seed || (flowBranch === "code" && finding) ? 4 : sent || inbox.pending.length || inbox.answered.length ? 3 : mem ? 2 : asking ? 1 : 0;
+  const flowBusy = asking || finding || sending;
+
   return (
-    <main className={`${s.page} ${s.teamPage}`} data-expanded={expanded}>
+    <main className={`${s.page} ${s.teamPage}`} data-expanded={expanded} data-focus={focus}>
       <div className={s.workspaceShell}>
       <div className={s.top}>
         <h1 className={s.title}>Kaam Ki Baat <span className={s.workspaceName}>/ Workspace</span></h1>
@@ -138,6 +144,7 @@ export default function Team() {
         </div>
         <div className={s.connection} role="status"><span className={connected ? s.ok : s.warn}>●</span> {connecting ? "Checking your session…" : connected ? `Connected as ${me!.participant!.name}` : "Connect your personal session"}</div>
       </section>
+      <FlowRail stage={flowStage} busy={flowBusy} branch={flowBranch} />
       {!connected && !connecting && <section className={s.connectCard} aria-label="Connect to workspace">
         <div><h2>Your workspace starts with a personal link</h2><p>Your team lead shares a link that gives you access to your permitted meetings and repository. Paste it here to connect.</p></div>
         <form className={s.row} onSubmit={e => { e.preventDefault(); void connect(); }}>
