@@ -1,6 +1,6 @@
 import type { EvidenceSnapshot } from "../contracts";
 import { getCodeGraph } from "../codegraph/load";
-import { buildSearchIndex, search, type SearchIndex } from "../codegraph/search";
+import { buildSearchIndex, expand, search, tokenize, type SearchIndex } from "../codegraph/search";
 
 const indexes = new WeakMap<EvidenceSnapshot, SearchIndex>();
 
@@ -22,6 +22,7 @@ export function projectContext(snapshot: EvidenceSnapshot, question = "What does
   const bestByPath = new Map<string, (typeof hits)[number]>();
   for (const hit of hits) if (!bestByPath.has(hit.path)) bestByPath.set(hit.path, hit);
   const topScore = hits[0]?.score || 1;
+  const expanded = new Set(expand(tokenize(question)).map(t => t.term));
   const terms = [...new Set(question.toLowerCase().match(/[a-z][a-z0-9_]{2,}/g) ?? [])].filter(t => !["the", "what", "does", "this", "project", "where", "how", "and", "can", "you", "with", "link", "linking", "connect", "connecting", "highlight", "part", "show"].includes(t));
   const scored = snapshot.files.map(file => {
     const low = file.content.toLowerCase(), name = file.path.toLowerCase();
@@ -43,7 +44,7 @@ export function projectContext(snapshot: EvidenceSnapshot, question = "What does
   const selected = [...new Map([...boundary, ...endpoints, ...scored.filter(x => x.score > 0)].map(x => [x.file.path, x])).values()].slice(0, 8);
   const passages = selected.map(({ file, hit: graphHit }) => {
     const lines = file.content.split("\n");
-    const anchorLine = graphHit && !["file", "test"].includes(graphHit.kind) ? graphHit.line : undefined;
+    const anchorLine = graphHit && !["file", "test"].includes(graphHit.kind) && tokenize(graphHit.label).some(t => expanded.has(t)) ? graphHit.line : undefined;
     const hit = anchorLine ? anchorLine - 1 : terms.length ? lines.findIndex(l => terms.some(t => l.toLowerCase().includes(t))) : 0;
     const start = Math.max(0, hit - 8), end = Math.min(lines.length, start + 65);
     return { path: file.path, lineStart: start + 1, lineEnd: end, anchorLine,
