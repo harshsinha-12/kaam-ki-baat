@@ -23,57 +23,67 @@ export interface CallSession {
 }
 
 export class EventStore implements UpdateRepository {
-  private events: StoredEvent[] | null = null;
+  private events: StoredEvent[] = [];
   private chain: Promise<unknown> = Promise.resolve();
 
   constructor(private readonly file: string | null) {}
 
-  async all(): Promise<StoredEvent[]> {
-    if (this.events) return this.events;
-    if (!this.file) return (this.events = []);
+  private async readEvents(): Promise<StoredEvent[]> {
+    if (!this.file) return this.events;
     try {
       const raw = await fs.readFile(this.file, "utf8");
-      this.events = raw.split("\n").filter(Boolean).map((l) => JSON.parse(l) as StoredEvent);
+      return raw.split("\n").filter(Boolean).map((l) => JSON.parse(l) as StoredEvent);
     } catch (e: unknown) {
       if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
-      this.events = [];
+      return [];
     }
-    return this.events;
   }
 
-  /** Serialized, durable append. Resolves only after the line is fsynced. */
-  append(event: StoredEvent): Promise<void> {
-    const run = async () => {
-      const events = await this.all();
-      if (this.file) {
-        await fs.mkdir(path.dirname(this.file), { recursive: true });
-        const fh = await fs.open(this.file, "a");
-        try {
-          await fh.write(JSON.stringify(event) + "\n");
-          await fh.sync();
-        } finally {
-          await fh.close();
-        }
-      }
-      events.push(event);
-    };
+  // One runtime writer per process. Serialize the idempotency lookup together
+  // with its append, and keep reads from racing an unfinished local append.
+  private serialize<T>(run: () => Promise<T>): Promise<T> {
     const next = this.chain.then(run, run);
     this.chain = next.catch(() => undefined);
     return next;
   }
 
+  all(): Promise<StoredEvent[]> {
+    return this.serialize(async () => [...await this.readEvents()]);
+  }
+
+  private async appendEvent(event: StoredEvent): Promise<void> {
+    if (this.file) {
+      await fs.mkdir(path.dirname(this.file), { recursive: true });
+      const fh = await fs.open(this.file, "a");
+      try {
+        await fh.writeFile(JSON.stringify(event) + "\n");
+        await fh.sync();
+      } finally {
+        await fh.close();
+      }
+    } else {
+      this.events.push(event);
+    }
+  }
+
+  /** Serialized, durable append. Resolves only after the line is fsynced. */
+  append(event: StoredEvent): Promise<void> {
+    return this.serialize(() => this.appendEvent(event));
+  }
+
   // ---- UpdateRepository (idempotent) ----
-  async writeOnce(record: SavedUpdate): Promise<{ id: string; replayed: boolean }> {
-    const existing = (await this.all()).find(
-      (e) => e.type === "task_update" && e.record.idempotencyKey === record.idempotencyKey,
-    );
-    if (existing && existing.type === "task_update") return { id: existing.record.id, replayed: true };
-    await this.append({ type: "task_update", at: record.at, record });
-    return { id: record.id, replayed: false };
+  writeOnce(record: SavedUpdate): Promise<{ id: string; replayed: boolean }> {
+    return this.serialize(async () => {
+      const existing = (await this.readEvents()).find(
+        (e) => e.type === "task_update" && e.record.idempotencyKey === record.idempotencyKey,
+      );
+      if (existing && existing.type === "task_update") return { id: existing.record.id, replayed: true };
+      await this.appendEvent({ type: "task_update", at: record.at, record });
+      return { id: record.id, replayed: false };
+    });
   }
 
   async read(id: string): Promise<SavedUpdate | null> {
-    if (this.file) this.events = null; // force a fresh read from disk for read-back
     const hit = (await this.all()).find((e) => e.type === "task_update" && e.record.id === id);
     return hit && hit.type === "task_update" ? hit.record : null;
   }
