@@ -6,10 +6,9 @@ import { evidenceUrl, type ActionReceipt, type PageState, type PendingAction, ty
 import { executeBrowserAction } from "@/lib/spatial/browser-actions";
 import styles from "./spatial.module.css";
 
-const INITIAL_PAGE: PageState = { space: "agent", selectedEvidence: null, visibleTargets: [] };
+const INITIAL_PAGE: PageState = { space: "meeting", selectedEvidence: null, visibleTargets: [] };
 const SPACES: { id: Space; title: string; hint: string }[] = [
   { id: "meeting", title: "← Meeting context", hint: "What was agreed" },
-  { id: "agent", title: "Conversation", hint: "Talk to Kaam Ki Baat" },
   { id: "code", title: "Codebase →", hint: "What the repository shows" },
 ];
 
@@ -24,6 +23,8 @@ export function SpatialWorkspace() {
   const [webCallEnabled, setWebCallEnabled] = useState(false);
   const [callState, setCallState] = useState("idle");
   const callRef = useRef<BolnaWebCall | null>(null);
+  const [Client, setClient] = useState<typeof BolnaWebCall | null>(null);
+  const startingRef = useRef(false);
   const [consent, setConsent] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const updatePage = useCallback((next: PageState) => { pageRef.current = next; setPage(next); }, []);
@@ -80,11 +81,19 @@ export function SpatialWorkspace() {
 
   useEffect(() => () => { void callRef.current?.stop(); }, []);
 
+  useEffect(() => {
+    let alive = true;
+    if (webCallEnabled) void import("@bolna/web-call").then(m => { if (alive) setClient(() => m.BolnaWebCall); }).catch(() => {
+      if (alive) setError("Could not load the Bolna browser client.");
+    });
+    return () => { alive = false; };
+  }, [webCallEnabled]);
+
   async function startCall() {
-    if (!consent || !webCallEnabled || !token || callRef.current && !["idle", "ended"].includes(callRef.current.getState())) return;
+    if (!consent || !webCallEnabled || !token || !Client || startingRef.current || callRef.current && !["idle", "ended"].includes(callRef.current.getState())) return;
+    startingRef.current = true;
     setCallState("connecting"); setError("");
     try {
-      const { BolnaWebCall: Client } = await import("@bolna/web-call");
       const key = new URLSearchParams(window.location.search).get("key") ?? "";
       const call = new Client({
         audioElement: audioRef.current!,
@@ -103,7 +112,7 @@ export function SpatialWorkspace() {
     } catch (e) {
       await callRef.current?.stop(); setCallState("ended");
       setError(e instanceof Error ? e.message : "The call could not start.");
-    }
+    } finally { startingRef.current = false; }
   }
 
   function disconnect() {
@@ -125,7 +134,9 @@ export function SpatialWorkspace() {
       <p>Use the token from <code>npm run call:token</code>. It stays in this tab’s memory. The board key alone does not unlock meeting passages.</p>
     </form> : <>
       <nav className={styles.spaces} aria-label="Choose a workspace">
-        {SPACES.map(s => <button key={s.id} aria-pressed={page.space === s.id} onClick={() => selectSpace(s.id)}><strong>{s.title}</strong><small>{s.hint}</small></button>)}
+        <button aria-pressed={page.space === "meeting"} onClick={() => selectSpace("meeting")}><strong>{SPACES[0].title}</strong><small>{SPACES[0].hint}</small></button>
+        <button disabled title="Leader authentication and passkey verification are not implemented"><strong>Leader Desk · locked</strong><small>Center · future leader access</small></button>
+        <button aria-pressed={page.space === "code"} onClick={() => selectSpace("code")}><strong>{SPACES[1].title}</strong><small>{SPACES[1].hint}</small></button>
       </nav>
       {!context ? <p role="status">Connecting your workspace…</p> : <>
         <p className={styles.provenance}><b>{context.snapshot.label}</b> · {context.snapshot.repository} @ <code>{context.snapshot.pinnedSha.slice(0, 7)}</code> · fetched {context.snapshot.fetchedAt}<br />
@@ -136,13 +147,13 @@ export function SpatialWorkspace() {
           {context.meetings.length === 0 && <p>No approved meeting passage is available for this task.</p>}
           {context.meetings.map(m => <article key={m.id}><h4>{m.title} <small>({m.source})</small></h4>{m.passages.map(p => <blockquote key={p.id}><p>{p.text}</p><footer>{p.speaker ?? "Unknown speaker"} · {p.id} · characters {p.charStart}–{p.charEnd}</footer></blockquote>)}</article>)}
         </section>
-        <section hidden={page.space !== "agent"} data-spatial-id="agent" tabIndex={-1} className={styles.panel} aria-label="Conversation">
+        <section className={styles.panel} aria-label="Shared Bolna conversation">
           <h3>Talk to Kaam Ki Baat</h3>
           <p>Try “What did we agree?”, “Show the codebase”, or “Focus Fix Navigator”. Switching spaces keeps the same call, task, and evidence.</p>
           {!webCallEnabled && <p>Browser calling awaits Bolna agent setup and authorization. You can connect this workspace to an existing authorized phone session using the same token.</p>}
           {webCallEnabled && <div className={styles.callControls}>
             <label><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> I consent to this Bolna test call and its recording.</label>
-            <button onClick={() => void startCall()} disabled={!consent || !["idle", "ended"].includes(callState)}>Start Bolna call</button>
+            <button onClick={() => void startCall()} disabled={!Client || !consent || !["idle", "ended"].includes(callState)}>Start Bolna call</button>
             <button onClick={() => void callRef.current?.stop()} disabled={["idle", "ended"].includes(callState)}>End call</button>
             <span role="status">{callState}</span>
           </div>}
@@ -157,9 +168,10 @@ export function SpatialWorkspace() {
           <div className={styles.cards}>{context.cards.map(c => <article key={c.id} data-spatial-id={c.id} tabIndex={-1} className={page.selectedEvidence === c.id ? styles.selected : ""}>
             <h4>{c.label}</h4><p>{c.summary}</p>
             {!c.evidence.length && <small>No evidence returned yet.</small>}
-            {c.evidence.map(e => { const url = evidenceUrl(e.url, context.snapshot.repository); return <div key={e.id} data-spatial-id={e.id} tabIndex={-1} className={page.selectedEvidence === e.id ? styles.selected : styles.evidence}>
+            {c.evidence.map(e => { const url = evidenceUrl(e.url, context.snapshot.repository); const finding = context.findings.find(f => f.id === e.id); return <div key={e.id} data-spatial-id={e.id} tabIndex={-1} className={page.selectedEvidence === e.id ? styles.selected : styles.evidence}>
               <button onClick={() => updatePage({ ...pageRef.current, selectedEvidence: e.id })}>{e.label}</button>
               {e.match && <small>{e.match}</small>}{url && <a href={url} target="_blank" rel="noopener noreferrer">Open source ↗</a>}
+              {finding && page.selectedEvidence === e.id && <div><p><code>{finding.path}:{finding.lineStart}–{finding.lineEnd}</code>{finding.symbol && ` · ${finding.symbol}`} · {finding.match}</p><pre className={styles.source}><code>{finding.excerpt}</code></pre></div>}
             </div>; })}
           </article>)}</div>
         </section>

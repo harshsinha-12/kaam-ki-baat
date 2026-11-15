@@ -55,12 +55,12 @@ Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 - **Fix Navigator** — target file + enclosing function + line + nearest test + `npm test -- <file>`; GitHub permalinks pinned to SHA. Never edits code.
 - **Evidence Verifier** — `lib/core/reconcile.ts` (deterministic): ownership state, PR open/merged, checks on the *current* SHA vs stale, last saved update. Never says "works in production".
 
-## 3. Current status — last verified 2026-11-15 (Codex, demo-readiness branch)
+## 3. Current status — last verified 2026-11-15 (Codex, spatial browser branch on merged PRs #8/#9)
 
 | Thing | State | Evidence |
 | --- | --- | --- |
 | Domain core + 4 runtime tools + 3 specialists | **Implemented** | `lib/**`, commit on PR #2 |
-| Unit + vertical-slice tests | **41/41 pass** (`tsx --test`, Node 20.20.0 locally) | Combined core/adapter tests, recovered evaluation privacy/finalization tests, and Bolna configuration tests |
+| Unit + vertical-slice tests | **50/50 pass** (`tsx --test`, Node 20.20.0 locally) | Prior 41 tests plus 9 spatial context, action/receipt, DOM executor, configuration and HTTP authentication tests |
 | Core typecheck (`tsconfig.core.json`) | **Pass** | local `npm run typecheck`, TypeScript 5.9 |
 | Install, full typecheck, production build locally | **Pass**: `npm install`, `npm ci`, `npm run typecheck`, `npm run build` | Node 20.20.0; `package-lock.json` pins dependencies; Next.js 15.5.29 |
 | CI workflow | **Passed** on PR #5 head `b63f4a8`; user merged it at `e005380`. PR #7 and main `6a5b2a3` CI passed; recovery PR CI pending | CI now uses `npm ci`, full typecheck, tests, Next build |
@@ -72,6 +72,7 @@ Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 | Bolna agent wired to our endpoints | **Prepared, not created** — four-function private config generated; provider context forwarding unverified | [voice setup](bolna/agent.md); awaits explicit agent-change authorization |
 | Evaluation recorder + board polish | **Recovered and implemented** from PR #6 without replacing PR #7 adapter | `lib/eval/recorder.ts`, `scripts/eval-call.ts`, `app/page.tsx`; real-call evaluation pending |
 | Real calls >45 s (need 3) | **0** | — |
+| Spatial browser workspace + Bolna relay | **Implemented; synthetic local checks pass** | `app/components/SpatialWorkspace.tsx`, `app/api/spatial/**`, `lib/spatial/**`; [setup and limits](bolna/spatial-browser.md). No browser visual/mic QA or provider call tested; Leader Desk locked, AirPods deferred |
 
 ## 4. Task board
 
@@ -90,10 +91,12 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | E1 | Evaluation recorder: pull Bolna `get_execution` → `docs/evals/<callId>.md` (ID, agent version, duration, tool results, what was communicated, failures) | Codex | implemented on `codex/demo-readiness`; real-call acceptance pending | 1 eval file per real call |
 | F1 | V1 failure → **dictate fix requirement with Wispr Flow** → implement → V2 replay of same scenario | Claude + user | todo | V1 vs V2 table in `docs/evals/` |
 | UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | implemented on `codex/demo-readiness`; prior synthetic visual QA retained in PR #6 | Screenshot in PR |
-| S1 | Bolna spatial browser workspace: meeting context on left, code on right, shared page state and validated browser actions; browser controls first, AirPods later | Codex | doing on `codex/spatial-website-agent` (2026-11-15) | Participant-scoped context and action acknowledgements tested; typecheck/build pass; Bolna configuration prepared without changing an agent or starting a call |
+| S1 | Bolna spatial browser workspace: meeting context on left, code on right, shared page state and validated browser actions; browser controls first, AirPods later | Codex | implemented on `codex/spatial-website-agent` (2026-11-15); live validation pending B2/B3 | 50 tests, full typecheck, production build, docs links and whitespace pass. Optional six-function config supported; no agent changed or call started |
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 · Codex · S1 implements the portfolio's curated context + validated DOM-action pattern with Bolna, not an OpenAI voice runtime. Rebased onto the user's merged PR #8 (`4d72575`) and PR #9 (`c64d8bc`), preserving board/evaluation recovery. Browser controls select left meeting/right code; center is locked pending the proposed leader auth. Two optional HTTP tools read participant-scoped context and relay focus/scroll commands with bounded browser acknowledgement; source excerpts stay SHA-pinned, stale/candidate states remain explicit. Original four runtime tools unchanged. Bolna web SDK 3.0.1 is pinned; its authenticated session route is disabled by default and has not contacted the provider. Nine synthetic tests cover authorization, scoped passages, forbidden actions, DOM read-back, HTTP relay, disconnection/timeout and config. 50/50 tests, full typecheck, production build, local doc links and whitespace pass. Browser visual/mic QA, live Bolna token forwarding/timing, AirPods/camera/leader/live-STT features are not verified or implemented. See `docs/bolna/spatial-browser.md` for transport differences, the mint endpoint documentation discrepancy, and the next authorized call test.
 
 - 2026-11-15 · Codex · Recovered PR #6 evaluation recorder/tests and board polish onto `6a5b2a3` without replacing newer GitHub/save fixes. Added a development-only four-function Bolna configuration generator with private output, two configuration tests, a fixture-only HTTP smoke runner, voice setup/runbook, and corrected stale README/evaluation status. 41/41 tests and full typecheck pass; production build passed after recovery. Eleven actual local HTTP checks passed against clearly labelled FIXTURE data; public HTTPS callback rejects requests without credentials (401). Server keys, temporary URL and generated provider configuration stay in ignored local files. Missing evaluation audit evidence is reported as unavailable rather than zero failures/acknowledgments, covered by a regression test. No meeting imported, agent changed or phone call placed. User questions for meeting selection and agent/call authorization remain pending.
 

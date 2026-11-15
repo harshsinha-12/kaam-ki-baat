@@ -1,7 +1,8 @@
-import type { MeetingPassage } from "../contracts";
+import type { CodeFinding, MeetingPassage } from "../contracts";
 import type { Specialist } from "../core/spatial-specialists";
 
-export const SPACES = ["meeting", "agent", "code"] as const;
+// Center is reserved for the future authenticated Leader Desk (PR #9).
+export const SPACES = ["meeting", "code"] as const;
 export type Space = typeof SPACES[number];
 export type BrowserAction =
   | { type: "focus_space"; target: Space }
@@ -23,6 +24,7 @@ export interface SpatialContext {
   task: { id: string; title: string; ownership: string } | null;
   meetings: { id: string; title: string; source: string; passages: MeetingPassage[] }[];
   cards: { id: Specialist; label: string; summary: string; evidence: { id: string; label: string; url?: string; match?: string }[] }[];
+  findings: CodeFinding[];
   turns: { at: string; utterance: string; specialist: string; spoken: string }[];
   outstanding: { id: string; fact: string; attempts: number }[];
   targets: { id: string; label: string; space: Space }[];

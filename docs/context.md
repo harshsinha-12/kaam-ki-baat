@@ -16,6 +16,8 @@ Keep these states distinct: mentioned / proposed / accepted ownership; open / cl
 
 The primary surface is a telephone call. An optional evidence board can show what was discussed, what code shows, what is verified, and the next action. No autonomous code repair, merging, deployment, broad repository indexing, or vector database is planned for the MVP.
 
+On 2026-11-15 the user requested portfolio-style website context and DOM tool actions while retaining Bolna as the voice provider. Spatial browser controls come first: meeting context on the left and code on the right, with AirPods motion deferred. PR #9's broader [spatial live-context proposal](spatial-live-context-v2.md) reserves the center for a future authenticated Leader Desk. The first browser slice keeps that desk locked; camera selection, live STT and leader escalation remain proposed. See [Bolna browser integration](bolna/spatial-browser.md) for the implementation and verification boundary.
+
 The [competition page](competition.md) confirms a three-hour build window (1–4 PM on 2026-11-15), voice-only building through Wispr Flow, teams of up to four, at least three consenting test calls strictly over 45 seconds, and evidence of improvement. The user additionally requests a stored evaluation after each call and a reviewed fix before the next call. A comparable regression replay will help distinguish a configuration fix from changed source data or caller behavior.
 
 ## References and existing work

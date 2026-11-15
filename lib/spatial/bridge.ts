@@ -41,7 +41,12 @@ export class SpatialBridge {
     c.seenAt = Date.now();
     if (receipt) {
       const pending = c.pending.get(receipt.id);
-      if (pending && pending.command.expiresAt > Date.now()) pending.finish(receipt.result);
+      if (pending && pending.command.expiresAt > Date.now()) {
+        const a = pending.command.action;
+        const matches = a.type === "scroll_page" || (a.type === "focus_space" ? page.space === a.target :
+          page.space === "code" && page.selectedEvidence === a.target);
+        pending.finish(receipt.result.ok && !matches ? { ok: false, message: "The browser state did not match the requested action." } : receipt.result);
+      }
     }
     return [...c.pending.values()].map(p => p.command).filter(p => p.expiresAt > Date.now());
   }

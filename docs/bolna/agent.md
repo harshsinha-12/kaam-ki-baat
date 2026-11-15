@@ -71,6 +71,8 @@ Reports in `docs/evals/` export allowlisted metadata, not transcripts, phone num
 
 ## Verification and sources
 
+The optional [spatial browser integration](spatial-browser.md) adds two page-context/control tools with `--spatial`; the default four-function configuration remains unchanged. It uses Bolna for voice and an application relay for browser DOM actions. This extension has not been observed in a real call.
+
 - 2026-11-15: local production HTTP smoke passed 11 checks using FIXTURE data and no phone call. Public HTTPS POST without credentials returned 401. The temporary URL and keys exist only in ignored local files; both server and tunnel must remain running.
 - Bolna MCP `search_docs` and live input schemas were inspected for custom functions and agent creation. No management mutation was called.
 - [Custom-function schema](https://www.bolna.ai/docs/tool-calling/custom-function-schema), [context variables](https://www.bolna.ai/docs/tool-calling/custom-function-variables), [agent v2 creation](https://www.bolna.ai/docs/api-reference/agent/v2/create), [execution records and finalization](https://www.bolna.ai/docs/api-reference/executions/get_execution).
