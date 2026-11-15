@@ -1,10 +1,24 @@
 # Call evaluation and improvement pipeline
 
-Status: implementation design requested by the user, not a running evaluation pipeline. The application core and metadata evaluation recorder are implemented; real-call evaluation remains unverified. Current results are tracked in [plan.md](plan.md), with commands in [voice setup](bolna/agent.md). Competition requirements are verified in [competition.md](competition.md).
+Status: a small manual private evaluator is implemented on `feat/post-call-evaluation`; the broader pipeline below remains design intent. V1 was retrieved, correlated, evaluated and persisted/read back privately. Current results are tracked in [plan.md](plan.md) and the [demo acceptance ledger](evals/demo-sprint.md). Competition requirements are recorded in [competition.md](competition.md).
 
 ## E1 implementation checkpoint — 2026-11-15
 
-Claimed on `feat/post-call-evaluation` from `17de40b`. The existing metadata recorder remains available. The next slice adds a distinct manual normalized import, private immutable evaluation runs, deterministic qualification and evidence checks, and synthetic regression coverage. At this checkpoint those additions are pending; no new real call or live evaluation has been verified. Automatic provider normalization/webhooks and LLM judging remain future work.
+The original E1 claim contained no implementation. This sprint resumes it in an isolated checkout with `scripts/eval-private.ts`, `lib/eval/private.ts` and `lib/eval/private-store.ts`. The existing `eval-call.ts` metadata export stays available. The private path retains raw execution, scoped audit, captured snapshot/consent references, scenario/version, tool outcomes and fresh-store write read-backs. Atomic content-derived runs preserve prior results and make unchanged retries idempotent. Missing evidence is inconclusive; conflicting mappings or read-backs fail. Lifecycle receipts bound tool counts and exclude preflight/post-call lookups; missing disconnect evidence stays inconclusive. Completion callbacks do not certify duration or speech quality.
+
+V1 is completed at 48 seconds, with one refused evidence lookup, a later successful brief and no verified saved update. Its source still has no confirmed task/code/PR match. The exact-task-ID fix has an independently reviewed synthetic failing-before/passing-after regression; no comparable voice replay is established. Stored consent consistency and duration checks do not certify organizer eligibility. Automatic ingestion/queues, provider judging and dashboards are outside this slice.
+
+Use explicit paths; private input missing on disk is recorded as unavailable. Malformed JSON/audit fails closed. Output is fixed under ignored `data/private/evaluations/` with private permissions; no raw input goes to the public metadata reports.
+
+```bash
+node_modules/.bin/tsx scripts/eval-private.ts \
+  --input data/private/execution.json --call-id <local-call-id> \
+  --events data/runtime/first-call-events.jsonl \
+  --snapshot data/private/snapshot.json --consent data/private/consent.json \
+  --manifest data/private/call-manifest.json --attempt data/private/call-attempt.json
+```
+
+Alternatively, `--execution <UUID>` retrieves finalized provider data with the existing server-only `BOLNA_API_KEY`. Never provide both input modes. A call needs actual consent and authorization independently of this read-only evaluation command. Review transcript/audio separately for useful opening, grounding, interruption and explicit save agreement; the evaluator does not infer them from tool success. The launcher's source binding records repository SHA, not a pre-call hash of all snapshot bytes; that limitation is retained.
 
 ## Intended loop
 
