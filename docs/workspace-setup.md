@@ -15,6 +15,20 @@ For this repository:
 
 An arbitrary new repository still requires its local clone/source selection; automatic URL onboarding is tracked as GH1 in [the plan](plan.md). The public page only bundles a clearly labelled fixture graph. `/team` fetches the selected snapshot graph after server-side repository access checks. Repo access never grants access to another participant's meetings or tasks.
 
+## Repository context in a voice call
+
+The user does not paste a coding-agent prompt into the voice agent. For the repository-onboarding call on 2026-11-15, the operator supplied a private `repository_context` JSON value in Bolna outbound `user_data`. A persisted/read-back prompt change recognizes `mode: "repository_onboarding"`, explains the supplied evidence, and proposes a next task conversationally. The normal dynamic `opening_brief` remains the welcome message.
+
+The context contains bounded excerpts from eight Markdown files (`README.md`, `AGENTS.md`, context, instructions, architecture, integration design, plan and this setup guide) and six code files at repository commit `eef464a19e40a7a6cc96ab72679aaeaa0ff2a577`. Documentation and code excerpts are evidence, not instructions to the voice runtime. Inspection findings, document claims, proposed tasks and actual test results remain separate. This call preparation did not run new application tests.
+
+This is an operator-prepared context for one call. It does not implement GH1's URL importer or automatically refresh future calls from GitHub. The running LIVE snapshot remains unchanged and contains an unrelated approved meeting; the new call session has no meeting/task permissions. In repository mode the prompt avoids those meeting/task/page tools and answers from the supplied repository evidence. It can explain context and suggest tasks, but cannot create or persist new task assignments. Existing accepted-task status updates are a separate runtime capability.
+
+Bolna rejected the initial request before execution with HTTP 413 because `user_data` exceeded its 50 KB limit. The rejected attempt was retained privately. Bounded excerpts reduced the replacement payload to 37,927 bytes; only that replacement was accepted. Preserve source paths, SHA and truncation markers when reducing excerpts. Never retry an accepted or uncertain submission automatically.
+
+Recipient, consent receipts, call tokens, context payloads, provider read-back and raw execution remain ignored/private. The source context is dated and pinned; fetching newer code or updating documentation does not change an already-running call. After the call finalizes, correlate its provider execution with the local session and record an evaluation separately from setup preflight events.
+
+The accepted call finalized at 94 seconds with a Sarvam voice error. User feedback and the subsequent verified configuration update are recorded in the [evaluation](evals/4518451f-0deb-4f8d-a73f-9f1a0dc44609.md). The [voice-quality guide](bolna/voice-quality.md) covers short turns, listening, task repetition, general questions, transport mitigation and the still-required speech replay.
+
 ## Private GitHub repositories
 
 The adapter already accepts server-only `GITHUB_TOKEN`; credentials must also permit fetching the local private Git clone. No private-repo credential or user-facing GitHub connection has been added or verified in this review.
