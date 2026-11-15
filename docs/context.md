@@ -1,6 +1,6 @@
 # Project context
 
-Status: initial handoff reviewed on 2026-11-15. The architecture is converged in [architecture.md](architecture.md). Application implementation is authorized to start, carried out by Claude Opus on its own branch.
+Status: application core, spatial browser workspace, source import and Bolna configuration are implemented as tracked in [plan.md](plan.md). The user approved one Wispr source, this repository, Speaker 1 identity and agent setup/testing. Real voice/call behaviour remains unverified. All calls are held for one final user confirmation naming the specific consenting participant (D-038).
 
 ## Purpose and users
 
@@ -46,7 +46,7 @@ Proposed by the handoff, pending further context:
 
 Open decisions:
 
-- Which meeting, repository, and participants are authorized for the demo?
+- Meeting/repository selection is confirmed in D-031/D-032. The source has no confirmed code match here. Actual phone testers, consent and numbers remain pending.
 - What caller verification and participant disclosure rules will apply?
 - Which storage and hosting setup should support HTTPS callbacks?
 - What additional rules appear in the full participant guidelines, including call eligibility and pre-existing-code restrictions?

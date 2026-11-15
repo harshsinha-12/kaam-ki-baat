@@ -1,6 +1,10 @@
 # Kaam Ki Baat voice configuration
 
-Prepared 2026-11-15. No Bolna agent has been created or changed. The local application and public HTTPS authentication check work; provider token substitution and a real telephone call remain unverified.
+Configured 2026-11-15 under explicit user authorization. The Kaam Ki Baat agent was created and its six functions verified by persisted read-back. The approved meeting is imported, the LIVE text/HTTP preview works, and browser calling is prepared behind fresh recording consent. Provider token forwarding/audio and real telephone calls remain unverified. See the [redacted profile](agent-profile.redacted.json).
+
+## Current call hold
+
+All calls are held under D-038 until one final user confirmation names the specific consenting participant. `KKB_ENABLE_WEB_CALLS=false` is set locally and authenticated browser start returns 503. Setup approval and text preview are not permission to start a provider session. The final named-participant confirmation is still absent.
 
 ## Generate the custom functions
 
@@ -43,7 +47,7 @@ Say when evidence is FIXTURE or synthetic. Do not present fixture people or meet
 
 1. User selects the approved meeting/repository and consenting participant. Import only permitted passages into ignored private files and generate a LIVE snapshot.
 2. Restart the application after updating its snapshot; the current runtime loads the snapshot once per process.
-3. Obtain explicit user permission for Bolna agent creation/configuration. Select available voice/transcriber settings from this account; provider quality is not established by documentation.
+3. Agent creation/configuration is authorized in D-033. Select available voice/transcriber settings from this account; provider quality is not established by documentation.
 4. Configure the generated functions and prompt. Read the agent back and verify all four names, callbacks, authentication and context. Store only a redacted configuration/version in Git.
 5. Issue the participant's token with `npm run call:token`. Preload the authorized opening brief before dialing if supported by the chosen Bolna welcome-message path; verify that path rather than assuming it.
 6. With call authorization and recorded consent, place the call. Observe backend tool events, token forwarding, interruption recovery and a confirmed save. Preserve the Bolna execution ID and local call ID privately.
@@ -67,12 +71,24 @@ BOLNA_API_KEY=… npx tsx scripts/eval-call.ts --execution <execution-UUID> --ca
 npx tsx scripts/eval-call.ts --input data/private/execution.json --call-id <local-call-ID>
 ```
 
-Reports in `docs/evals/` export allowlisted metadata, not transcripts, phone numbers, consent wording or provider error bodies. Existing reports are preserved; archive a pending report deliberately before retrying. Local call correlation and saved-action verification still need human review. No live evaluation has run.
+Reports in `docs/evals/` export allowlisted metadata, not transcripts, phone numbers, consent wording or provider error bodies. Existing reports are preserved; archive a pending report deliberately before retrying. Local call correlation and saved-action verification still need human review. No real call evaluation has run. Browser call starts now persist an execution-to-local-call correlation for later evaluation. A pending call is not a completed test.
 
 ## Verification and sources
 
 The optional [spatial browser integration](spatial-browser.md) adds two page-context/control tools with `--spatial`; the default four-function configuration remains unchanged. It uses Bolna for voice and an application relay for browser DOM actions. This extension has not been observed in a real call.
 
 - 2026-11-15: local production HTTP smoke passed 11 checks using FIXTURE data and no phone call. Public HTTPS POST without credentials returned 401. The temporary URL and keys exist only in ignored local files; both server and tunnel must remain running.
-- Bolna MCP `search_docs` and live input schemas were inspected for custom functions and agent creation. No management mutation was called.
+- Bolna MCP `search_docs` and live input schemas were inspected for custom functions and agent creation. Agent creation and configuration updates were authorized and executed; all six callbacks were read back. The MCP update did not persist changed task tools, so the official v2 PUT was used and verified.
 - [Custom-function schema](https://www.bolna.ai/docs/tool-calling/custom-function-schema), [context variables](https://www.bolna.ai/docs/tool-calling/custom-function-variables), [agent v2 creation](https://www.bolna.ai/docs/api-reference/agent/v2/create), [execution records and finalization](https://www.bolna.ai/docs/api-reference/executions/get_execution).
+
+## Current owner preview
+
+The selected source has no confirmed implementation/PR link in this repository. The source-backed personal commitment and the user-confirmed speaker mapping are private. The Code Scout now requires a curated task term before returning a candidate, so generic question words do not create unrelated matches.
+
+```sh
+node --env-file=.env.local --import tsx scripts/demo-text.ts --participant <approved-participant-id>
+```
+
+This runs the real handlers with an isolated event file and saves a private trace. It never changes live task status or calls Bolna. The current preview passes nine turns. All voice calls remain held for the final named-participant confirmation.
+
+Browser starts require a fresh recording-consent request, record an audit receipt and preload the permitted opening brief before minting the provider session. The returned execution ID is persisted with the local call ID. Withdrawing the checkbox consent stops the browser call. Provider audio, exact context substitution and DOM timing still need the user's consenting browser test.

@@ -8,6 +8,8 @@ import type { SavedUpdate, UpdateRepository } from "../core/persist-update";
 export type StoredEvent =
   | { type: "task_update"; at: string; record: SavedUpdate }
   | { type: "call_session"; at: string; session: CallSession }
+  | { type: "web_call_consent"; at: string; callId: string; participantId: string; recording: true; snapshotSha: string }
+  | { type: "call_execution"; at: string; callId: string; executionId: string; agentId: string; channel: "web" | "phone" }
   | { type: "tool_call"; at: string; callId: string; tool: string; ok: boolean; summary: string; evidenceIds: string[] }
   | { type: "communicated"; at: string; callId: string; factId: string; fact: string; acknowledged: boolean }
   // Spatial zones / escalation / live context (lib/zones). Typed payloads live there.

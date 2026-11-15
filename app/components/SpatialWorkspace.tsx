@@ -99,7 +99,8 @@ export function SpatialWorkspace() {
         audioElement: audioRef.current!,
         getSession: async () => {
           const r = await fetch("/api/spatial/bolna-session", {
-            method: "POST", headers: { Authorization: `Bearer ${key}`, "x-kkb-call-token": token },
+            method: "POST", headers: { Authorization: `Bearer ${key}`, "x-kkb-call-token": token, "Content-Type": "application/json" },
+            body: JSON.stringify({ consented: true }),
           });
           if (!r.ok) throw new Error("Bolna browser session could not be created.");
           return r.json();
@@ -152,7 +153,10 @@ export function SpatialWorkspace() {
           <p>Try “What did we agree?”, “Show the codebase”, or “Focus Fix Navigator”. Switching spaces keeps the same call, task, and evidence.</p>
           {!webCallEnabled && <p>Browser calling awaits Bolna agent setup and authorization. You can connect this workspace to an existing authorized phone session using the same token.</p>}
           {webCallEnabled && <div className={styles.callControls}>
-            <label><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> I consent to this Bolna test call and its recording.</label>
+            <label><input type="checkbox" checked={consent} onChange={e => {
+              setConsent(e.target.checked);
+              if (!e.target.checked) void callRef.current?.stop();
+            }} /> I consent to this Bolna test call and its recording.</label>
             <button onClick={() => void startCall()} disabled={!Client || !consent || !["idle", "ended"].includes(callState)}>Start Bolna call</button>
             <button onClick={() => void callRef.current?.stop()} disabled={["idle", "ended"].includes(callState)}>End call</button>
             <span role="status">{callState}</span>

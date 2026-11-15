@@ -20,9 +20,14 @@ export function codeScout(snapshot: EvidenceSnapshot, task: Task | undefined, ut
   if (!terms.length) return [];
   const pr = task?.prNumber != null ? snapshot.pullRequests.find((p) => p.number === task.prNumber) : undefined;
   const changed = new Set(pr?.changedFiles ?? []);
+  const seeds = (task?.searchTerms ?? []).map(t => t.toLowerCase()).filter(Boolean);
 
   const scored: Array<CodeFinding & { score: number }> = [];
   for (const file of snapshot.files) {
+    // Generic question words such as "matching implementation" must not create
+    // a task match when none of the task's curated source terms occurs here.
+    const haystack = `${file.path}\n${file.content}`.toLowerCase();
+    if (seeds.length && !seeds.some(term => haystack.includes(term))) continue;
     const lines = file.content.split("\n");
     let best = { line: -1, score: 0 };
     lines.forEach((text, i) => {
