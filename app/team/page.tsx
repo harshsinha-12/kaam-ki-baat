@@ -175,6 +175,7 @@ export default function Team() {
           {ga && (
             <>
               {ga.seed && <a className={s.meta} href={`https://github.com/${ga.repository}/blob/${ga.sha}/${ga.seed.path}#L${ga.seed.line}`} target="_blank" rel="noreferrer">{ga.seed.path}:{ga.seed.line} @ {ga.sha.slice(0, 7)} ↗ · <span className={ga.match === "confirmed" ? s.ok : s.warn}>{ga.match}</span></a>}
+              <a className={s.meta} href={`/graph?q=${encodeURIComponent(cq)}`}>See how it was found in the full graph →</a>
               <ol className={s.steps}>{ga.explanation.map((l, i) => <li key={i}>{l.replace(/^\d+\.\s*/, "")}</li>)}</ol>
             </>
           )}

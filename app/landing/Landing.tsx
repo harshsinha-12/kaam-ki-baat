@@ -767,6 +767,10 @@ export default function Landing() {
           <Reveal i={1}><h2 className={s.h2}>Find a function. <em>Follow the links</em>.</h2></Reveal>
           <Reveal i={2}><p className={s.lede}>Selected files and symbols form a static graph. Text matching finds a candidate, then import and call hints connect nearby code and tests. These links help navigation; they do not prove runtime behavior or test coverage.</p></Reveal>
           <GraphSection />
+          <Reveal i={3}>
+            <p className={s.lede}>Search it in plain words or by name. On 28 development questions, the right function was in the top three 93% of the time (keyword ranking alone: 46%). On 12 questions held out from tuning: 33% versus 17%. <a href={`${REPO}/blob/main/docs/codegraph/EVAL.md`} target="_blank" rel="noreferrer">Read the eval</a>.</p>
+            <div className={s.ctaRow} style={{ opacity: 1, animation: "none" }}><a href="/graph" className={`${s.btn} ${s.primary}`}>Explore the code graph →</a></div>
+          </Reveal>
         </section>
 
         <section id="how" className={s.section}>
