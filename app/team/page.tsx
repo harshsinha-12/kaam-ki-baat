@@ -4,6 +4,7 @@ import { CodeGraphView, type ViewGraph } from "../components/CodeGraphView";
 import { ProjectConnection, type ConnectedProject } from "../components/ProjectConnection";
 import { FocusInputControls } from "../components/FocusInputControls";
 import type { ConfirmedFocus, FocusSnapshot } from "@/lib/focus/input-contracts";
+import { AgentGlyph } from "../components/AgentGlyph";
 import { CodeFocus } from "../components/CodeFocus";
 import { key, sessionToken, zone } from "../zones/client";
 import s from "../zones/zones.module.css";
@@ -18,6 +19,7 @@ type GA = { explanation: string[]; match: string; seed: { label: string; path: s
 type Ticket = { id: string; question: string; state: string; answer?: { statement: string; conditions?: string; approvedBy: string; decisionVersion: number } };
 
 export default function Team() {
+  const [expanded, setExpanded] = useState(false);
   const [sessionLink, setSessionLink] = useState("");
   const [connecting, setConnecting] = useState(true);
   const [asking, setAsking] = useState(false);
@@ -113,7 +115,8 @@ export default function Team() {
   };
 
   return (
-    <main className={s.page}>
+    <main className={`${s.page} ${s.teamPage}`} data-expanded={expanded}>
+      <div className={s.workspaceShell}>
       <div className={s.top}>
         <h1 className={s.title}>Kaam Ki Baat <span className={s.workspaceName}>/ Workspace</span></h1>
         <div className={s.meta}>{me?.snapshot && <><span className={s.badge}>{me.snapshot.label}</span> {me.snapshot.repository} @ {me.snapshot.pinnedSha.slice(0, 7)}</>}</div>
@@ -134,22 +137,21 @@ export default function Team() {
         </form>
       </section>}
       {connected && <ProjectConnection selectedZone={focus} repository={me!.snapshot?.repository ?? "harshsinha-12/kaam-ki-baat"} onConnected={connectProject} />}
-      <div className={s.setupRow}>
-        <details className={s.setupDisclosure}><summary>Camera &amp; head tracking</summary><p className={s.setupHint}>Choose Webcam, start camera, then calibrate facing forward. Look left for meeting context, center for the leader, and right for code. Head movement highlights; activation is explicit.</p>{connected ? <FocusInputControls key={me!.participant!.name} onConfirmedFocus={followFocus} /> : <p>Connect your personal session to enable camera controls.</p>}</details>
-        <details className={s.setupDisclosure}><summary>How to use this workspace</summary><p className={s.setupHint}>Connect the approved GitHub URL above to open its graph. Start the voice guide to ask about code and documentation. Team Memory answers from approved meeting notes; unclear decisions can be sent to the verified team leader. Camera is off until you start it, and video stays on your device.</p></details>
-      </div>
+      {connected && <FocusInputControls compact key={me!.participant!.name} onConfirmedFocus={followFocus} />}
       {error && <p className={s.bad} role="alert">{error}</p>}
+      <div className={s.workspaceHeading}><div><span className={s.label}>Your workspace</span><h2>Three perspectives. One conversation.</h2></div><button className={s.textButton} aria-pressed={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? "Show project controls ↙" : "Expand workspace ↗"}</button></div>
       <div className={s.zones} role="group" aria-label="Workspace areas">
-        <button className={`${s.zbtn} ${focus === "team_memory" ? s.zbtnOn : ""}`} disabled={!connected} aria-pressed={focus === "team_memory"} onClick={() => void selectSpace("team_memory")}><div className={s.label}>← Look left · meeting context</div>Team Memory</button>
-        <button className={`${s.zbtn} ${s.lock} ${focus === "leader_desk" ? s.centerSelected : ""}`} disabled={!connected} aria-pressed={focus === "leader_desk"} onClick={() => void selectSpace("leader_desk")} title={me?.zones?.leader_desk?.reason ?? "Leader access requires a verified leader session"}><div className={s.label}>↑ Face forward · access protected</div>Leader Desk</button>
-        <button className={`${s.zbtn} ${focus === "code_navigator" ? s.zbtnOn : ""}`} disabled={!connected} aria-pressed={focus === "code_navigator"} onClick={() => void selectSpace("code_navigator")}><div className={s.label}>Look right → · codebase</div>Code Navigator</button>
+        <button data-zone="team_memory" className={`${s.zbtn} ${focus === "team_memory" ? s.zbtnOn : ""}`} disabled={!connected} aria-pressed={focus === "team_memory"} onClick={() => void selectSpace("team_memory")}><AgentGlyph zone="team_memory" size={36} /><span><strong>Team Memory</strong><small>Meeting context</small></span><span className={s.zoneKey} aria-hidden="true">←</span></button>
+        <button data-zone="leader_desk" className={`${s.zbtn} ${s.lock} ${focus === "leader_desk" ? s.centerSelected : ""}`} disabled={!connected} aria-pressed={focus === "leader_desk"} onClick={() => void selectSpace("leader_desk")} title={me?.zones?.leader_desk?.reason ?? "Leader access requires a verified leader session"}><AgentGlyph zone="leader_desk" size={36} /><span><strong>Leader Desk</strong><small>Verified leader access</small></span><span className={s.zoneKey} aria-hidden="true">↑</span></button>
+        <button data-zone="code_navigator" className={`${s.zbtn} ${focus === "code_navigator" ? s.zbtnOn : ""}`} disabled={!connected} aria-pressed={focus === "code_navigator"} onClick={() => void selectSpace("code_navigator")}><AgentGlyph zone="code_navigator" size={36} /><span><strong>Code Navigator</strong><small>Repository &amp; source</small></span><span className={s.zoneKey} aria-hidden="true">→</span></button>
       </div>
 
       {focus === "leader_desk" && <section className={`${s.card} ${s.activeC} ${s.leaderHint}`} role="status"><div><div className={s.label}>Center selected</div><h2>Leader Desk</h2><p>Charan is the team leader. Use the project voice guide above to clear repository doubts. Human-approved decisions require leader verification.</p></div><a className={s.btn} href="/leader">Leader verification ↗</a></section>}
       <div className={s.grid}>
-        <section className={`${s.card} ${focus === "team_memory" ? s.active : ""}`}>
-          <div className={s.label}>Team Memory · meeting context</div>
-          <div className={s.h}>What did we decide?</div>
+        <section data-zone="team_memory" className={`${s.card} ${focus === "team_memory" ? s.active : ""}`}>
+          <div className={s.cardHeading}><span className={s.zoneNumber}>01 / MEMORY</span><span className={s.cardTag}>Approved meeting notes</span></div>
+          <h2 className={s.h}>What did we decide?</h2>
+          <p className={s.cardDescription}>Pick up where your team left off.</p>
           <div className={s.row}>
             <input className={s.input} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ask()} aria-label="Ask Team Memory" />
             <button className={`${s.btn} ${s.primary}`} disabled={!connected || asking || !q.trim()} onClick={ask}>{asking ? "Looking up…" : "Ask"}</button>
@@ -176,9 +178,10 @@ export default function Team() {
           </div>
         </section>
 
-        <section id="code-navigator" className={`${s.card} ${focus === "code_navigator" ? s.activeR : ""}`}>
-          <div className={s.label}>Code Navigator · graph of this repo</div>
-          <div className={s.h}>Where is it in the code?</div>
+        <section data-zone="code_navigator" id="code-navigator" className={`${s.card} ${focus === "code_navigator" ? s.activeR : ""}`}>
+          <div className={s.cardHeading}><span className={s.zoneNumber}>03 / CODE</span><span className={s.cardTag}>Commit-pinned sources</span></div>
+          <h2 className={s.h}>Where is it in the code?</h2>
+          <p className={s.cardDescription}>Trace an idea to the exact implementation.</p>
           <div className={s.row}>
             <input className={s.input} value={cq} onChange={(e) => setCq(e.target.value)} onKeyDown={(e) => e.key === "Enter" && navigate()} aria-label="Ask Code Navigator" />
             <button className={`${s.btn} ${s.primary}`} disabled={!connected || finding || !cq.trim()} onClick={navigate}>{finding ? "Finding…" : "Find"}</button>
@@ -193,6 +196,11 @@ export default function Team() {
           )}
           {connected && <CodeFocus />}
         </section>
+      </div>
+      <section id="workspace-settings" className={s.setupRow} aria-label="Workspace settings">
+        <details className={s.setupDisclosure}><summary><span>A quick guide</span><small>Make yourself at home</small></summary><p className={s.setupHint}>Connect the approved GitHub URL above to open its graph. Start the voice guide to ask about code and documentation. Team Memory answers from approved meeting notes; unclear decisions can be sent to the verified team leader. Camera is off until you start it, and video stays on your device.</p></details>
+      </section>
+      <footer className={s.workspaceFooter}><span>Kaam Ki Baat</span><span>Grounded in your meetings. Connected to your code.</span></footer>
       </div>
     </main>
   );

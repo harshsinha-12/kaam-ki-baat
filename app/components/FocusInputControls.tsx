@@ -11,7 +11,7 @@ import styles from "./spatial.module.css";
 export const ZONE_LABELS: Record<Zone, string> = { team_memory: "Team Memory", leader_desk: "Leader Desk", code_navigator: "Code Navigator" };
 type Access = Record<Zone, { allowed: boolean; reason?: string }>;
 
-export function FocusInputControls({ onConfirmedFocus }: { onConfirmedFocus: (focus: ConfirmedFocus) => void }) {
+export function FocusInputControls({ onConfirmedFocus, compact = false }: { onConfirmedFocus: (focus: ConfirmedFocus) => void; compact?: boolean }) {
   const [draft, setDraft] = useState("");
   const [deviceToken, setDeviceToken] = useState("");
   const [snapshot, setSnapshot] = useState<FocusSnapshot | null>(null);
@@ -126,8 +126,8 @@ export function FocusInputControls({ onConfirmedFocus }: { onConfirmedFocus: (fo
   const airpods = snapshot?.status;
   const airpodsFresh = airpods?.fresh && Date.now() - Date.parse(airpods.receivedAt) <= 6000;
   const webcamLease = controller.current?.lease;
-  return <section className={styles.inputPanel} aria-label="Focus input controls">
-    <div className={styles.inputTop}><div><span className={styles.eyebrow}>Workspace control</span><h3>Focus input</h3></div><span className={styles.connectionBadge} data-state={connection}>{changing ? "Switching…" : connection === "connected" ? "Head controls connected" : connection}</span></div>
+  return <section className={`${styles.inputPanel} ${compact ? styles.compactInput : ""}`} aria-label="Focus input controls">
+    <div className={styles.inputTop}><div><span className={styles.eyebrow}>Workspace control</span><h3>Focus input</h3></div><span className={styles.connectionBadge} data-state={connection}>{changing ? "Switching…" : connection === "connected" ? "Controls connected" : connection}</span></div>
     {!deviceToken ? <form className={styles.connect} onSubmit={e => {
       e.preventDefault(); const token = draft.trim(); setDeviceToken(token); setDraft("");
       try { sessionStorage.setItem("kkb_session", token); } catch { /* private mode */ }
@@ -150,12 +150,13 @@ export function FocusInputControls({ onConfirmedFocus }: { onConfirmedFocus: (fo
       </>}
       {provider === "webcam" && <>
         <p className={styles.provenance}>Permission: {["tracking", "calibrating", "lost"].includes(webcamStatus) ? "camera granted" : webcamStatus === "unavailable" ? "unavailable — see camera status" : "requested when you start camera"} · Calibration: {webcamStatus === "tracking" ? "calibrated" : webcamStatus === "lost" ? "tracking lost; no new selection" : "not confirmed"}</p>
-        <WebcamHeadTracker key={snapshot?.input.epoch} disabled={connection !== "connected" || changing} onStatusChange={setWebcamStatus} onSelect={zone => select(zone, webcamLease)} />
+        <WebcamHeadTracker compact={compact} key={snapshot?.input.epoch} disabled={connection !== "connected" || changing} onStatusChange={setWebcamStatus} onSelect={zone => select(zone, webcamLease)} />
       </>}
       {provider === "airpods" && <div>
         <p>AirPods: {!airpodsFresh ? "unavailable — no fresh companion heartbeat" : airpods!.state.replaceAll("_", " ")} · Permission: {!airpodsFresh ? "unknown" : ["denied", "permission_required"].includes(airpods!.state) ? airpods!.state.replaceAll("_", " ") : "reported by companion"} · Calibration: {airpodsFresh && airpods?.calibrated ? "calibrated" : "not confirmed"}</p>
         <p>Open the macOS companion with the same device session. Start motion and recenter there. Head turns select only.</p>
       </div>}
+      <details className={styles.advancedControls} open={compact ? undefined : true}><summary>Selection &amp; device details</summary>
       <div className={styles.focusActions}>
         <button className={styles.activateButton} disabled={connection !== "connected" || changing || !currentSelection || !zoneAccess?.allowed} onClick={() => void controller.current?.activate().catch(e => setError(e.message))}>Activate {currentSelection && focus?.zone ? ZONE_LABELS[focus.zone] : "selected zone"}</button>
         <span>Active zone: {focus?.activeZone ? ZONE_LABELS[focus.activeZone] : "none"}</span>
@@ -164,6 +165,7 @@ export function FocusInputControls({ onConfirmedFocus }: { onConfirmedFocus: (fo
       </div>
       {connection === "unavailable" && <p>Stop the companion locally if it is still running. Reconnect a valid device session to restore focus controls.</p>}
       <p className={styles.provenance}>Selection does not activate a zone or unlock the Leader Desk. Switching inputs keeps the same Bolna conversation.</p>
+      </details>
     </>}
     {error && <p role="alert" className={styles.error}>{error}</p>}
   </section>;

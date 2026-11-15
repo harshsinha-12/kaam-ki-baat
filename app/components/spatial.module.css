@@ -68,3 +68,25 @@
 .inputPanel .activateButton:not(:disabled) { background:#f2d18c; color:#201a10; border-color:#f2d18c; }
 @media(max-width:580px) { .manualZones { grid-template-columns:1fr; } .focusActions { align-items:stretch; } .focusActions > span { width:100%; order:3; } .focusActions button { flex:1; } }
 @media(prefers-reduced-motion:reduce) { .inputPanel button { transition:none; } }
+
+.advancedControls { margin-top:12px; }
+.advancedControls > summary { cursor:pointer; color:#aaa599; font-size:11px; }
+.compactInput { display:grid; grid-template-columns:auto minmax(260px,1fr) auto; gap:12px 22px; align-items:center; margin:0; padding:12px 16px; background:#121211; border-radius:12px; }
+.compactInput .inputTop { margin:0; gap:10px; }
+.compactInput .inputTop h3 { font-size:12px; font-weight:550; margin:0; }
+.compactInput .inputTop .eyebrow { display:none; }
+.compactInput .connectionBadge { font-size:9px; padding:4px 7px; }
+.compactInput .inputSelector { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; max-width:540px; }
+.compactInput .inputSelector legend { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.compactInput .inputChoice { padding:8px 12px; gap:7px; border-radius:7px; }
+.compactInput .inputChoice strong { font-size:11px; font-weight:500; }
+.compactInput .inputChoice small { display:none; }
+.compactInput .inputChoice input { width:12px; height:12px; }
+.compactInput .focusReadout { margin:0; font-size:10px; text-align:right; }
+.compactInput > .provenance,.compactInput > .manualZones { display:none; }
+.compactInput .advancedControls { grid-column:1/-1; margin:0; }
+.compactInput .advancedControls > summary { width:fit-content; font-size:10px; }
+.compactInput > .error { grid-column:1/-1; margin:0; font-size:12px; }
+.compactInput > .connect,.compactInput > div:not(.inputTop),.compactInput > p:not(.focusReadout):not(.provenance) { grid-column:1/-1; }
+@media(max-width:1000px) { .compactInput { grid-template-columns:auto 1fr; gap:10px 16px; }.compactInput .focusReadout { grid-column:1/-1; text-align:left; }.compactInput .inputSelector { max-width:none; } }
+@media(max-width:600px) { .compactInput { padding:12px; grid-template-columns:1fr; gap:10px; }.compactInput .inputTop { justify-content:space-between; }.compactInput .inputSelector { width:100%; }.compactInput .inputChoice { padding:9px; }.compactInput .inputChoice span { display:block; }.compactInput .focusReadout { font-size:10px; } }
