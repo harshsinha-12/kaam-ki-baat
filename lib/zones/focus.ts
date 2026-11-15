@@ -92,6 +92,11 @@ export async function activateZone(store: EventStore, actor: Actor, body: Record
   if (!access.allowed) return { ok: false, status: 403, reason: access.reason };
   return store.appendGuarded<ActivationResult>((events) => {
     const f = focusState(events, actor.sessionId);
+    const input = focusInput(events, actor.sessionId);
+    // Supplying the new epoch cannot make a pre-switch selection current.
+    // The newly selected provider must confirm a fresh selection first.
+    if (input.epoch > 0 && (f.inputEpoch !== input.epoch || f.provider !== input.provider))
+      return { reject: { ok: false, status: 409, reason: "input changed; select again before activating" } };
     if (body.expectedSeq !== undefined && body.expectedSeq !== f.seq || body.inputEpoch !== undefined && body.inputEpoch !== focusInput(events, actor.sessionId).epoch)
       return { reject: { ok: false, status: 409, reason: "selection changed; review it before activating" } };
     // Activation applies to the zone the user has SELECTED; manual providers select and activate in one gesture.

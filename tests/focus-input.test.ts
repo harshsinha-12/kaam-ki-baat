@@ -101,4 +101,16 @@ describe("input arbitration (synthetic device sessions)", () => {
       assert.equal((await fresh.all()).filter(e => e.type === "call_session").length, 0);
     } finally { await rm(dir, { recursive: true, force: true }); }
   });
+
+  it("requires a fresh selection after switching providers, even when activation supplies the new epoch", async () => {
+    const z = await zoneSetup();
+    await z.act(z.dev, "focus-input", { provider: "manual" });
+    await z.act(z.dev, "focus", { zone: "code_navigator", provider: "manual", seq: 1, inputEpoch: 1 });
+    await z.act(z.dev, "focus-input", { provider: "webcam" });
+    assert.equal((await z.act(z.dev, "activate", { zone: "code_navigator", method: "click", expectedSeq: 1, inputEpoch: 2 })).status, 409);
+    assert.equal((await z.act(z.dev, "activate", { zone: "code_navigator", method: "click" })).status, 409);
+    assert.equal(focusState(await z.store.all(), z.dev.session.sessionId).activeZone, null);
+    await z.act(z.dev, "focus", { zone: "code_navigator", provider: "webcam", seq: 2, inputEpoch: 2 });
+    assert.equal((await z.act(z.dev, "activate", { zone: "code_navigator", method: "click", expectedSeq: 2, inputEpoch: 2 })).status, 200);
+  });
 });
