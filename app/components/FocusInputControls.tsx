@@ -143,7 +143,7 @@ export function FocusInputControls({ onConfirmedFocus, compact = false }: { onCo
       </fieldset>
       <div className={compact ? styles.routeIndicator : styles.focusReadout} data-zone={currentSelection ? focus?.zone : undefined} role="status" aria-live="polite">
         <span><small>{compact ? "Targeted agent" : "Selected zone"}</small><strong>{currentSelection && focus?.zone ? focus.zone === "leader_desk" ? "Leader guide" : ZONE_LABELS[focus.zone] : "Awaiting selection"}</strong></span>
-        {compact && <span className={styles.routeHint}>{currentSelection ? "Turn your head to change the guide · same voice call" : "Select an area to confirm this input"}</span>}
+        {compact && <span className={styles.routeHint}>{currentSelection ? provider === "manual" ? "Click or use arrow keys to change the guide · same voice call" : "Turn your head to change the guide · same voice call" : "Select an area to confirm this input"}</span>}
         {!currentSelection && focus?.zone && <span>Last confirmed: {ZONE_LABELS[focus.zone]}</span>}
         {compact && <button className={styles.activateButton} disabled={connection !== "connected" || changing || !currentSelection || !zoneAccess?.allowed} onClick={() => void controller.current?.activate().catch(e => setError(e.message))}>{focus?.activeZone === focus?.zone && currentSelection ? `Active: ${ZONE_LABELS[focus.zone!]}` : `Activate ${currentSelection && focus?.zone ? ZONE_LABELS[focus.zone] : "selected zone"}`}</button>}
         {zoneAccess && !zoneAccess.allowed && <span className={styles.routeHint}>Leader workspace locked · AI guide only</span>}
