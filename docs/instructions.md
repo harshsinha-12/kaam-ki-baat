@@ -33,4 +33,4 @@ The future product should:
 - Preserve disputed or superseded assignments and their provenance.
 - Demonstrate real call outcomes separately from simulated tests and compare the same scenario before and after a regression fix.
 
-See [reference/EVALUATION.md](reference/EVALUATION.md) for the inherited regression matrix. No application tests or live voice calls have run yet.
+See [reference/EVALUATION.md](reference/EVALUATION.md) for the inherited regression matrix. Application tests have run; see [plan.md](plan.md) for exact results. No live voice calls have been verified.

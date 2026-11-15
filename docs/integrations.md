@@ -2,6 +2,15 @@
 
 Checked on 2026-11-15. MCP registration, authentication, live tool discovery, and application integration are separate checkpoints.
 
+## Current-system reconnection — 2026-11-15
+
+The current Codex configuration initially had neither server registered. With the user's authorization, both were reconnected on this Mac:
+
+- **Bolna:** full endpoint registered with bearer authentication in user-only Codex configuration (mode `0600`). Live MCP initialization and paginated `tools/list` returned **121 tools**. A fresh read-only `get_user_info` completed without a tool error; account details were withheld.
+- **Wispr Flow:** endpoint registered; browser OAuth completed and Codex reported `Successfully logged in`. The saved Codex OAuth credential was then used for live MCP initialization and `tools/list`, returning **16 tools**, including `search_meetings` and `get_meeting`.
+- These are live connection/catalog checks, not a real meeting import or a telephone-runtime test. No meeting content was read during reconnection. The user still needs to select the approved meeting and confirm the demo repository.
+- Newly registered tools are not exposed natively in this already-running session. Verification used the remote MCP protocol with the saved credentials; a fresh Codex session may be needed for native tool exposure. Credentials and OAuth callback values are excluded from Git.
+
 ## Bolna AI
 
 - Landing page: <https://mcp.bolna.ai/>

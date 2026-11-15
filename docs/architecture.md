@@ -1,6 +1,6 @@
 # Architecture: how Kaam Ki Baat works
 
-Status: **design, approved for implementation by the user on 2026-11-15.** No application code exists yet. Claude Opus will build the first slice on its own branch. Nothing here is verified by a live call or a live meeting read.
+Status: **architecture approved for implementation on 2026-11-15.** The first slice and review fixes are merged through PRs #2 and #5. Current implementation and validation are tracked in [plan.md](plan.md). No live call or approved meeting import has been verified.
 
 This is the one document a new contributor (human or agent) should read to understand the project. Details live in linked documents.
 
