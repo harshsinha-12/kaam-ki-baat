@@ -1,13 +1,22 @@
 # Kaam Ki Baat
 
-Project workspace. Requirements and technical decisions are awaiting the initial brief.
+A voice teammate that connects what a team agreed in a meeting with what its GitHub repository shows, then helps each teammate take the next useful action.
+
+**Stage:** planning, handoff integration, and MCP setup. Application implementation is on hold while further context is being supplied.
 
 ## Project notes
 
-- [Context](docs/context.md): purpose, users, scope, and references.
-- [Instructions](docs/instructions.md): requirements, constraints, and working preferences.
-- [Plan](docs/plan.md): milestones, tasks, and validation.
+- [Context](docs/context.md): purpose, proposed MVP, and open decisions.
+- [Instructions](docs/instructions.md): current working constraints and acceptance principles.
+- [Plan](docs/plan.md): completed preparation and future milestones.
+- [MCP integrations](docs/integrations.md): endpoints, authentication, and verified connection status.
+- [Tool recommendations](docs/tool-research.md): tools to use for setup, debugging, and the future voice runtime.
+- [Competition rules](docs/competition.md): verified schedule, strict call duration, and submission requirements.
+- [Evaluation pipeline](docs/evaluation-pipeline.md): stored call evaluations and reviewed improvements between calls.
+- [Handoff references](docs/reference/README.md): retained architecture, contracts, UX, and evaluation details.
 
 ## Development setup
 
-The technology stack and run commands will be documented once requirements are confirmed.
+The handoff proposes one Next.js + TypeScript application with a small durable task store. This is a planning baseline; no application dependencies, routes, database, or runtime have been created.
+
+Use **Kaam Ki Baat** as the project name everywhere. The repository is [harshsinha-12/kaam-ki-baat](https://github.com/harshsinha-12/kaam-ki-baat).
