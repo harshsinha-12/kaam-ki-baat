@@ -117,6 +117,26 @@
       "charEnd": 846,
       "text": "Open question: do we freeze the code at 3:30 or 3:45?",
       "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#12",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Harsh",
+      "charStart": 847,
+      "charEnd": 997,
+      "text": "Bug from yesterday's call: the agent said saved even though the write had timed out. I want the code agent to show me exactly which line decides that.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "kkb#13",
+      "meetingId": "kkb-sync-2026-11-15",
+      "speaker": "Charan",
+      "charStart": 998,
+      "charEnd": 1109,
+      "text": "Good test for the code agent. Harsh, you own the fix. Start from persistVerifiedUpdate and check the read-back.",
+      "visibility": "participant"
     }
   ]
 }
