@@ -87,6 +87,8 @@ test("cross-system questions retrieve the imported meeting boundary and Bolna ca
     { path: "docs/integrations.md", content: "# Wispr and Bolna\nWispr MCP is read by the developer agent. Approved meeting data is imported; Bolna does not call Wispr directly." },
     { path: "scripts/build-snapshot.ts", content: "// Meeting JSON comes from an approved Wispr MCP read.\nexport function buildSnapshot(meeting) { return { passages: meeting.passages }; }" },
     { path: "lib/adapters/bolna.ts", content: "// Bolna uses HTTPS callbacks to read imported evidence.\nexport function buildBolnaTools(origin) {\n  return { url: origin + '/api/tools/get_my_brief' };\n}" },
+    { path: "scripts/mcp-server.ts", content: "// Generic MCP server for external coding agents, not the Wispr import.\nexport function handleMcp() { return 'MCP MCP MCP'; }" },
+    { path: "lib/contracts.ts", content: "// Wispr meeting record type\nexport interface WisprMeeting { source: string }" },
   ];
   const context = projectContext(snapshot, "Where do we link Wispr MCP with Bolna AI?");
   assert.ok(context.passages.some(p => p.path === "scripts/build-snapshot.ts"));

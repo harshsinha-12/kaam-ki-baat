@@ -22,14 +22,25 @@ export function projectContext(snapshot: EvidenceSnapshot, question = "What does
   const bestByPath = new Map<string, (typeof hits)[number]>();
   for (const hit of hits) if (!bestByPath.has(hit.path)) bestByPath.set(hit.path, hit);
   const topScore = hits[0]?.score || 1;
-  const terms = [...new Set(question.toLowerCase().match(/[a-z][a-z0-9_]{2,}/g) ?? [])].filter(t => !["the", "what", "does", "this", "project", "where", "how", "and", "can", "you", "with"].includes(t));
+  const terms = [...new Set(question.toLowerCase().match(/[a-z][a-z0-9_]{2,}/g) ?? [])].filter(t => !["the", "what", "does", "this", "project", "where", "how", "and", "can", "you", "with", "link", "linking", "connect", "connecting", "highlight", "part", "show"].includes(t));
   const scored = snapshot.files.map(file => {
     const low = file.content.toLowerCase(), name = file.path.toLowerCase();
     const score = terms.reduce((n, t) => n + (name.includes(t) ? 12 : 0) + Math.min(6, low.split(t).length - 1), 0);
     const hit = bestByPath.get(file.path);
-    return { file, hit, score: score + (hit ? 18 * hit.score / topScore : 0) + (includeOverview && /^(README\.md|docs\/(architecture|context|plan)\.md)$/.test(file.path) ? 4 : 0) };
+    const titleScore = /\.md$/.test(file.path) ? terms.filter(t => low.split("\n")[0].includes(t)).length * 8 : 0;
+    return { file, hit, score: score + titleScore + (hit ? 18 * hit.score / topScore : 0) + (includeOverview && /^(README\.md|docs\/(architecture|context|plan)\.md)$/.test(file.path) ? 4 : 0) };
   }).sort((a, b) => b.score - a.score || a.file.path.localeCompare(b.file.path));
-  const passages = scored.filter(x => x.score > 0).slice(0, 8).map(({ file, hit: graphHit }) => {
+  // A connection question needs both its documented boundary and code from
+  // each named system; a generic transport match must not crowd either out.
+  const connection = /\b(?:link|connect|integrat)\w*\b/i.test(question) && terms.length > 1;
+  const boundary = connection ? scored.filter(x => x.score > 0 && /\.md$/.test(x.file.path)).slice(0, 2) : [];
+  const endpoints = connection ? terms.flatMap(term => {
+    const match = scored.filter(x => /\.[cm]?[jt]sx?$/.test(x.file.path) && (x.file.path + "\n" + x.file.content).toLowerCase().includes(term))
+      .sort((a, b) => terms.filter(t => b.file.content.toLowerCase().includes(t)).length - terms.filter(t => a.file.content.toLowerCase().includes(t)).length || b.score - a.score)[0];
+    return match ? [match] : [];
+  }) : [];
+  const selected = [...new Map([...boundary, ...endpoints, ...scored.filter(x => x.score > 0)].map(x => [x.file.path, x])).values()].slice(0, 8);
+  const passages = selected.map(({ file, hit: graphHit }) => {
     const lines = file.content.split("\n");
     const anchorLine = graphHit && !["file", "test"].includes(graphHit.kind) ? graphHit.line : undefined;
     const hit = anchorLine ? anchorLine - 1 : terms.length ? lines.findIndex(l => terms.some(t => l.toLowerCase().includes(t))) : 0;
