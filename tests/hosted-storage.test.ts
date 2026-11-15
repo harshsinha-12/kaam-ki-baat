@@ -9,8 +9,10 @@ import { testSnapshot } from "./helpers/snapshot";
 
 function redisFixture() {
   const lists = new Map<string, string[]>(), values = new Map<string, string>();
+  let unavailable = false;
   const config = { url: "https://redis.example", token: "synthetic-server-token", namespace: "test" };
   const transport: typeof fetch = async (_url, options) => {
+    if (unavailable) return new Response("private provider details", {status:503});
     assert.equal((options?.headers as Record<string,string>).Authorization, "Bearer synthetic-server-token");
     const [command, ...args] = JSON.parse(String(options?.body));
     let result: unknown;
@@ -28,7 +30,7 @@ function redisFixture() {
     else throw new Error("unsupported synthetic command");
     return Response.json({result});
   };
-  return { config, transport, values, store: () => new EventStore(null, new RedisEventBackend(new RedisClient(config,transport))) };
+  return { config, transport, values, fail: () => { unavailable = true; }, store: () => new EventStore(null, new RedisEventBackend(new RedisClient(config,transport))) };
 }
 
 test("separate serverless store instances resolve the same persisted device identity", async () => {
@@ -80,6 +82,10 @@ test("hosted snapshot loading ignores copied Mac paths and keeps auth/source dat
     assert.deepEqual(await loadRuntimeSnapshot(),snapshot);
     fixture.values.delete("test:snapshot");
     await assert.rejects(loadRuntimeSnapshot(),/not been imported/);
+    delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    await assert.rejects(loadRuntimeSnapshot(),/not configured/);
+    const {runtimeStore}=await import("../lib/store/runtime-store");
+    assert.throws(()=>runtimeStore(),/not configured/);
   } finally { globalThis.fetch=transport;keys.forEach((key,i)=>saved[i]===undefined?delete process.env[key]:process.env[key]=saved[i]); }
 });
 
@@ -145,6 +151,12 @@ test("Vercel HTTP routes recover imported auth and source highlights after insta
     assert.equal(response.status,200);assert.equal(data.focus.path,"lib/core/persist-update.ts");
     assert.deepEqual(data.focus.highlights.map((h:{start:number;end:number})=>[h.start,h.end]),[[6,8]]);
     assert.equal((await POST(request("invalid-token",{}),{params:Promise.resolve({action:"code_files"})})).status,401);
+    const {GET:health}=await import("../app/api/health/route");
+    assert.equal((await health()).status,200);
+    fixture.fail();
+    const unavailable=await health();assert.equal(unavailable.status,503);
+    const status=await unavailable.json();assert.equal(status.snapshot.loaded,false);
+    assert.doesNotMatch(JSON.stringify(status),/private provider details|mac-only|synthetic-server-token/);
   } finally {
     globalThis.fetch=transport;global.__kkbRuntime=oldRuntime;global.__kkbRuntimePromise=oldPromise;
     keys.forEach((key,i)=>saved[i]===undefined?delete process.env[key]:process.env[key]=saved[i]);

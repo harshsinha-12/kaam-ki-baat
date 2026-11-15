@@ -8,7 +8,9 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   let snapshot: Record<string, unknown> = { loaded: false };
   try {
-    const s = (await getRuntime()).snapshot;
+    const rt = await getRuntime();
+    await rt.store.all();
+    const s = rt.snapshot;
     snapshot = { loaded: true, label: s.label, repository: s.repository, pinnedSha: s.pinnedSha, fetchedAt: s.fetchedAt };
   } catch (e) {
     snapshot = { loaded: false, error: "Runtime storage or evidence snapshot is not configured or unavailable." };
@@ -18,5 +20,5 @@ export async function GET() {
     snapshot,
     toolKeyConfigured: Boolean(process.env.KKB_TOOL_KEY),
     persistence: process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL ? "hosted-redis" : "append-only jsonl",
-  });
+  }, { status: snapshot.loaded ? 200 : 503 });
 }
