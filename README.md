@@ -10,6 +10,8 @@ Your team's conversations are full of decisions. Your repository is full of chan
 
 ![The product story: conversation → project evidence → action](docs/images/demo-graph.png)
 
+**Demo film (1:15):** [docs/demo/kaam-ki-baat-demo-75s.mp4](docs/demo/kaam-ki-baat-demo-75s.mp4) · [subtitles](docs/demo/kaam-ki-baat-demo-75s.srt) · [source](docs/demo/video-source/)
+
 ## The experience
 
 Three agents sit around a teammate. Choose one by a deliberate head turn, with the webcam, or by clicking a card. **Head movement selects an agent; it never authenticates a person or grants permission.**
