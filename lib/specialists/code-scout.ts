@@ -1,7 +1,8 @@
 import type { CodeFinding, EvidenceSnapshot, Task } from "../contracts";
+import { graphFindings } from "../evidence/code-graph";
 
-// Agent A — Code Scout: find relevant code at the pinned SHA. No indexing, no
-// embeddings (D-017): a bounded keyword scan of the snapshot's files.
+// Agent A — Code Scout: optional scoped Graphify index (D-031), with a bounded
+// keyword fallback for snapshots without a usable graph. No embeddings.
 // A hit is "confirmed" only when the file is also changed by the task's PR;
 // a keyword-only hit stays a "candidate".
 
@@ -16,8 +17,12 @@ export function queryTerms(task: Task | undefined, utterance: string): string[] 
 }
 
 export function codeScout(snapshot: EvidenceSnapshot, task: Task | undefined, utterance: string, limit = 3): CodeFinding[] {
+  limit = Math.max(0, Math.min(10, Number.isFinite(limit) ? Math.floor(limit) : 3));
+  if (!limit) return [];
   const terms = queryTerms(task, utterance);
   if (!terms.length) return [];
+  const graph = graphFindings(snapshot, task, terms, limit);
+  if (graph.length) return graph;
   const pr = task?.prNumber != null ? snapshot.pullRequests.find((p) => p.number === task.prNumber) : undefined;
   const changed = new Set(pr?.changedFiles ?? []);
   const seeds = (task?.searchTerms ?? []).map(t => t.toLowerCase()).filter(Boolean);

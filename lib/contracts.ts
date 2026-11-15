@@ -78,6 +78,12 @@ export interface CodeFinding {
   // confirmed = file is changed by the task's PR AND matches; otherwise candidate.
   match: "candidate" | "confirmed";
   url: string;
+  retrieval?: {
+    method: "graphify";
+    builtAt: string;
+    // Graph relationships suggest context; they do not prove task ownership or completion.
+    via?: { symbol: string; relation: string; confidence: "EXTRACTED" | "INFERRED"; direction: "outgoing" | "incoming" };
+  };
 }
 
 export interface Task {
@@ -113,6 +119,7 @@ export interface EvidenceSnapshot {
   checks: CheckRecord[];
   tasks: Task[];
   participants: Participant[];
+  codeGraph?: import("./evidence/code-graph").CodeGraph;
 }
 
 export interface TaskUpdateRequest {
