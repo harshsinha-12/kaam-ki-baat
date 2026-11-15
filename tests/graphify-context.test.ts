@@ -10,6 +10,8 @@ import { loadSnapshot } from "../lib/evidence/load";
 import { issueCallSession } from "../lib/auth/call-session";
 import { EventStore } from "../lib/store/event-store";
 import { runTool, type Runtime } from "../lib/tools/runtime";
+import { navigateCode } from "../lib/zones/code";
+import type { Actor } from "../lib/zones/identity";
 import { testSnapshot } from "./helpers/snapshot";
 
 function graphSnapshot() {
@@ -130,5 +132,17 @@ describe("Graphify code context", () => {
     assert.equal(denied.status, 403);
     assert.equal(denied.body.evidence, undefined);
     assert.equal((await runTool(rt, "get_task_evidence", { call_token: "forged-token-forged-token", focus: "find" })).status, 401);
+  });
+
+  it("preserves graph provenance and verified source ranges in the device Code Navigator", () => {
+    const s = graphSnapshot();
+    const actor: Actor = { participant: s.participants[0], role: "member", repoAccess: true, sessionId: "synthetic", channel: "device", stepUpFresh: false, meetingIds: ["m1"] };
+    const response = navigateCode(s, actor, "persistVerifiedUpdate", "t1");
+    assert.equal(response.ok, true);
+    if (!response.ok) return;
+    assert.equal(response.locations[1].verified, true);
+    assert.equal(response.locations[1].match, "candidate");
+    assert.equal(response.locations[1].retrieval?.via?.confidence, "INFERRED");
+    assert.equal(navigateCode(s, { ...actor, repoAccess: false }, "persistVerifiedUpdate", "t1").ok, false);
   });
 });

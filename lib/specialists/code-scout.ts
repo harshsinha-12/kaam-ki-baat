@@ -1,7 +1,7 @@
 import type { CodeFinding, EvidenceSnapshot, Task } from "../contracts";
 import { graphFindings } from "../evidence/code-graph";
 
-// Agent A — Code Scout: optional scoped Graphify index (D-031), with a bounded
+// Agent A — Code Scout: optional scoped Graphify index (D-039), with a bounded
 // keyword fallback for snapshots without a usable graph. No embeddings.
 // A hit is "confirmed" only when the file is also changed by the task's PR;
 // a keyword-only hit stays a "candidate".
