@@ -55,14 +55,20 @@ Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 - **Fix Navigator** — target file + enclosing function + line + nearest test + `npm test -- <file>`; GitHub permalinks pinned to SHA. Never edits code.
 - **Evidence Verifier** — `lib/core/reconcile.ts` (deterministic): ownership state, PR open/merged, checks on the *current* SHA vs stale, last saved update. Never says "works in production".
 
-## 3. Current status — last verified 2026-11-15 ~14:20 IST (Claude, sandbox)
+## 3. Current status — last verified 2026-11-15 (Codex local; earlier Claude evidence retained)
 
 | Thing | State | Evidence |
+| UI1 board | PASS | Prominent source badge, active glow + reduced motion, responsive layout, timestamped evidence-tool timeline; Chromium desktop/mobile checks, no page errors; .github/screenshots/board.png uses mocked synthetic data |
+| E1 synthetic checks | PASS (33/33 total tests + full typecheck) | Real-call report remains blocked; no call or agent changes authorized |
+| E1 recorder | Implemented (5b31693); real-call acceptance blocked | scripts/eval-call.ts fetches execution or reads private get_execution JSON; allowlisted metadata report, exclusive writes, pending duration handling; synthetic privacy tests |
+| B1 temporary tunnel | PASS | Public HTTPS POST get_my_brief without key returned 401 unauthorized; URL only in ignored .env.local; dev/tunnel process must remain running |
+| G1 adapter | PASS | Pagination + rate-limit + partial failure tests; 31/31 tests, full typecheck; ignored FIXTURE snapshot has successful checks at PR #2 head 8767273 |
+| X1 local validation | PASS | 2026-11-15: npm install, npm run typecheck, npm test (28/28), npm run build; Node 25.9.0, Next 15.5.29 |
 | --- | --- | --- |
 | Domain core + 4 runtime tools + 3 specialists | **Implemented** | `lib/**`, commit on PR #2 |
 | Unit + vertical-slice tests | **28/28 pass** (`tsx --test`, Node 22) | run in Claude sandbox |
 | Core typecheck (`tsconfig.core.json`) | **Pass** | tsc 6.0 in sandbox |
-| Full `npm run typecheck` (Next types) locally | Not run in sandbox (no registry access); CI ran install + build green on `63317bd` | task X1 re-checks locally |
+| Full `npm run typecheck` (Next types) locally | PASS | X1 local run; production build rechecked after UI1 |
 | CI workflow (install, core typecheck, tests, Next build) | **Passed** on `63317bd` (2 runs: `check` success; CodeRabbit skipped) | GitHub check-runs API |
 | GitHub adapter (live) | **Works**: read real PR #2 (open, head `63317bd`), changed files, check runs | `npm run snapshot:fixture` → 27 files, 1 PR, 2 checks |
 | Demo dry run (real tool handlers, no Bolna) | Works; output reviewed | `npm run demo:dry` — NOT call evidence |
@@ -76,20 +82,32 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 
 | ID | Task | Owner | Status | Done when |
 | --- | --- | --- | --- | --- |
-| X1 | `npm install && npm run typecheck && npm test && npm run build`; fix breakages without weakening tests | Codex | todo | All four green; paste results in §3 |
+| X1 | `npm install && npm run typecheck && npm test && npm run build`; fix breakages without weakening tests | Codex | done (f3bdebb) | All four green; paste results in §3 |
 | U1 | **Pick the ONE approved Wispr meeting** (title/date or link) and confirm the demo repo = this repo | **User** | blocked (needs user) | Meeting ID recorded in decisions.md D-021 |
 | U2 | Name 1–3 consenting test participants; they consent on record (no phone numbers in git) | **User** | todo | Consent note per person (who, when, how) |
 | W1 | Wispr import: `get_meeting` + paginated transcript for U1 → `data/private/meeting.json` (`source: "LIVE"`, only decision/assignment passages, with char offsets) and `data/private/project.json` (real participants + tasks, ownership state from exact words) | Claude (has Wispr MCP) | blocked on U1 | `npm run snapshot` prints `LIVE snapshot` |
-| G1 | Harden GitHub adapter: pagination, rate-limit errors, unit test with mocked fetch; ensure checks for head SHA appear once CI runs | Codex | todo | Test passes; snapshot shows ≥1 check on PR #2 head |
-| B1 | Tunnel: `npm run dev` + `cloudflared tunnel --url http://localhost:3000` (or ngrok); record URL in `.env.local` only | Codex / user machine | todo | `curl -X POST $URL/api/tools/get_my_brief` returns 401 without key |
+| G1 | Harden GitHub adapter: pagination, rate-limit errors, unit test with mocked fetch; ensure checks for head SHA appear once CI runs | Codex | done (3e686e2) | Test passes; snapshot shows ≥1 check on PR #2 head |
+| B1 | Tunnel: `npm run dev` + `cloudflared tunnel --url http://localhost:3000` (or ngrok); record URL in `.env.local` only | Codex / user machine | done (6656310) | `curl -X POST $URL/api/tools/get_my_brief` returns 401 without key |
 | B2 | **Needs user go-ahead (AGENTS.md gate).** Bolna agent "Kaam Ki Baat" via Bolna MCP: one persona (Hinglish), 4 custom functions → `$URL/api/tools/<name>`, Bearer `KKB_TOOL_KEY`, `call_token` from `user_data`. Write exact config to `docs/bolna/agent.md` (no secrets). Confirm schema with Bolna `search_docs` first | Codex | todo | `get_agent` shows 4 functions; config committed |
 | B3 | **Needs user go-ahead (AGENTS.md gate).** First real call (V1): `npm run call:token -- --participant <id> --consent "<who/when>"` → Bolna call with `user_data.call_token` | User + Codex | blocked on U2, B2 | Execution ID, duration >45 s, tool calls in `data/runtime/events.jsonl` |
-| E1 | Evaluation recorder: pull Bolna `get_execution` → `docs/evals/<callId>.md` (ID, agent version, duration, tool results, what was communicated, failures) | Codex | todo | 1 eval file per real call |
+| E1 | Evaluation recorder: pull Bolna `get_execution` → `docs/evals/<callId>.md` (ID, agent version, duration, tool results, what was communicated, failures) | Codex | blocked (recorder implemented; real call awaits B2/B3 approval and U2) | 1 eval file per real call |
 | F1 | V1 failure → **dictate fix requirement with Wispr Flow** → implement → V2 replay of same scenario | Claude + user | todo | V1 vs V2 table in `docs/evals/` |
-| UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | todo | Screenshot in PR |
+| UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | done (cc20aa6) | Screenshot in PR |
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 · Codex · Final verification: full typecheck, 33/33 tests, production build and diff whitespace checks pass; no private call imported, no agent created or changed. Removed session-generated lock/Next declaration changes outside lane.
+
+- 2026-11-15 · Codex · UI1: source badge, animated active card, reduced motion, mobile layout and evidence-tool timeline; synthetic screenshot committed for PR. Timeline only includes successful get_task_evidence turns exposed by the existing board API.
+
+- 2026-11-15 · Codex · E1 recorder implemented: `npx tsx scripts/eval-call.ts --execution <UUID> --call-id <local ID>` (BOLNA_API_KEY via environment), or `--input data/private/execution.json`; report in docs/evals, no raw strings exported. Uses documented GET /executions/{id}; live acceptance blocked until approved calls exist.
+
+- 2026-11-15 · Codex · B1: local Next dev + cloudflared tunnel verified 401 without key; temporary URL recorded only in .env.local. No Bolna operation.
+
+- 2026-11-15 · Codex · G1: paginate files/checks, preserve provider head SHA, report rate limits without response bodies; regression tests and live public check read passed.
+
+- 2026-11-15 · Codex · X1: install, full typecheck, 28 tests and production build passed locally; no source fix needed. Generated package-lock.json left uncommitted outside assigned files.
 
 - 2026-11-15 ~14:20 · Claude · `npm run demo:dry` against the real PR #2 snapshot found 4 defects, now fixed with regression tests: (1) interruption recovery repeated already-spoken facts; (2) Fix Navigator pointed at a test helper, not the regression test; (3) GitHub `skipped` checks (CodeRabbit) were mapped to `failure`; (4) the spoken line number was one line early. 28/28 tests pass. These were found BEFORE any call, so they are not the V1 call failure for F1.
 

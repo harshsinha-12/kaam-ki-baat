@@ -14,13 +14,29 @@ export function githubClient(repository: string, token = process.env.GITHUB_TOKE
     const res = await fetchImpl(`https://api.github.com/repos/${repository}${p}`, {
       headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     });
-    if (!res.ok) throw new Error(`GitHub ${p} -> ${res.status}`);
+    if (!res.ok) {
+      const limited = res.status === 429 || (res.status === 403 && (res.headers.get("x-ratelimit-remaining") === "0" || res.headers.has("retry-after")));
+      throw new Error(limited
+        ? `GitHub rate limit (${res.status}); retry-after=${res.headers.get("retry-after") ?? "unknown"}; reset=${res.headers.get("x-ratelimit-reset") ?? "unknown"}`
+        : `GitHub ${p} -> ${res.status}`);
+    }
     return res.json() as Promise<any>;
+  };
+  // Numbered pages keep credentials on the authorized repository's API origin.
+  const pages = async (p: string, field?: string): Promise<any[]> => {
+    const result: any[] = [];
+    for (let page = 1; ; page++) {
+      const data = await get(`${p}?per_page=100&page=${page}`);
+      const items = field ? data[field] : data;
+      if (!Array.isArray(items)) throw new Error("Invalid GitHub page");
+      result.push(...items);
+      if (items.length < 100) return result;
+    }
   };
   return {
     async pullRequest(number) {
       const pr = await get(`/pulls/${number}`);
-      const files: any[] = await get(`/pulls/${number}/files?per_page=100`);
+      const files = await pages(`/pulls/${number}/files`);
       return {
         kind: "pr",
         id: `pr:${number}`,
@@ -35,13 +51,13 @@ export function githubClient(repository: string, token = process.env.GITHUB_TOKE
       };
     },
     async checksFor(sha) {
-      const data = await get(`/commits/${sha}/check-runs?per_page=100`);
+      const runs = await pages(`/commits/${sha}/check-runs`, "check_runs");
       // skipped / neutral runs carry no verdict about the code: drop them rather than call them failures.
-      return (data.check_runs as any[]).filter((c) => !(c.status === "completed" && ["skipped", "neutral"].includes(c.conclusion))).map((c) => ({
+      return runs.filter((c) => !(c.status === "completed" && ["skipped", "neutral"].includes(c.conclusion))).map((c) => ({
         kind: "check" as const,
         id: `check:${c.id}`,
         repository,
-        commitSha: sha,
+        commitSha: c.head_sha ?? sha,
         name: c.name,
         conclusion: c.status !== "completed" ? "pending" : c.conclusion === "success" ? "success" : c.conclusion === "cancelled" ? "cancelled" : "failure", // failure | timed_out | action_required
         url: c.html_url,
