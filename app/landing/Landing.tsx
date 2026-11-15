@@ -694,7 +694,7 @@ export default function Landing() {
         <div className={s.navLinks}>
           <a href="#demo">Demo</a><a href="#problem">Problem</a><a href="#hears">How it hears</a><a href="#zones">Three zones</a><a href="#escalation">Escalation</a><a href="#guards">Guards</a><a href="#graph">Code graph</a><a href="#how">How it works</a>
         </div>
-        <a href="/team" className={`${s.btn} ${s.primary}`}>Open workspace →</a>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}><a href="/evals" style={{ fontSize: 12, whiteSpace: "nowrap" }}>Call evals ↗</a><a href="/team" className={`${s.btn} ${s.primary}`}>Open workspace →</a></div>
       </nav>
 
       <main id="main">
