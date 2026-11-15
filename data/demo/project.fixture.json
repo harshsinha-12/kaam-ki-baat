@@ -1,5 +1,5 @@
 {
-  "_label": "FIXTURE project for the two-person team. Names are role labels; put real names only in data/private/project.json (gitignored).",
+  "_label": "FIXTURE demo project: two-person team (Charan Rathore, lead; Harsh Sinha, teammate). Hypothetical meeting; real repository evidence.",
   "repository": "harshsinha-12/kaam-ki-baat",
   "paths": [
     "lib",
@@ -13,19 +13,20 @@
   "participants": [
     {
       "id": "p_lead",
-      "name": "Lead",
+      "name": "Charan",
       "meetingIds": [
         "kkb-sync-2026-11-15"
       ],
       "taskIds": [
-        "t_leader_device"
+        "t_leader_device",
+        "t_approvals"
       ],
       "role": "leader",
       "repoAccess": true
     },
     {
       "id": "p_dev",
-      "name": "Teammate",
+      "name": "Harsh",
       "meetingIds": [
         "kkb-sync-2026-11-15"
       ],
@@ -33,7 +34,8 @@
         "t_calls",
         "t_readback",
         "t_code_graph",
-        "t_film"
+        "t_film",
+        "t_freeze"
       ],
       "role": "member",
       "repoAccess": true
@@ -42,37 +44,33 @@
   "tasks": [
     {
       "id": "t_leader_device",
-      "title": "lock the Leader Desk to the lead's own device",
+      "title": "lock the Leader Desk to Charan's laptop with Touch ID",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#1"
+        "kkb#2"
       ],
       "assignment": {
         "state": "accepted",
         "ownerId": "p_lead"
       },
       "searchTerms": [
-        "leader_desk",
-        "stepup",
+        "assertpasskey",
         "passkey"
       ]
     },
     {
-      "id": "t_calls",
-      "title": "run three consenting test calls longer than 45 seconds with evaluation notes",
+      "id": "t_approvals",
+      "title": "handle leader approvals during the demo",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#3",
-        "kkb#4"
+        "kkb#7"
       ],
       "assignment": {
         "state": "accepted",
-        "ownerId": "p_dev"
+        "ownerId": "p_lead"
       },
-      "prNumber": 11,
       "searchTerms": [
-        "recordexecutioncallback",
-        "duration"
+        "resolveticket"
       ]
     },
     {
@@ -80,7 +78,7 @@
       "title": "only say saved after the update is read back from the store",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#5"
+        "kkb#4"
       ],
       "assignment": {
         "state": "accepted",
@@ -93,18 +91,37 @@
       ]
     },
     {
-      "id": "t_code_graph",
-      "title": "make the left side a codebase graph agent like Graphify",
+      "id": "t_calls",
+      "title": "run three test calls over 45 seconds with an evaluation note after each",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
+        "kkb#5",
         "kkb#6"
+      ],
+      "assignment": {
+        "state": "accepted",
+        "ownerId": "p_dev"
+      },
+      "prNumber": 11,
+      "searchTerms": [
+        "recordexecutioncallback",
+        "duration"
+      ]
+    },
+    {
+      "id": "t_code_graph",
+      "title": "move the code graph agent to the left side",
+      "meetingId": "kkb-sync-2026-11-15",
+      "passageIds": [
+        "kkb#8",
+        "kkb#9"
       ],
       "assignment": {
         "state": "proposed",
         "ownerId": "p_dev"
       },
       "searchTerms": [
-        "codegraph",
+        "querygraph",
         "graph"
       ]
     },
@@ -113,13 +130,27 @@
       "title": "record the demo film before four",
       "meetingId": "kkb-sync-2026-11-15",
       "passageIds": [
-        "kkb#7"
+        "kkb#10"
       ],
       "assignment": {
         "state": "mentioned"
       },
       "searchTerms": [
         "film"
+      ]
+    },
+    {
+      "id": "t_freeze",
+      "title": "decide the code freeze time, 3:30 or 3:45",
+      "meetingId": "kkb-sync-2026-11-15",
+      "passageIds": [
+        "kkb#11"
+      ],
+      "assignment": {
+        "state": "unknown"
+      },
+      "searchTerms": [
+        "freeze"
       ]
     }
   ]
