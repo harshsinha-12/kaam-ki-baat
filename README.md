@@ -23,6 +23,7 @@ Start with [AGENTS.md](AGENTS.md) for the required instruction reads, implementa
 - [Tool recommendations](docs/tool-research.md): tools to use for setup, debugging, and the future voice runtime.
 - [Competition rules](docs/competition.md): verified schedule, strict call duration, and submission requirements.
 - [Evaluation pipeline](docs/evaluation-pipeline.md): stored call evaluations and reviewed improvements between calls.
+- [Demo readiness and call handoff](docs/bolna/demo-handoff.md): read-only preflight, one final call confirmation, and submission evidence.
 - [Handoff references](docs/reference/README.md): retained architecture, contracts, UX, and evaluation details.
 
 ## Development setup

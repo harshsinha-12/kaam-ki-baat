@@ -21,3 +21,12 @@ it("reports missing tool and communication evidence as unavailable, not zero fai
   assert.match(report, /Consent record present: unavailable/);
   assert.doesNotMatch(report, /0 failures|0 acknowledged/);
 });
+it("retains spatial tool names while omitting private tool responses", () => {
+  const report = evaluationMarkdown({ id, status: "completed", conversation_duration: 60 }, [
+    { type: "tool_call", at: "PRIVATE", callId: "c", tool: "get_page_context", ok: true, summary: "PRIVATE", evidenceIds: [] },
+    { type: "tool_call", at: "PRIVATE", callId: "c", tool: "control_page", ok: false, summary: "PRIVATE", evidenceIds: [] },
+  ], "c");
+  assert.match(report, /get_page_context \| success/);
+  assert.match(report, /control_page \| failure/);
+  assert.doesNotMatch(report, /PRIVATE/);
+});

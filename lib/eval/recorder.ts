@@ -6,7 +6,7 @@ export function executionId(value: unknown): string {
   return value;
 }
 const terminal = new Set(["completed", "no-answer", "busy", "failed", "canceled", "stopped", "error", "balance-low"]);
-const tools = new Set(["get_my_brief", "get_task_evidence", "get_changes", "record_task_update"]);
+const tools = new Set(["get_my_brief", "get_task_evidence", "get_changes", "record_task_update", "get_page_context", "control_page"]);
 
 // Only typed metadata leaves the private input. Never interpolate summaries,
 // transcripts, phone numbers, provider errors, consent text or tool responses.
