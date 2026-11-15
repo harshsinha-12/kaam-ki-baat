@@ -10,7 +10,7 @@ export function sessionToken(): string {
   try { return token || sessionStorage.getItem("kkb_session") || ""; } catch { return token; }
 }
 export async function zone<T = Record<string, unknown>>(action: string, body: Record<string, unknown> = {}): Promise<{ status: number; data: T & { ok?: boolean; error?: string } }> {
-  const res = await fetch(`/api/zones/${action}`, { method: "POST", headers: { "content-type": "application/json", authorization: `Session ${sessionToken()}` }, body: JSON.stringify(body) });
+  const res = await fetch(`/api/zones/${action}`, { method: "POST", headers: { "content-type": "application/json", authorization: `Session ${sessionToken()}` }, body: JSON.stringify(body), signal: AbortSignal.timeout(15000) });
   return { status: res.status, data: await res.json() };
 }
 export const b64u = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
