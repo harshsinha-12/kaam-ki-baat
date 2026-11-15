@@ -4,12 +4,12 @@ Checked on 2026-11-15. MCP registration, authentication, live tool discovery, an
 
 ## Current live integration — 2026-11-15
 
-- User approved one shared Wispr note, this repository, and their Speaker 1 mapping. `resolve_share_link` returned the complete normalized transcript (9,213 characters, explicit end marker). Five exact passages with speaker, offsets, hashes and source modification time were retained privately; the temporary full transcript response was removed after extraction.
+- User approved one shared Wispr note, this repository, and their Speaker 1 mapping. `resolve_share_link` returned the complete normalized transcript (explicit end marker). Five exact passages with speaker, offsets, hashes and source modification time were retained privately; the temporary full transcript response was removed after extraction.
 - The source describes a different product domain. The current LIVE snapshot has two tasks, no asserted PR link, and checks read from the repository's pinned commit. A LIVE label describes real source reads, not a confirmed meeting-to-code match.
 - Created the Kaam Ki Baat Bolna agent under the user's authorization. Persisted `get_agent` read-back verified all six function names, callback URLs, server-key authentication, call-token mapping, dynamic opening and spatial prompt. A redacted profile is in [agent-profile.redacted.json](bolna/agent-profile.redacted.json); the ID, keys and full payload/read-back stay in ignored private files.
 - Provider validation required Sarvam voice language in `provider_config`. MCP `update_agent` reported success for a tool change but read-back still showed four tools; the official v2 PUT then persisted all six. No management success was inferred without that read-back.
 - A nine-turn TEXT_PREVIEW against the real runtime passed, including a refused unconfirmed save, persisted isolated save/read-back, idempotent retry, proposed-ownership refusal and unauthorized-task refusal. Preview events are separate from live call events. This is not a Bolna conversation or telephone evidence.
-- LIVE HTTP preflight verified the owner brief, scoped meeting passages and rejection of a browser-session request without fresh recording consent. Browser calling is configured locally and requires the user's consent checkbox and Start action. No provider audio session or telephone call has been started by this lane.
+- LIVE HTTP preflight verified the owner brief, scoped meeting passages and rejection of a browser-session request without fresh recording consent. Browser calling is configured but disabled locally under the final named-participant call hold (D-034). The consent checkbox is an additional runtime gate after that confirmation. No provider audio session or telephone call has been started by this lane.
 
 ## Current-system reconnection — 2026-11-15
 
@@ -67,3 +67,5 @@ A fresh coding session may be needed to expose newly registered servers as nativ
 - [Bolna custom functions](https://www.bolna.ai/docs/tool-calling/custom-function-calls)
 - [Wispr connection and access guide](https://docs.wisprflow.ai/articles/9551372685-connect-an-mcp-client-to-wispr-flow-remote-mcp-server)
 - [Official Wispr plugin](https://github.com/Wispr-AI/wispr-flow-plugin)
+
+Final startup validation (2026-11-15): after restarting the owned production service against the newly saved selected snapshot, both local and public HTTPS authenticated board metadata match the private LIVE snapshot exactly, including repository, SHA and `fetchedAt`. Unauthenticated evidence/spatial tool requests return 401. An authenticated browser start returns 503 under the call hold. No browser consent receipt or provider execution correlation exists. Earlier readiness preflight failure correctly detected the stale server snapshot before this restart.

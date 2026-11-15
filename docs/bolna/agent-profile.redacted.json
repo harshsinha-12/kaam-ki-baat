@@ -29,5 +29,6 @@
     "Provider context substitution and audio quality not observed in a real call",
     "MCP update accepted prompts but did not persist changed task tools; official v2 PUT persisted all six functions",
     "No phone number/consent supplied; no telephone call placed"
-  ]
+  ],
+  "callHold": "ALL calls held until ONE final user confirmation names the specific consenting participant; browser enablement false"
 }

@@ -2,6 +2,10 @@
 
 Configured 2026-11-15 under explicit user authorization. The Kaam Ki Baat agent was created and its six functions verified by persisted read-back. The approved meeting is imported, the LIVE text/HTTP preview works, and browser calling is prepared behind fresh recording consent. Provider token forwarding/audio and real telephone calls remain unverified. See the [redacted profile](agent-profile.redacted.json).
 
+## Current call hold
+
+All calls are held under D-034 until one final user confirmation names the specific consenting participant. `KKB_ENABLE_WEB_CALLS=false` is set locally and authenticated browser start returns 503. Setup approval and text preview are not permission to start a provider session. The final named-participant confirmation is still absent.
+
 ## Generate the custom functions
 
 With `KKB_PUBLIC_URL` and `KKB_TOOL_KEY` set in ignored `.env.local`:
@@ -85,6 +89,6 @@ The selected source has no confirmed implementation/PR link in this repository. 
 node --env-file=.env.local --import tsx scripts/demo-text.ts --participant <approved-participant-id>
 ```
 
-This runs the real handlers with an isolated event file and saves a private trace. It never changes live task status or calls Bolna. The current preview passes nine turns.
+This runs the real handlers with an isolated event file and saves a private trace. It never changes live task status or calls Bolna. The current preview passes nine turns. All voice calls remain held for the final named-participant confirmation.
 
 Browser starts require a fresh recording-consent request, record an audit receipt and preload the permitted opening brief before minting the provider session. The returned execution ID is persisted with the local call ID. Withdrawing the checkbox consent stops the browser call. Provider audio, exact context substitution and DOM timing still need the user's consenting browser test.

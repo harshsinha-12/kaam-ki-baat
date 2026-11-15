@@ -60,7 +60,7 @@ Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 
 ## 3. Current status — last verified 2026-11-15 (Codex live-demo worktree; merged PR #10 and main documentation update retained)
 
-Baseline includes merged PR #10 (`f7100a6`) and the main status reconciliation (`17de40b`). The earlier checkout recheck is preserved in the change log. The private import/runtime/configuration evidence below belongs to `/Users/harshsinha/kaam-ki-baat-github`; private files do not travel with Git. No relational database, camera selection, leader passkey or live STT is implemented.
+Baseline includes merged PR #10 (`f7100a6`) and the main status reconciliation (`17de40b`). The earlier checkout recheck is preserved in the change log. All calls are held under D-034 for the final named-participant confirmation. The private import/runtime/configuration evidence below belongs to `/Users/harshsinha/kaam-ki-baat-github`; private files do not travel with Git. No relational database, camera selection, leader passkey or live STT is implemented.
 
 | Thing | State | Evidence |
 | --- | --- | --- |
@@ -92,7 +92,7 @@ The browser slice from PR #10 is implemented; the larger [spatial v2 proposal](s
 | 5. Stored evaluation and reviewed fix between calls | Milestone 5 and [evaluation-pipeline.md](evaluation-pipeline.md) | Recorder merged; no completed real call evaluation or V1/V2 voice replay yet. Generic-query retrieval defect was fixed from a text preview, not a phone call. |
 | 6. Evidence board and demo record | Milestone 6 | Board/spatial workspace implemented and owner access prepared privately. No real-call demo record or deployment. |
 
-Next product gate: owner opens the prepared workspace and explicitly starts a recorded browser test. Then retrieve the execution through the persisted correlation, evaluate it, and review a focused fix. Three consenting telephone calls over 45 seconds remain unverified; deployment/merging remain user-controlled.
+Next product gate: obtain ONE final user confirmation naming the specific consenting participant; all calls remain held until then. After that confirmation, the named participant may explicitly start a recorded browser test. Then retrieve the execution through the persisted correlation, evaluate it, and review a focused fix. Three consenting telephone calls over 45 seconds remain unverified; deployment/merging remain user-controlled.
 
 ## 4. Task board
 
@@ -115,6 +115,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 · Codex · Coordination checkpoint: preserved parent commits `77d881a`/`d566029` for the dependent readiness lane. Its 57-test/typecheck/build report is separate from this parent's 52 tests. All calls held for ONE final named-participant confirmation (D-034); browser flag disabled. After the readiness check correctly detected a stale selected snapshot, restarted the owned production service. Local and public HTTPS health/authorized board now match repository, SHA, label and fetchedAt; unauthorized evidence/spatial tools return 401; authenticated call start remains 503, with no provider execution or consent receipt. PR #11 remains separate: current CI fails test type narrowing, and its runtime/store/decision additions require reconciliation before merging.
 
 - 2026-11-15 · Codex · Live-demo lane: approved Wispr share resolved and full transcript read; five exact hashed passages retained privately, user-confirmed Speaker 1 mapping, LIVE snapshot with pinned-commit GitHub read and no invented PR link. Created Bolna agent; official v2 update plus persisted MCP read-back verified all six functions after MCP update failed to persist changed task tools. Nine-turn text preview found generic-query false candidates, now fixed with a regression test; unlinked briefs no longer imply exact code exists. Browser minting now requires fresh recording consent, prepares the authorized opening brief, stores consent/execution correlation and stops on consent withdrawal. 52/52 tests, full typecheck and production build passed; LIVE HTTP brief/context/consent preflight passed. No provider session or phone call started. Separate local `codex/live-demo-readiness` lane is preparing preflight/handoff; this lane avoids duplicating that work.
 
