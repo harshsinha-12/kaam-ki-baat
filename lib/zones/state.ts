@@ -1,5 +1,6 @@
 import type { StoredEvent, ZoneEvent } from "../store/event-store";
-import type { ClarificationTicket, Consent, Decision, DeviceSession, LiveUtterance, Zone } from "./contracts";
+import type { ClarificationTicket, Consent, Decision, DeviceSession, FocusProvider, LiveUtterance, Zone } from "./contracts";
+import type { ConfirmedFocus, FocusInput, InputStatus } from "../focus/input-contracts";
 
 // Typed views over the append-only log. Every projection is a pure fold, so the
 // same events always produce the same state (and tests can replay them).
@@ -10,6 +11,8 @@ export type ZoneKind =
   | "step_up_attempt"
   | "consent"
   | "focus"
+  | "focus_input"
+  | "focus_input_status"
   | "activation"
   | "decision"
   | "resolution"
@@ -49,11 +52,25 @@ export function latestConsent(events: StoredEvent[], sessionId: string): Consent
   return cs.length ? (cs[cs.length - 1].data as unknown as Consent) : null;
 }
 
-export function focusState(events: StoredEvent[], sessionId: string): { zone: Zone | null; seq: number; activeZone: Zone | null } {
+export function focusState(events: StoredEvent[], sessionId: string): ConfirmedFocus {
   const f = zoneEvents(events, "focus").filter((e) => e.key === sessionId);
   const a = zoneEvents(events, "activation").filter((e) => e.key === sessionId);
-  const last = f[f.length - 1]?.data as { zone: Zone; seq: number } | undefined;
-  return { zone: last?.zone ?? null, seq: last?.seq ?? 0, activeZone: (a[a.length - 1]?.data as { zone: Zone } | undefined)?.zone ?? null };
+  const last = f[f.length - 1]?.data as { zone: Zone; provider: FocusProvider; seq: number; inputEpoch?: number } | undefined;
+  return { zone: last?.zone ?? null, provider: last?.provider ?? null, seq: last?.seq ?? 0, inputEpoch: last?.inputEpoch ?? null, activeZone: (a[a.length - 1]?.data as { zone: Zone } | undefined)?.zone ?? null };
+}
+
+export function focusInput(events: StoredEvent[], sessionId: string): FocusInput {
+  const inputs = zoneEvents(events, "focus_input").filter(e => e.key === sessionId);
+  return (inputs.at(-1)?.data as unknown as FocusInput | undefined) ?? { provider: "manual", epoch: 0 };
+}
+
+export function focusInputStatus(events: StoredEvent[], sessionId: string, now = Date.now()): InputStatus | null {
+  const input = focusInput(events, sessionId);
+  const last = zoneEvents(events, "focus_input_status").filter(e => e.key === sessionId && e.data.inputEpoch === input.epoch).at(-1);
+  if (!last) return null;
+  const age = now - Date.parse(last.at);
+  const data = last.data as unknown as Omit<InputStatus, "receivedAt" | "fresh">;
+  return { state: data.state, calibrated: data.calibrated, lastSampleAt: data.lastSampleAt, receivedAt: last.at, fresh: age >= 0 && age <= 6000 };
 }
 
 /** Latest version of each decision recorded in the log (leader resolutions). */

@@ -5,7 +5,7 @@
 export function sessionToken(): string {
   if (typeof window === "undefined") return "";
   const m = window.location.hash.match(/t=([A-Za-z0-9_-]+)/);
-  if (m) { try { sessionStorage.setItem("kkb_session", m[1]); } catch { /* private mode */ } history.replaceState(null, "", window.location.pathname); }
+  if (m) { try { sessionStorage.setItem("kkb_session", m[1]); } catch { /* private mode */ } history.replaceState(null, "", window.location.pathname + window.location.search); }
   try { return m?.[1] ?? sessionStorage.getItem("kkb_session") ?? ""; } catch { return m?.[1] ?? ""; }
 }
 export async function zone<T = Record<string, unknown>>(action: string, body: Record<string, unknown> = {}): Promise<{ status: number; data: T & { ok?: boolean; error?: string } }> {
