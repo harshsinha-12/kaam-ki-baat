@@ -36,9 +36,11 @@ export interface Trail {
   areas: StoryArea[];
   prs: StoryPR[];
   sentences: string[];
+  /** Sentences before the first PR sentence (1 for an area trail, 0 otherwise). */
+  lead: number;
 }
 
-const words = (s: string) => s.toLowerCase().replace(/[^a-z0-9#\s]/g, " ").split(/\s+/).filter((w) => w.length > 2 || /^#?\d+$/.test(w));
+const words = (s: string) => s.toLowerCase().replace(/[^a-z0-9#\s]/g, " ").split(/\s+/).filter((w) => w.length >= 2 || /^#?\d+$/.test(w));
 
 export function clock(iso: string): string {
   const d = new Date(iso);
@@ -71,12 +73,12 @@ export function traceTrail(story: RepoStory, question: string, max = 6): Trail {
     const sentences = prs.length
       ? prs.map((p) => `Pull request ${p.number}, merged at ${clock(p.mergedAt)}: ${p.what} It touched ${p.filesChanged} files, mostly in ${p.topFolders.slice(0, 2).join(" and ")}.`)
       : [`I can't find pull request ${explicit.join(", ")} on main.`];
-    return { question, areas, prs, sentences };
+    return { question, areas, prs, sentences, lead: 0 };
   }
 
   const areas = matchAreas(story, question);
   if (!areas.length) {
-    return { question, areas: [], prs: [], sentences: [`I couldn't tie that to one part of the product. Try asking about ${story.areas.slice(0, 4).map((a) => a.label).join(", ")}.`] };
+    return { question, areas: [], prs: [], sentences: [`I couldn't tie that to one part of the product. Try asking about ${story.areas.slice(0, 4).map((a) => a.label).join(", ")}.`], lead: 0 };
   }
   const main = areas[0];
   const all = story.prs.filter((p) => p.areas.includes(main.id));
@@ -93,5 +95,5 @@ export function traceTrail(story: RepoStory, question: string, max = 6): Trail {
     ...prs.slice(1, -1).map((p) => `Then pull request ${p.number}: ${p.what}`),
     ...(last !== first ? [`The latest change is pull request ${last.number} at ${clock(last.mergedAt)}: ${last.what} If something looks wrong here, start there.`] : [`That is the only change to it so far, so start there.`]),
   ];
-  return { question, areas, prs, sentences };
+  return { question, areas, prs, sentences, lead: 1 };
 }
