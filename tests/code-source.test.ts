@@ -85,7 +85,7 @@ test("cross-system questions retrieve the imported meeting boundary and Bolna ca
   const snapshot = testSnapshot();
   snapshot.files = [
     { path: "docs/integrations.md", content: "# Wispr and Bolna\nWispr MCP is read by the developer agent. Approved meeting data is imported; Bolna does not call Wispr directly." },
-    { path: "scripts/build-snapshot.ts", content: "// Meeting JSON comes from an approved Wispr MCP read.\nexport function buildSnapshot(meeting) { return { passages: meeting.passages }; }" },
+    { path: "scripts/build-snapshot.ts", content: "// Meeting JSON comes from an approved Wispr MCP read.\nexport function buildSnapshot(meeting) { return { passages: JSON.parse(meeting).passages }; }" },
     { path: "lib/adapters/bolna.ts", content: "// Bolna uses HTTPS callbacks to read imported evidence.\nexport function buildBolnaTools(origin) {\n  return { url: origin + '/api/tools/get_my_brief' };\n}" },
     { path: "scripts/mcp-server.ts", content: "// Generic MCP server for external coding agents, not the Wispr import.\nexport function handleMcp() { return 'MCP MCP MCP'; }" },
     { path: "lib/contracts.ts", content: "// Wispr meeting record type\nexport interface WisprMeeting { source: string }" },
@@ -96,6 +96,7 @@ test("cross-system questions retrieve the imported meeting boundary and Bolna ca
   assert.ok(context.passages.some(p => p.path === "docs/integrations.md"));
   const source = questionSource(snapshot, context.question, context.passages);
   assert.ok(source && snapshot.files.some(f => f.path === source.path));
+  assert.equal(source.path, "scripts/build-snapshot.ts", "show the integration boundary rather than a shared record type");
   assert.ok(context.passages.every(p => p.retrieval.match === "candidate"));
   assert.match(context.instructions, /Do not invent/);
 });
