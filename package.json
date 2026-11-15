@@ -1,25 +1,30 @@
 {
   "name": "kaam-ki-baat",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
+  "engines": { "node": ">=20" },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "start": "next start",
+    "typecheck": "tsc --noEmit -p tsconfig.core.json && tsc --noEmit",
+    "typecheck:core": "tsc --noEmit -p tsconfig.core.json",
+    "test": "tsx --test tests/*.test.ts",
+    "snapshot": "tsx scripts/build-snapshot.ts",
+    "snapshot:fixture": "tsx scripts/build-snapshot.ts --project data/demo/project.fixture.json",
+    "call:token": "tsx scripts/create-call.ts"
   },
   "dependencies": {
     "next": "^15.5.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "zod": "^4.1.0"
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.9.0",
-    "vitest": "^3.2.0"
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
   }
 }

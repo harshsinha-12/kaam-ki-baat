@@ -2,3 +2,10 @@
 .env
 .env.*
 !.env.example
+
+# Runtime + private evidence (never commit)
+node_modules/
+.next/
+data/private/
+data/runtime/
+*.tsbuildinfo

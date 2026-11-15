@@ -1,33 +1,110 @@
-# Project plan
+# Kaam Ki Baat — BUILD PLAN (single source of truth)
 
-## Current status
+**Every agent (Claude, Codex) and every human reads this first and updates it after each meaningful change.**
+Rules live in [AGENTS.md](../AGENTS.md). Design lives in [architecture.md](architecture.md). Decisions live in [decisions.md](decisions.md). This file is *status + who does what next*.
 
-Scoped implementation is authorized. The first Next.js/Zod/Vitest evidence foundation is committed to feat/evidence-core-spatial-specialists; dependencies, compilation, provider adapters, real calls, and deployment are not verified.
+Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competition.md)).
 
-## Preparation
+## 0. Goal of the demo (the vertical slice)
 
-- [x] Review the supplied handoff and preserve relevant technical references.
-- [x] Confirm Kaam Ki Baat against the repository name and user instructions.
-- [x] Record the purpose, proposed MVP, constraints, and open decisions.
-- [x] Register Bolna and Wispr Flow MCP in local Codex configuration.
-- [x] Validate the Bolna key with a live read-only `get_user_info` request.
-- [x] Discover Bolna's live tool catalog: 121 tools on 2026-11-15.
-- [x] Complete Wispr browser authorization; Codex confirmed successful login after manual callback input.
-- [x] Discover Wispr's live account catalog (16 tools) and inspect meeting search/transcript schemas.
-- [x] Verify a bounded Wispr project-title search; it succeeded with zero matches, so no meeting was imported.
-- [x] Research and document the initial tool recommendations, distinguishing live discovery from documentation.
-- [x] Verify the public competition rules and 1–4 PM build window.
-- [x] Design the stored call-evaluation and reviewed improvement pipeline.
-- [ ] Read one user-selected, authorized Wispr meeting after authentication.
-- [ ] Incorporate the next context update and settle remaining scope decisions.
+> **One approved Wispr meeting → one codebase finding → one exact code pointer → one personalized Bolna call → one verifiably saved action.**
 
-## Active milestones — implement with verification
+Demo script (≈90 s, must be >45 s on Bolna's own log):
+1. Kaam Ki Baat calls a consenting teammate. `get_my_brief` → *"In <meeting>, the team agreed: X. PR #2 is still open, not merged. Want me to show you where the code is?"*
+2. Caller interrupts: *"Ruko — code kahan hai?"* → Fix Navigator: file, function, line, test. Then *"Also, before I forget: …"* (unfinished fact resumes).
+3. *"Did CI pass?"* → Evidence Verifier: checks on the **current** SHA, or "that result is for an older commit".
+4. *"Mark it in progress."* → confirm → `record_task_update` → *"Saved, and I read it back."*
+5. The board at `/?key=…` shows the three cards lighting up left → center → right with SHA-pinned links.
 
-1. Confirm the meeting, repository, participants, consent, full participant guidelines, storage, and HTTPS callback setup. Prove a real Bolna call and an authorized Wispr meeting read as independent integration gates.
-2. Create the smallest service and typed evidence records. Verify ownership ambiguity, PR state, mismatched check SHA, stale evidence, and permission boundaries with focused fixtures.
-3. Deliver one personalized brief and one confirmed, persisted task update, with idempotency and read-back verification.
-4. Connect the live voice runtime to the narrow application tools. Verify interruptions, code-switching, failed tools, and uncertainty handling.
-5. Implement the [evaluation pipeline](evaluation-pipeline.md): persist call snapshots, deterministic results, optional rubric judgments, suggestions, and agent versions. Complete at least three consenting calls strictly over 45 seconds, evaluate after each, review and apply a focused fix between calls, and replay a comparable scenario.
-6. Prepare the evidence board and demo record with exact results and known limitations. Deployment requires an explicit user instruction.
+## 1. Branches and lanes
 
-The [inherited build schedule](reference/BUILD_PLAN.md) is a time-boxing reference within the verified [1–4 PM event build window](competition.md). Reserve time for calls and improvements before UI polish; a large evaluation framework must not consume the three-hour window. No teammates or live outcomes are assumed. Completed changes will be committed and pushed on a coordination branch with a concise PR when appropriate; merge, deployment, sharing private meeting data, and external operations remain subject to their separate scope.
+| Branch | Purpose | Who merges |
+| --- | --- | --- |
+| `main` | Reviewed work only | User |
+| `feat/evidence-core-spatial-specialists` (**PR #2**) | **Integration branch.** Lane PRs target this. | User (or lane owner when user says so) |
+| `claude/<topic>` | Claude lane work → PR into integration | — |
+| `codex/<topic>` | Codex lane work → PR into integration | — |
+
+Before starting: `git fetch && git checkout -b codex/<topic> origin/feat/evidence-core-spatial-specialists`. Rebase on the integration branch before opening a PR. Small PRs, merged often (every 30–40 min).
+
+### File ownership (avoid conflicts)
+
+| Area | Owner | Files |
+| --- | --- | --- |
+| Domain core, auth, store, specialists, runtime tools | **Claude** | `lib/core/**`, `lib/store/**`, `lib/auth/**`, `lib/specialists/**`, `lib/tools/**`, `app/api/tools/**`, `scripts/create-call.ts`, their tests |
+| UI board, GitHub adapter, snapshot builder, CI, Bolna agent config, evaluation recorder | **Codex** | `app/page.tsx`, `app/components/**`, `lib/adapters/**`, `scripts/build-snapshot.ts`, `.github/**`, `docs/bolna/**`, `lib/eval/**`, `scripts/eval-*.ts`, their tests |
+| Shared — edit in small, separate commits and note it in §5 | both | `lib/contracts.ts`, `package.json`, `docs/plan.md`, `docs/decisions.md` |
+| Private data — **never committed** | user + whichever agent imports | `data/private/**`, `data/runtime/**`, `.env.local` |
+
+## 2. How the system works (one screen)
+
+```
+Wispr MCP ──(agent reads ONE approved meeting)──> data/private/meeting.json ─┐
+local git @ SHA + GitHub REST (PR, checks) ─────> scripts/build-snapshot.ts ─┴─> data/private/snapshot.json (LIVE) | data/demo/snapshot.fixture.json (FIXTURE)
+                                                                                    │
+Bolna call ──POST /api/tools/{tool} (Bearer KKB_TOOL_KEY, body.call_token)──> lib/tools/runtime.ts
+   get_my_brief · get_task_evidence(focus: find|locate|verify, question) · get_changes · record_task_update
+        │ resolveCaller (server-side token → participant → authorized tasks)
+        ├─ orchestrator: Code Scout (left) · Fix Navigator (center) · Evidence Verifier (right)
+        │    shared taskId + contextVersion; communication ledger resumes unfinished facts
+        └─ EventStore: append-only data/runtime/events.jsonl (idempotent writes, fsync, read-back)
+Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
+```
+
+- **Code Scout** — keyword scan of snapshot files at the pinned SHA. `confirmed` only if the file is changed in the task's PR; otherwise `candidate`.
+- **Fix Navigator** — target file + enclosing function + line + nearest test + `npm test -- <file>`; GitHub permalinks pinned to SHA. Never edits code.
+- **Evidence Verifier** — `lib/core/reconcile.ts` (deterministic): ownership state, PR open/merged, checks on the *current* SHA vs stale, last saved update. Never says "works in production".
+
+## 3. Current status — last verified 2026-11-15 ~14:05 IST (Claude, sandbox)
+
+| Thing | State | Evidence |
+| --- | --- | --- |
+| Domain core + 4 runtime tools + 3 specialists | **Implemented** | `lib/**`, commit on PR #2 |
+| Unit + vertical-slice tests | **25/25 pass** (`tsx --test`, Node 22) | run in Claude sandbox |
+| Core typecheck (`tsconfig.core.json`) | **Pass** | tsc 6.0 in sandbox |
+| Full `npm install` / `npm run typecheck` / `npm run build` (Next.js) | **NOT RUN** — sandbox has no package-registry access | first person with network: run and record here (task X1) |
+| CI workflow | Added (`.github/workflows/ci.yml`); first run pending | GitHub Actions on PR #2 |
+| Fixture snapshot | Builder written; real repo files + real PR #2 + FIXTURE meeting | `npm run snapshot:fixture` |
+| Wispr: approved meeting read end-to-end | **BLOCKED — needs user to pick the meeting** | — |
+| Bolna agent wired to our endpoints | **NOT STARTED** — needs public HTTPS URL (tunnel) | — |
+| Real calls >45 s (need 3) | **0** | — |
+
+## 4. Task board
+
+Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in place.
+
+| ID | Task | Owner | Status | Done when |
+| --- | --- | --- | --- | --- |
+| X1 | `npm install && npm run typecheck && npm test && npm run build`; fix breakages without weakening tests | Codex | todo | All four green; paste results in §3 |
+| U1 | **Pick the ONE approved Wispr meeting** (title/date or link) and confirm the demo repo = this repo | **User** | blocked (needs user) | Meeting ID recorded in decisions.md D-021 |
+| U2 | Name 1–3 consenting test participants; they consent on record (no phone numbers in git) | **User** | todo | Consent note per person (who, when, how) |
+| W1 | Wispr import: `get_meeting` + paginated transcript for U1 → `data/private/meeting.json` (`source: "LIVE"`, only decision/assignment passages, with char offsets) and `data/private/project.json` (real participants + tasks, ownership state from exact words) | Claude (has Wispr MCP) | blocked on U1 | `npm run snapshot` prints `LIVE snapshot` |
+| G1 | Harden GitHub adapter: pagination, rate-limit errors, unit test with mocked fetch; ensure checks for head SHA appear once CI runs | Codex | todo | Test passes; snapshot shows ≥1 check on PR #2 head |
+| B1 | Tunnel: `npm run dev` + `cloudflared tunnel --url http://localhost:3000` (or ngrok); record URL in `.env.local` only | Codex / user machine | todo | `curl -X POST $URL/api/tools/get_my_brief` returns 401 without key |
+| B2 | **Needs user go-ahead (AGENTS.md gate).** Bolna agent "Kaam Ki Baat" via Bolna MCP: one persona (Hinglish), 4 custom functions → `$URL/api/tools/<name>`, Bearer `KKB_TOOL_KEY`, `call_token` from `user_data`. Write exact config to `docs/bolna/agent.md` (no secrets). Confirm schema with Bolna `search_docs` first | Codex | todo | `get_agent` shows 4 functions; config committed |
+| B3 | **Needs user go-ahead (AGENTS.md gate).** First real call (V1): `npm run call:token -- --participant <id> --consent "<who/when>"` → Bolna call with `user_data.call_token` | User + Codex | blocked on U2, B2 | Execution ID, duration >45 s, tool calls in `data/runtime/events.jsonl` |
+| E1 | Evaluation recorder: pull Bolna `get_execution` → `docs/evals/<callId>.md` (ID, agent version, duration, tool results, what was communicated, failures) | Codex | todo | 1 eval file per real call |
+| F1 | V1 failure → **dictate fix requirement with Wispr Flow** → implement → V2 replay of same scenario | Claude + user | todo | V1 vs V2 table in `docs/evals/` |
+| UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | todo | Screenshot in PR |
+| C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
+
+## 5. Change log (newest first; one line each)
+
+- 2026-11-15 ~14:05 · Claude · Merged `main` into PR #2 branch (took main's docs). Replaced zod/vitest with dependency-free core + `tsx --test` (D-024). Added EventStore, call tokens, 3 specialists + orchestrator, 4 tools, board API/UI, snapshot builder, GitHub adapter, CI. Folded `OPUS_START.md` + `IMPLEMENTATION_STATUS.md` into this file.
+
+## 6. Commands
+
+```bash
+npm install
+npm test                       # domain + slice tests
+npm run typecheck              # core + Next
+npm run snapshot:fixture       # FIXTURE snapshot from real repo + synthetic meeting
+npm run snapshot               # LIVE snapshot (needs data/private/project.json + meeting.json)
+KKB_TOOL_KEY=… KKB_BOARD_KEY=… npm run dev
+npm run call:token -- --participant p_dev --consent "verbal, to Harsh, 14:20 IST"
+curl -s -X POST localhost:3000/api/tools/get_my_brief -H "Authorization: Bearer $KKB_TOOL_KEY" -H 'content-type: application/json' -d '{"call_token":"…"}'
+```
+
+## 7. Never
+
+Commit secrets, phone numbers, or private transcripts · call anyone without recorded consent · call a FIXTURE result "live" · say "saved" without read-back · say "done" from an open PR or a stale check · merge or deploy without the user.

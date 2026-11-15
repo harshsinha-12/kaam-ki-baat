@@ -1,0 +1,42 @@
+{
+  "_label": "FIXTURE — synthetic meeting written for development. Not a Wispr record. Replace with data/private/meeting.json from an approved Wispr meeting.",
+  "meeting": {
+    "id": "fixture-meeting-001",
+    "title": "FIXTURE: Kaam Ki Baat build sync",
+    "date": "2026-11-15",
+    "source": "FIXTURE",
+    "approvedBy": "fixture"
+  },
+  "passages": [
+    {
+      "kind": "meeting",
+      "id": "fixture-meeting-001#p1",
+      "meetingId": "fixture-meeting-001",
+      "speaker": "Demo Lead",
+      "charStart": 0,
+      "charEnd": 118,
+      "text": "Decision: the agent may only say 'saved' after the task update is read back from the store. Demo Dev, can you own that?",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "fixture-meeting-001#p2",
+      "meetingId": "fixture-meeting-001",
+      "speaker": "Demo Dev",
+      "charStart": 119,
+      "charEnd": 160,
+      "text": "Yes, I'll take the read-back verification.",
+      "visibility": "participant"
+    },
+    {
+      "kind": "meeting",
+      "id": "fixture-meeting-001#p3",
+      "meetingId": "fixture-meeting-001",
+      "speaker": "Demo Lead",
+      "charStart": 161,
+      "charEnd": 250,
+      "text": "Maybe Demo Dev could also look at the three-card specialist board later, if there's time.",
+      "visibility": "participant"
+    }
+  ]
+}
