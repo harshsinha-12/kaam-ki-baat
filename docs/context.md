@@ -1,6 +1,6 @@
 # Project context
 
-Status: application core, spatial browser workspace, source import and Bolna configuration are implemented as tracked in [plan.md](plan.md). The user approved one Wispr source, this repository, Speaker 1 identity and agent setup/testing. Real voice/call behaviour remains unverified. All calls are held for one final user confirmation naming the specific consenting participant (D-034).
+Status: application core, spatial browser workspace, source import and Bolna configuration are implemented as tracked in [plan.md](plan.md). The user approved one Wispr source, this repository, Speaker 1 identity and agent setup/testing. Real voice/call behaviour remains unverified. All calls are held for one final user confirmation naming the specific consenting participant (D-038).
 
 ## Purpose and users
 

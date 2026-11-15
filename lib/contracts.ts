@@ -93,6 +93,9 @@ export interface Task {
 export interface Participant {
   id: string;
   name: string;
+  // Server-owned authorization. Never accepted from a client or a model.
+  role?: "member" | "leader"; // default member
+  repoAccess?: boolean; // may use the Code Navigator (default true)
   meetingIds: string[]; // meetings this person may hear about
   taskIds: string[]; // tasks this person may read/update
 }

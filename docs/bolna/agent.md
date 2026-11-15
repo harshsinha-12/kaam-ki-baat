@@ -4,7 +4,7 @@ Configured 2026-11-15 under explicit user authorization. The Kaam Ki Baat agent 
 
 ## Current call hold
 
-All calls are held under D-034 until one final user confirmation names the specific consenting participant. `KKB_ENABLE_WEB_CALLS=false` is set locally and authenticated browser start returns 503. Setup approval and text preview are not permission to start a provider session. The final named-participant confirmation is still absent.
+All calls are held under D-038 until one final user confirmation names the specific consenting participant. `KKB_ENABLE_WEB_CALLS=false` is set locally and authenticated browser start returns 503. Setup approval and text preview are not permission to start a provider session. The final named-participant confirmation is still absent.
 
 ## Generate the custom functions
 

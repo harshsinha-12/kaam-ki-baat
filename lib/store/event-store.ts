@@ -11,7 +11,11 @@ export type StoredEvent =
   | { type: "web_call_consent"; at: string; callId: string; participantId: string; recording: true; snapshotSha: string }
   | { type: "call_execution"; at: string; callId: string; executionId: string; agentId: string; channel: "web" | "phone" }
   | { type: "tool_call"; at: string; callId: string; tool: string; ok: boolean; summary: string; evidenceIds: string[] }
-  | { type: "communicated"; at: string; callId: string; factId: string; fact: string; acknowledged: boolean };
+  | { type: "communicated"; at: string; callId: string; factId: string; fact: string; acknowledged: boolean }
+  // Spatial zones / escalation / live context (lib/zones). Typed payloads live there.
+  | { type: "zone"; at: string; kind: string; key: string; data: Record<string, unknown> };
+
+export type ZoneEvent = Extract<StoredEvent, { type: "zone" }>;
 
 export interface CallSession {
   callId: string;
@@ -22,6 +26,12 @@ export interface CallSession {
   consentRecordedBy: string; // who recorded consent, and how (free text, no phone numbers)
   scenario: string;
   expiresAt: string;
+}
+
+// A copied .env.example leaves optional keys blank. Blank is unset, not "the current directory".
+export function eventsLogPath(envValue = process.env.KKB_EVENTS_FILE): string {
+  const chosen = envValue?.trim() || "data/runtime/events.jsonl";
+  return path.resolve(chosen);
 }
 
 export class EventStore implements UpdateRepository {
@@ -66,6 +76,20 @@ export class EventStore implements UpdateRepository {
     } else {
       this.events.push(event);
     }
+  }
+
+  /**
+   * Atomic check-then-append (compare-and-set) under the same serialization as
+   * every other write. `decide` sees the persisted log and returns the event to
+   * append, or a rejection. Used for idempotency keys, version checks and dedupe.
+   */
+  appendGuarded<T>(decide: (events: StoredEvent[]) => { append: StoredEvent | StoredEvent[]; result: T } | { reject: T }): Promise<T> {
+    return this.serialize(async () => {
+      const d = decide(await this.readEvents());
+      if ("reject" in d) return d.reject;
+      for (const e of Array.isArray(d.append) ? d.append : [d.append]) await this.appendEvent(e);
+      return d.result;
+    });
   }
 
   /** Serialized, durable append. Resolves only after the line is fsynced. */
