@@ -26,7 +26,8 @@
     "graph:eval": "tsx scripts/eval-codegraph.ts",
     "story": "tsx scripts/build-repo-story.ts",
     "mcp": "tsx scripts/mcp-server.ts",
-    "deploy:check": "node scripts/check-deployment.mjs"
+    "deploy:check": "node scripts/check-deployment.mjs",
+    "storage:migrate": "tsx scripts/migrate-hosted-runtime.ts"
   },
   "dependencies": {
     "@bolna/web-call": "3.0.1",

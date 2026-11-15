@@ -1,16 +1,30 @@
 import { mkdir, readFile, writeFile, rename, open } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { EventStore, eventsLogPath } from "../store/event-store";
+import { runtimeStore } from "../store/runtime-store";
+import { RedisClient, redisConfig } from "../store/redis";
+import { acquireLease } from "../store/lease";
 import { evaluateCall, obj, hash, type EvaluationDashboard, type Obj } from "./dashboard";
 
 export const dashboardDir = () => path.resolve(process.env.KKB_EVAL_DIR?.trim() || "data/private/call-evals");
 export async function readDashboard(): Promise<EvaluationDashboard | null> {
-  try { const data = JSON.parse(await readFile(path.join(dashboardDir(), "latest.json"), "utf8"));
+  const config = redisConfig();
+  try { const raw = config ? await new RedisClient(config).get(`${config.namespace}:eval:latest`) : await readFile(path.join(dashboardDir(), "latest.json"), "utf8");
+    if (!raw) return null;
+    const data = JSON.parse(raw);
     if (data.schema !== 1 || !Array.isArray(data.calls)) throw new Error("Invalid evaluation store"); return data;
   } catch (e) { if ((e as NodeJS.ErrnoException).code === "ENOENT") return null; throw e; }
 }
 async function persist(data: EvaluationDashboard) {
+  const config = redisConfig();
+  if (config) {
+    const redis = new RedisClient(config), text = JSON.stringify(data), run = `${config.namespace}:eval:run:${hash(data)}`;
+    await redis.setIfAbsent(run, text);
+    if (await redis.get(run) !== text) throw new Error("Evaluation read-back mismatch");
+    await redis.command(["SET", `${config.namespace}:eval:latest`, text]);
+    if (await redis.get(`${config.namespace}:eval:latest`) !== text) throw new Error("Evaluation read-back mismatch");
+    return;
+  }
   const dir = dashboardDir(); await mkdir(path.join(dir, "runs"), { recursive: true, mode: 0o700 });
   const text = JSON.stringify(data, null, 2), digest = hash(data.calls.map(c => c.inputHash));
   const run = path.join(dir, "runs", `${digest}.json`);
@@ -29,7 +43,11 @@ async function persist(data: EvaluationDashboard) {
 let inFlight: Promise<EvaluationDashboard> | null = null;
 export function syncDashboard(): Promise<EvaluationDashboard> {
   if (inFlight) return inFlight;
-  inFlight = synchronize().finally(() => { inFlight = null; }); return inFlight;
+  inFlight = (async () => {
+    const release = redisConfig() ? await acquireLease(runtimeStore(), "evaluation-sync", 300000) : async () => {};
+    if (!release) throw new Error("Evaluation refresh already in progress; retry shortly.");
+    try { return await synchronize(); } finally { await release(); }
+  })().finally(() => { inFlight = null; }); return inFlight;
 }
 async function synchronize(): Promise<EvaluationDashboard> {
   const agentId = process.env.BOLNA_AGENT_ID, key = process.env.BOLNA_API_KEY;
@@ -63,11 +81,14 @@ async function synchronize(): Promise<EvaluationDashboard> {
   }
   const calls = new Map((previous?.calls ?? []).map(c => [c.id, c]));
   let reviews: Obj = {};
-  try { reviews = obj(JSON.parse(await readFile(path.join(dashboardDir(), "reviews.json"), "utf8"))); }
+  try { const config = redisConfig();
+    const raw = config ? await new RedisClient(config).get(`${config.namespace}:eval:reviews`) : await readFile(path.join(dashboardDir(), "reviews.json"), "utf8");
+    if (raw) reviews = obj(JSON.parse(raw));
+  }
   catch (e) { if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e; }
   let events = null;
   const warnings: string[] = [];
-  try { events = await new EventStore(eventsLogPath()).all(); } catch { warnings.push("Configured local audit could not be read; local evidence is inconclusive."); }
+  try { events = await runtimeStore().all(); } catch { warnings.push("Configured audit could not be read; application evidence is inconclusive."); }
   const entries = [...listed];
   // Bounded parallel reads; each refresh rechecks post-processing and missing logs.
   for (let i = 0; i < entries.length; i += 3) await Promise.all(entries.slice(i, i + 3).map(async ([id, raw]) => {

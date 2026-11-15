@@ -4,7 +4,6 @@ import { runTool } from "@/lib/tools/runtime";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const minted = new Map<string, number>();
 
 // Dormant until the user authorizes agent setup and enables web calls locally.
 // Never accepts an agent ID, participant ID or arbitrary user_data from a model.
@@ -17,13 +16,14 @@ export async function POST(req: Request) {
   }
   const body = await readBody(req);
   if (body?.consented !== true) return json({ ok: false, error: "Explicit consent to this browser test call and recording is required." }, 400);
-  for (const [id, expiry] of minted) if (expiry <= Date.now()) minted.delete(id);
-  const { callId, expiresAt } = auth.caller.session;
-  if (minted.has(callId)) return json({ ok: false, error: "A browser call was already requested for this session. Issue a new participant token for another call." }, 409);
-  minted.set(callId, Date.parse(expiresAt));
+  const { callId } = auth.caller.session;
+  const reserved = await auth.rt.store.appendGuarded(events => {
+    if (events.some(e => e.type === "web_call_consent" && e.callId === callId)) return { reject: false };
+    return { append: { type: "web_call_consent", at: new Date().toISOString(), callId,
+      participantId: auth.caller.participant.id, recording: true, snapshotSha: auth.rt.snapshot.pinnedSha }, result: true };
+  });
+  if (!reserved) return json({ ok: false, error: "A browser call was already requested for this session. Issue a new participant token for another call." }, 409);
   try {
-    await auth.rt.store.append({ type: "web_call_consent", at: new Date().toISOString(), callId,
-      participantId: auth.caller.participant.id, recording: true, snapshotSha: auth.rt.snapshot.pinnedSha });
     const brief = await runTool(auth.rt, "get_my_brief", { call_token: token });
     if (brief.status !== 200 || typeof brief.body.speak !== "string") return json({ ok: false, error: "An authorized opening brief could not be prepared." }, 409);
     const response = await fetch("https://api.bolna.ai/web-call/freeswitch-session", {

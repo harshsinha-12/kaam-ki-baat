@@ -1,3 +1,4 @@
+import { restoreConversations } from "@/lib/store/conversation";
 import { NextResponse } from "next/server";
 import { getRuntime } from "@/lib/runtime-instance";
 
@@ -11,7 +12,8 @@ export async function GET(req: Request) {
   if (!process.env.KKB_BOARD_KEY || url.searchParams.get("key") !== process.env.KKB_BOARD_KEY) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
-  const rt = getRuntime();
+  const rt = await getRuntime();
+  await restoreConversations(rt);
   const convs = [...rt.conversations.values()];
   const conv = url.searchParams.get("callId") ? rt.conversations.get(url.searchParams.get("callId")!) : convs[convs.length - 1];
   return NextResponse.json({

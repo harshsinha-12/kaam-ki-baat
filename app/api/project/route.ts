@@ -1,3 +1,4 @@
+import { acquireLease } from "@/lib/store/lease";
 import { NextResponse } from "next/server";
 import { getRuntime } from "@/lib/runtime-instance";
 import { resolveDeviceActor } from "@/lib/zones/identity";
@@ -9,9 +10,8 @@ import { projectContext, repositoryName } from "@/lib/project/context";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const pending = new Set<string>();
 export async function POST(req: Request) {
-  const rt = getRuntime();
+  const rt = await getRuntime();
   const header = req.headers.get("authorization") ?? "";
   const auth = await resolveDeviceActor(rt.store, rt.snapshot, header.startsWith("Session ") ? header.slice(8) : null);
   if (!auth.ok) return NextResponse.json({ ok: false, error: auth.reason }, { status: auth.status });
@@ -21,8 +21,8 @@ export async function POST(req: Request) {
   if (body.action !== "voice") return NextResponse.json({ ok: true, ...projectContext(rt.snapshot, typeof body.question === "string" ? body.question.slice(0, 2000) : undefined), graph: getCodeGraph(rt.snapshot) });
   if (body.consented !== true) return NextResponse.json({ ok: false, error: "Consent to the voice call and recording is required." }, { status: 400 });
   if (process.env.KKB_ENABLE_WEB_CALLS !== "true" || !process.env.BOLNA_API_KEY || !process.env.BOLNA_AGENT_ID) return NextResponse.json({ ok: false, error: "The Bolna agent is not configured." }, { status: 503 });
-  if (pending.has(auth.actor.sessionId)) return NextResponse.json({ ok: false, error: "A voice session is already being created." }, { status: 409 });
-  pending.add(auth.actor.sessionId);
+  const release = await acquireLease(rt.store, `project-voice:${auth.actor.sessionId}`, 120000);
+  if (!release) return NextResponse.json({ ok: false, error: "A voice session is already being created." }, { status: 409 });
   try {
     const { token, session } = await issueCallSession(rt.store, { participantId: auth.actor.participant.id, meetingIds: auth.actor.meetingIds, repository: rt.snapshot.repository, consentRecordedBy: "Named participant explicitly started a browser project-guide call and consented to recording", scenario: "repository-project-guide", ttlMinutes: 30 });
     await rt.store.append(ev("project_voice_binding", session.callId, { deviceSessionId: auth.actor.sessionId, participantId: auth.actor.participant.id }));
@@ -35,5 +35,5 @@ export async function POST(req: Request) {
     await rt.store.append({ type: "call_execution", at: new Date().toISOString(), callId: session.callId, executionId: result.run_id, agentId: result.agent_id, channel: "web" });
     return NextResponse.json(result);
   } catch { return NextResponse.json({ ok: false, error: "Voice connection failed. Check microphone access and try again explicitly." }, { status: 502 }); }
-  finally { pending.delete(auth.actor.sessionId); }
+  finally { await release(); }
 }

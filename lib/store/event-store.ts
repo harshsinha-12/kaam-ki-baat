@@ -16,6 +16,11 @@ export type StoredEvent =
   | { type: "zone"; at: string; kind: string; key: string; data: Record<string, unknown> };
 
 export type ZoneEvent = Extract<StoredEvent, { type: "zone" }>;
+export interface EventBackend {
+  read(): Promise<StoredEvent[]>;
+  append(events: StoredEvent[]): Promise<void>;
+  compareAppend(length: number, events: StoredEvent[]): Promise<boolean>;
+}
 
 export interface CallSession {
   callId: string;
@@ -38,9 +43,10 @@ export class EventStore implements UpdateRepository {
   private events: StoredEvent[] = [];
   private chain: Promise<unknown> = Promise.resolve();
 
-  constructor(private readonly file: string | null) {}
+  constructor(private readonly file: string | null, private readonly backend?: EventBackend) {}
 
   private async readEvents(): Promise<StoredEvent[]> {
+    if (this.backend) return this.backend.read();
     if (!this.file) return this.events;
     try {
       const raw = await fs.readFile(this.file, "utf8");
@@ -64,6 +70,7 @@ export class EventStore implements UpdateRepository {
   }
 
   private async appendEvent(event: StoredEvent): Promise<void> {
+    if (this.backend) { await this.backend.append([event]); return; }
     if (this.file) {
       await fs.mkdir(path.dirname(this.file), { recursive: true });
       const fh = await fs.open(this.file, "a");
@@ -85,10 +92,19 @@ export class EventStore implements UpdateRepository {
    */
   appendGuarded<T>(decide: (events: StoredEvent[]) => { append: StoredEvent | StoredEvent[]; result: T } | { reject: T }): Promise<T> {
     return this.serialize(async () => {
-      const d = decide(await this.readEvents());
-      if ("reject" in d) return d.reject;
-      for (const e of Array.isArray(d.append) ? d.append : [d.append]) await this.appendEvent(e);
-      return d.result;
+      for (let attempt = 0; attempt < 16; attempt++) {
+        const events = await this.readEvents();
+        const d = decide(events);
+        if ("reject" in d) return d.reject;
+        const append = Array.isArray(d.append) ? d.append : [d.append];
+        if (this.backend) {
+          if (await this.backend.compareAppend(events.length, append)) return d.result;
+        } else {
+          for (const event of append) await this.appendEvent(event);
+          return d.result;
+        }
+      }
+      throw new Error("Concurrent storage update could not be committed. Retry explicitly.");
     });
   }
 
@@ -99,13 +115,12 @@ export class EventStore implements UpdateRepository {
 
   // ---- UpdateRepository (idempotent) ----
   writeOnce(record: SavedUpdate): Promise<{ id: string; replayed: boolean }> {
-    return this.serialize(async () => {
-      const existing = (await this.readEvents()).find(
+    return this.appendGuarded<{ id: string; replayed: boolean }>((events) => {
+      const existing = events.find(
         (e) => e.type === "task_update" && e.record.idempotencyKey === record.idempotencyKey,
       );
-      if (existing && existing.type === "task_update") return { id: existing.record.id, replayed: true };
-      await this.appendEvent({ type: "task_update", at: record.at, record });
-      return { id: record.id, replayed: false };
+      if (existing && existing.type === "task_update") return { reject: { id: existing.record.id, replayed: true } };
+      return { append: { type: "task_update", at: record.at, record }, result: { id: record.id, replayed: false } };
     });
   }
 
