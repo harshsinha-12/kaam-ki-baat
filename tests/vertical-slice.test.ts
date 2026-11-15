@@ -83,6 +83,22 @@ describe("authorization is server-side", () => {
     assert.equal(w.body.saved, false);
     assert.match(String(w.body.speak), /couldn't save/);
   });
+  it("requires accepted ownership by the caller before recording status", async () => {
+    for (const assignment of [
+      { state: "mentioned" as const, ownerId: "dev" },
+      { state: "proposed" as const, ownerId: "dev" },
+      { state: "accepted" as const },
+      { state: "accepted" as const, ownerId: "lead" },
+    ]) {
+      const { rt, token } = await setup();
+      rt.snapshot.tasks[0].assignment = assignment;
+      const r = await runTool(rt, "record_task_update", {
+        call_token: token, task_id: "t1", status: "in_progress", confirmed: true, idempotency_key: "ownership-test",
+      });
+      assert.equal(r.body.saved, false, JSON.stringify(assignment));
+      assert.equal(await rt.store.latestUpdate("t1"), null);
+    }
+  });
 });
 
 describe("regressions found in dry run (2026-11-15, before any real call)", () => {

@@ -10,8 +10,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - run: npm install --no-audit --no-fund
-      - run: npm run typecheck:core
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
       - run: npm test
       - run: npm run snapshot:fixture -- --out /tmp/snapshot.json || echo "snapshot needs GitHub API; non-blocking"
       - run: npm run build

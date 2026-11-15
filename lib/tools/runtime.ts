@@ -111,8 +111,8 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
     case "record_task_update": {
       const blocked = new Map<string, string>();
       for (const t of rt.snapshot.tasks) {
-        if (t.assignment.state === "disputed" || t.assignment.state === "unknown") blocked.set(t.id, "ownership is not established, so I won't record a status");
-        else if (t.assignment.state === "accepted" && t.assignment.ownerId && t.assignment.ownerId !== caller.participant.id) blocked.set(t.id, "this task belongs to someone else");
+        if (t.assignment.state !== "accepted" || !t.assignment.ownerId) blocked.set(t.id, "ownership is not established, so I won't record a status");
+        else if (t.assignment.ownerId !== caller.participant.id) blocked.set(t.id, "this task belongs to someone else");
       }
       const raw = { ...body, taskId: body.task_id ?? body.taskId ?? pickTask(rt, caller)?.id };
       const result = await persistVerifiedUpdate({
