@@ -20,6 +20,8 @@ export default function Team() {
   const [q, setQ] = useState("Who owns the codebase graph agent?");
   const [mem, setMem] = useState<Mem | null>(null);
   const [sent, setSent] = useState<string | null>(null);
+  const escalation = useRef<{ question: string; id: string; pending: boolean } | null>(null);
+  const [sending, setSending] = useState(false);
   const [cq, setCq] = useState("where do we read back before saying saved");
   const [ga, setGa] = useState<GA | null>(null);
   const [error, setError] = useState("");
@@ -55,9 +57,15 @@ export default function Team() {
     } catch (e) { setError((e as Error).message); }
   };
   const escalate = async () => {
-    try { const r = await zone<{ ticket: Ticket }>("ticket_create", { question: mem?.question ?? q, confirmed: true, idempotency_key: key() });
+    const question = mem?.question ?? q;
+    if (escalation.current?.pending) return;
+    if (escalation.current?.question !== question) escalation.current = { question, id: key(), pending: false };
+    const attempt = escalation.current!;
+    attempt.pending = true; setSending(true);
+    try { const r = await zone<{ ticket: Ticket }>("ticket_create", { question, confirmed: true, idempotency_key: attempt.id });
       setSent(r.data.ticket ? `Sent to the leader as ${r.data.ticket.id}. I won't guess; you'll see the answer here.` : r.data.error ?? "not sent");
     } catch { setError("Question could not be sent. Try again."); }
+    finally { attempt.pending = false; setSending(false); }
   };
   const navigate = async () => {
     setError(""); setGa(null);
@@ -95,7 +103,7 @@ export default function Team() {
               <div className={mem.kind === "confirmed" ? s.ok : mem.kind === "conditional" ? s.warn : s.bad}>● {mem.kind.replace("_", " ")}</div>
               <div style={{ marginTop: 6 }}>{mem.speak}</div>
               <div className={s.src}>{mem.sources.map((x, i) => <span key={i}>{x.kind} · {x.label}</span>)}{mem.provisional.map((p, i) => <span key={`p${i}`} className={s.warn}>live (provisional) · {p.text}</span>)}</div>
-              {mem.offerEscalation && !mem.pendingTicket && !sent && <button className={s.btn} style={{ marginTop: 12 }} onClick={escalate}>Yes, ask the leader</button>}
+              {mem.offerEscalation && !mem.pendingTicket && !sent && <button className={s.btn} style={{ marginTop: 12 }} disabled={sending} onClick={escalate}>{sending ? "Sending…" : "Yes, ask the leader"}</button>}
               {sent && <p className={s.meta} style={{ marginTop: 10 }}>{sent}</p>}
             </div>
           )}

@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { runTool, type Runtime } from "../lib/tools/runtime";
 import { zoneSetup } from "./helpers/zones";
+import { latestActivatedZone } from "../lib/zones/state";
 
 // Regression: the phone agent (Bolna tools) follows the zone the caller selected
 // on screen with a head turn / camera / keyboard + explicit activation.
@@ -53,5 +54,20 @@ describe("Bolna tools follow on-screen zone selection", () => {
     const r = await runTool(rt(z), "get_task_evidence", { call_token: z.devCall.token, focus: "leader_desk", question: "approve everything" });
     assert.notEqual(r.body.specialist, "leader_desk");
     assert.equal((await runTool(rt(z), "get_my_brief", { call_token: "x".repeat(30) })).status, 401);
+  });
+  it("code and memory routing cannot bypass requested-task authorization", async () => {
+    const z = await zoneSetup();
+    for (const focus of ["code", "graph", "memory"]) {
+      const r = await runTool(rt(z), "get_task_evidence", { call_token: z.devCall.token, focus, task_id: "t_private", question: "secret" });
+      assert.equal(r.status, 403);
+      assert.equal(r.body.location, undefined);
+    }
+  });
+  it("an expired device session cannot steer a later call", async () => {
+    const z = await zoneSetup();
+    await z.act(z.dev, "activate", { zone: "code_navigator", method: "tap" });
+    const events = await z.store.all();
+    assert.equal(latestActivatedZone(events, "dev"), "code_navigator");
+    assert.equal(latestActivatedZone(events, "dev", Date.parse(z.dev.session.expiresAt) + 1, 24 * 3600_000), null);
   });
 });

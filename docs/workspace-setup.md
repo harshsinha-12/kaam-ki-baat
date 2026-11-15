@@ -48,6 +48,8 @@ Choose a stable HTTPS hostname before retaining passkeys. Changing a temporary t
 
 ## Other APIs and graph options
 
+The optional local MCP server (`npm run mcp`) uses the same private snapshot/event log. Set server-side `KKB_MCP_SESSION_TOKEN` to a session issued for the intended participant. All tool calls authenticate it, code/report/status tools require repository access, decisions filter permitted meetings/passages, and task status requires that participant's task. Missing/expired sessions fail closed. Initialization and tool names remain discoverable without disclosing evidence. This is a local stdio integration, not a public HTTP endpoint; do not share the token or an operator-wide private snapshot with another team.
+
 | Feature | Requirement and current boundary |
 | --- | --- |
 | Public GitHub | GitHub REST, token optional; live unauthenticated read verified above. |
