@@ -135,9 +135,10 @@ it("runs the browser-to-Bolna HTTP bridge with synthetic identity and no provide
   const { rt, token } = await setup();
   const global = globalThis as unknown as { __kkbRuntime?: Runtime };
   const oldRuntime = global.__kkbRuntime;
-  const oldEnv = { board: process.env.KKB_BOARD_KEY, tool: process.env.KKB_TOOL_KEY, enabled: process.env.KKB_ENABLE_WEB_CALLS };
+  const oldEnv = { board: process.env.KKB_BOARD_KEY, tool: process.env.KKB_TOOL_KEY, enabled: process.env.KKB_ENABLE_WEB_CALLS, publicUrl: process.env.KKB_PUBLIC_URL };
   global.__kkbRuntime = rt;
   process.env.KKB_BOARD_KEY = "fixture-board-key"; process.env.KKB_TOOL_KEY = "fixture-tool-key"; process.env.KKB_ENABLE_WEB_CALLS = "false";
+  process.env.KKB_PUBLIC_URL = "https://workspace.example";
   const req = (path: string, key: string, body: object, callToken = token, origin?: string) => new Request(`http://localhost${path}`, {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "x-kkb-call-token": callToken, "Content-Type": "application/json", ...(origin ? { Origin: origin } : {}) }, body: JSON.stringify(body),
   });
@@ -145,6 +146,7 @@ it("runs the browser-to-Bolna HTTP bridge with synthetic identity and no provide
     assert.equal((await browserPost(req("/api/spatial/browser", "wrong", { page: emptyPage() }))).status, 401);
     assert.equal((await browserPost(req("/api/spatial/browser", "fixture-board-key", { page: emptyPage() }, "forged-token-forged"))).status, 401);
     assert.equal((await browserPost(req("/api/spatial/browser", "fixture-board-key", { page: emptyPage() }, token, "https://evil.example"))).status, 403);
+    assert.equal((await browserPost(req("/api/spatial/browser", "fixture-board-key", { page: emptyPage() }, token, "https://workspace.example"))).status, 200);
     const initial = await browserPost(req("/api/spatial/browser", "fixture-board-key", { page: emptyPage(), callId: "someone-else" }));
     assert.equal(initial.status, 200);
     const data = await initial.json();
@@ -169,7 +171,7 @@ it("runs the browser-to-Bolna HTTP bridge with synthetic identity and no provide
     assert.deepEqual((await rt.store.all()).filter(e => e.type === "tool_call").map(e => e.type === "tool_call" && e.tool), ["control_page", "get_page_context"]);
   } finally {
     global.__kkbRuntime = oldRuntime;
-    for (const [key, value] of [["KKB_BOARD_KEY", oldEnv.board], ["KKB_TOOL_KEY", oldEnv.tool], ["KKB_ENABLE_WEB_CALLS", oldEnv.enabled]]) {
+    for (const [key, value] of [["KKB_BOARD_KEY", oldEnv.board], ["KKB_TOOL_KEY", oldEnv.tool], ["KKB_ENABLE_WEB_CALLS", oldEnv.enabled], ["KKB_PUBLIC_URL", oldEnv.publicUrl]]) {
       if (value === undefined) delete process.env[key!]; else process.env[key!] = value;
     }
   }

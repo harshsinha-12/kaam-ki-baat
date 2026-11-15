@@ -29,7 +29,11 @@ export async function readBody(req: Request): Promise<Record<string, unknown> | 
 export async function spatialAuth(req: Request, role: "browser" | "tool", token: unknown) {
   const expected = role === "browser" ? process.env.KKB_BOARD_KEY : process.env.KKB_TOOL_KEY;
   if (!checkServerKey(req.headers.get("authorization"), expected)) return { response: json({ ok: false, error: "unauthorized" }, 401) };
-  if (role === "browser" && req.headers.get("origin") && req.headers.get("origin") !== new URL(req.url).origin) {
+  // A local Next server may see localhost behind the authorized HTTPS tunnel.
+  // Accept that explicitly configured public origin, never arbitrary forwarded hosts.
+  const origins = new Set([new URL(req.url).origin]);
+  try { if (process.env.KKB_PUBLIC_URL) origins.add(new URL(process.env.KKB_PUBLIC_URL).origin); } catch { /* invalid configuration grants no access */ }
+  if (role === "browser" && req.headers.get("origin") && !origins.has(req.headers.get("origin")!)) {
     return { response: json({ ok: false, error: "origin not allowed" }, 403) };
   }
   const rt = getRuntime();
