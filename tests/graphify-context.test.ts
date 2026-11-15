@@ -87,6 +87,14 @@ describe("Graphify code context", () => {
     assert.deepEqual(codeScout(s, s.tasks[0], "", 0), []);
   });
 
+  it("requires a task-curated anchor before generic question matches can traverse the graph", () => {
+    const s = graphSnapshot();
+    const unrelated = { ...s.tasks[0], searchTerms: ["inventoryrebalance", "warehousestock"], prNumber: undefined };
+    assert.deepEqual(codeScout(s, unrelated, "where is persistVerifiedUpdate implementation?"), []);
+    // Free code navigation is still available without asserting a task link.
+    assert.equal(codeScout(s, undefined, "persistVerifiedUpdate")[0].retrieval?.method, "graphify");
+  });
+
   it("accepts edges compatibility exports, rejects unknown shapes, and never trusts graph labels as source symbols", () => {
     const s = graphSnapshot();
     s.codeGraph!.nodes[0].label = "inventedSymbol";

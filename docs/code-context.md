@@ -1,6 +1,6 @@
 # Code context for knowledge transfer
 
-The optional Graphify path links an existing meeting task to source symbols and nearby dependencies. A task's `searchTerms` and the caller's question seed the graph. Code Scout returns the best source location and a bounded set of callers, callees or imports. Fix Navigator supplies a test pointer; Evidence Verifier still determines PR/check status independently. Graph relationships never establish ownership or completion.
+The optional Graphify path links an existing meeting task to source symbols and nearby dependencies. A task's `searchTerms` and the caller's question seed the graph. When a task has curated terms, a source label/path must match one before traversal; generic question words cannot establish a link to an unrelated product. Code Scout returns the best source location and a bounded set of callers, callees or imports. Fix Navigator supplies a test pointer; Evidence Verifier still determines PR/check status independently. Graph relationships never establish ownership or completion.
 
 ## Build and query
 
@@ -49,7 +49,7 @@ Generated graphs stay under ignored `data/private/`; raw `graphify-out/` is also
 
 On 2026-11-15, Graphify 0.9.100 ran locally against the committed fixture snapshot at `63317bdea64bc95765ba00467fcf56f10c73ec85`: **147 nodes, 330 edges, 27 code files**. Queries located `persistVerifiedUpdate`, its helper `withTimeout`, its caller `dispatch` and `parseTaskUpdate`, with exact SHA-pinned excerpts. The meeting remains **FIXTURE**. This verifies local extraction/import/retrieval, not an approved meeting import or a provider call.
 
-Eight regression tests in [graphify-context.test.ts](../tests/graphify-context.test.ts) cover dependency discovery without a keyword hit, relationship direction/confidence, stale and out-of-scope fallback, bounded output, export compatibility, private sidecar loading, authenticated task-tool delivery and device Code Navigator provenance/access checks. Current aggregate checks are recorded in [the plan](plan.md).
+Nine regression tests in [graphify-context.test.ts](../tests/graphify-context.test.ts) cover dependency discovery without a keyword hit, relationship direction/confidence, stale and out-of-scope fallback, bounded output, curated-task grounding, export compatibility, private sidecar loading, authenticated task-tool delivery and device Code Navigator provenance/access checks. Current aggregate checks are recorded in [the plan](plan.md).
 
 Primary references checked on 2026-11-15:
 

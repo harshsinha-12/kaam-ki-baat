@@ -71,7 +71,15 @@ export function graphFindings(snapshot: EvidenceSnapshot, task: Task | undefined
   for (const term of new Set(terms.flatMap((t) => [...words(t), t.toLowerCase().replace(/[^a-z0-9_-]/g, "")]))) {
     for (const id of index.terms.get(term) ?? []) scores.set(id, (scores.get(id) ?? 0) + 1);
   }
-  const seeds = [...scores].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 8);
+  const compact = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const curated = (task?.searchTerms ?? []).map(compact).filter(Boolean);
+  // A generic question cannot anchor a different product's task in this repo.
+  // Only follow relationships after a curated term matches a source label/path;
+  // comment-only seeds can still be handled by the existing keyword fallback.
+  const seeds = [...scores].filter(([id]) => {
+    const n = index.nodes.get(id)!;
+    return !curated.length || curated.some((term) => compact(n.label).includes(term) || compact(n.path).includes(term));
+  }).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 8);
   const pr = snapshot.pullRequests.find((p) => p.repository === snapshot.repository && p.number === task?.prNumber);
   const result: CodeFinding[] = [];
   const seen = new Set<string>();
