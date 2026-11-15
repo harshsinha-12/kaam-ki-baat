@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { SpatialWorkspace } from "./components/SpatialWorkspace";
 
 // Three-card specialist board (left / center / right), Air Agents-style:
 // the active specialist lights up; each card shows the evidence it returned.
@@ -63,6 +64,8 @@ export default function Home() {
           </div>
         )}
       </header>
+
+      <SpatialWorkspace />
 
       {!board?.ok && <p style={{ marginTop: 32, opacity: 0.8 }}>{board?.error === "unauthorized" ? "Open this page with ?key=KKB_BOARD_KEY" : "Loading…"}</p>}
       {board?.ok && !conv && <p style={{ marginTop: 32, opacity: 0.8 }}>Waiting for a call. The board lights up when Bolna calls get_my_brief.</p>}
