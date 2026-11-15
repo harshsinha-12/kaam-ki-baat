@@ -11,7 +11,9 @@ import { handleTurn, startConversation, type Conversation } from "../specialists
 import { acknowledge, createTicket, deliveries, markDelivered } from "../zones/escalation";
 import type { Actor } from "../zones/identity";
 import { askTeamMemory, nameOf } from "../zones/memory";
-import { contextVersion } from "../zones/state";
+import { contextVersion, latestActivatedZone } from "../zones/state";
+import { getCodeGraph } from "../codegraph/load";
+import { queryGraph } from "../codegraph/graph";
 
 // The four runtime tools Bolna calls during a phone call (D-013). Framework-free:
 // app/api/tools/[tool]/route.ts is a thin HTTP wrapper around these.
@@ -113,11 +115,36 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       });
     }
     case "get_task_evidence": {
+      // No explicit focus? Follow the zone the caller activated on screen (camera/keyboard selection).
+      if (body.focus === undefined || body.focus === "") {
+        const z = latestActivatedZone(await rt.store.all(), caller.participant.id);
+        if (z === "team_memory") body = { ...body, focus: "memory", focusSource: "screen" };
+        else if (z === "code_navigator") body = { ...body, focus: "code", focusSource: "screen" };
+      }
+      if (body.focus === "code" || body.focus === "graph") {
+        const actor = callActor(caller);
+        if (!actor.repoAccess) return { status: 403, body: { ok: false, error: "no repository access", speak: "I can't show code to you." } };
+        const g = getCodeGraph(rt.snapshot);
+        const pr = rt.snapshot.pullRequests.find((p) => p.state === "open") ?? rt.snapshot.pullRequests[0];
+        const a = queryGraph(g, String(body.question ?? body.utterance ?? ""), rt.snapshot.files, new Set(pr?.changedFiles ?? []));
+        const file = a.seed ? a.seed.path.split("/").pop() : "";
+        const caller2 = a.path.find((p) => p.via === "uses");
+        const test = a.path.find((p) => p.via === "tests");
+        const speak = a.seed
+          ? `Open ${file}, the ${a.seed.label} ${a.seed.kind}, line ${a.seed.line}.${caller2 ? ` It's called from ${caller2.node.path.split("/").pop()}.` : ""}${test ? ` Its test is ${test.node.path.split("/").pop()}.` : ""} ${a.match === "confirmed" ? "It's changed in the PR, so that's confirmed." : "That's my best match, not confirmed yet."}`
+          : "I couldn't find that in the code at this commit. Tell me a function or file name.";
+        return ok({
+          speak, specialist: "code_navigator", focusSource: body.focusSource ?? "caller",
+          match: a.match, explanation: a.explanation, sha: g.sha,
+          location: a.seed ? { path: a.seed.path, line: a.seed.line, url: `https://github.com/${g.repository}/blob/${g.sha}/${a.seed.path}#L${a.seed.line}` } : null,
+          evidenceIds: a.subgraph.nodes,
+        });
+      }
       if (body.focus === "memory" || body.focus === "team_memory") {
         const events = await rt.store.all();
         const a = askTeamMemory(rt.snapshot, events, callActor(caller), String(body.question ?? body.utterance ?? ""));
         return ok({
-          speak: a.speak, specialist: "team_memory", kind: a.kind, offerEscalation: a.offerEscalation,
+          speak: a.speak, specialist: "team_memory", kind: a.kind, focusSource: body.focusSource ?? "caller", offerEscalation: a.offerEscalation,
           sources: a.sources, contextVersion: contextVersion(events), pendingTicket: "pendingTicket" in a ? a.pendingTicket?.id ?? null : null,
           evidenceIds: a.sources.map((x) => x.id),
         });

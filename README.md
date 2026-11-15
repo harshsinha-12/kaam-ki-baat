@@ -22,6 +22,7 @@ Start with [AGENTS.md](AGENTS.md) for the required instruction reads, implementa
 - [MCP integrations](docs/integrations.md): endpoints, authentication, and verified connection status.
 - [Tool recommendations](docs/tool-research.md): tools to use for setup, debugging, and the future voice runtime.
 - [Code context](docs/code-context.md): optional Graphify retrieval linking meeting tasks to pinned code and dependencies.
+- [Workspace setup](docs/workspace-setup.md): public/private GitHub access, passkey settings and required APIs.
 - [Competition rules](docs/competition.md): verified schedule, strict call duration, and submission requirements.
 - [Evaluation pipeline](docs/evaluation-pipeline.md): stored call evaluations and reviewed improvements between calls.
 - [Handoff references](docs/reference/README.md): retained architecture, contracts, UX, and evaluation details.

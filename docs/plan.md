@@ -107,6 +107,21 @@ Implemented on `codex/graphify-context` (implementation `3ede500` and setup/devi
 
 Verification: **95/95 tests pass**, full `npm run typecheck`, production `npm run build`, local documentation links and `git diff --check` pass. Real Graphify **0.9.100** extraction against the existing fixture snapshot at `63317bd` produced **147 nodes, 330 edges, 27 code files**; the task-linked query returned `persistVerifiedUpdate`, callers and helpers with pinned excerpts. The fixture demo passed with the graph enabled, including idempotent save/read-back in an in-memory store. A deliberate source-byte mismatch was rejected before extraction and preserved the prior output. Graph outputs are ignored and not committed. No live meeting import, agent change, provider call, browser visual QA, hardware gesture test or voice-latency measurement was run for G2. Enable `KKB_CODE_GRAPH` for the chosen snapshot and restart; rebuild whenever that snapshot changes.
 
+
+## 3a. Claude stage audit — 2026-11-15 ~15:50 IST (from code + tests)
+
+| Stage | Status | Gap / needs |
+| --- | --- | --- |
+| Roles, consent, sessions, call tokens | Implemented + tested | — |
+| Leader passkey (Touch ID) | Implemented; simulated authenticator with real P-256 signatures | **One real Touch ID run on Charan's Mac over HTTPS** (`KKB_RP_ID`/`KKB_ORIGIN` = tunnel host) |
+| Spatial selector → phone agent | Implemented: activating a zone on screen steers `get_task_evidence` when the caller names no focus (`tests/bolna-zones.test.ts`) | Webcam (MediaPipe) provider needs a package install; AirPods needs the Mac companion |
+| Team Memory, escalation, Leader Desk | Implemented + tested; `/team`, `/leader` | Browser QA against a running server |
+| Code graph | Built-in TS graph (`lib/codegraph`) + Codex's Graphify import (`lib/evidence/code-graph.ts`) | — |
+| MCP server for other teams | `npm run mcp` (stdio, 4 read-only tools), tested over real stdio | — |
+| Meeting context | `docs/demo/meeting-notes.md` / `data/demo/meeting.kkb.json` — hypothetical demo meeting, Charan + Harsh (consented) | Wispr MCP had no matching meeting |
+| Bolna live calls | Prompt ready (`docs/bolna/kaam-ki-baat-agent.md`) | **Runtime must run on a machine with a public URL** (Codex #17: localhost refused, tunnel 530). Bolna's connector cannot place calls; calls go via the dashboard/API from that machine |
+| Manim film | Scenes in `scripts/manim/architecture.py` | `pip install manim` not possible in Claude's sandbox; render locally |
+
 ## 4. Task board
 
 Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in place.
@@ -126,11 +141,11 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | code on `main` via PR #8 (`4d72575`); three-card visual QA not repeated at `f7100a6` | Screenshot in PR |
 | S1 | Bolna spatial browser workspace: meeting context on left, code on right, shared page state and validated browser actions; browser controls first, AirPods later | Codex | merged at `f7100a6` (PR #10). Connect form rendered locally; live validation pending B2/B3 | 50/50 tests this session. Optional six-function config supported; no agent changed or call started |
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
-| G2 | Optional Graphify code graph → bounded, SHA-pinned code retrieval for meeting/task knowledge transfer | Codex | implemented and pushed through `8dedcae`; [PR #15](https://github.com/harshsinha-12/kaam-ki-baat/pull/15) open, merge remains with user | 95/95 tests, full typecheck/build, real local fixture extraction/retrieval, graph-enabled dry run and setup docs; §3d |
+| G2 | Optional Graphify code graph → bounded, SHA-pinned code retrieval for meeting/task knowledge transfer | Codex | merged in PR #15 at `daf6d28`; preserved in PR #16 | 95/95 tests at its review, real local fixture extraction/retrieval, graph-enabled dry run and setup docs; §3d |
 
 | Z1 | Zones backend: roles + step-up, focus/activation gate, Team Memory, tickets → leader resolve → delivery/ack, live utterances, code-location pinning, callback dedupe, `request_clarification` phone tool | Claude | done (`claude/leader-escalation-backend`) | 75/75 tests incl. acceptance flow |
 | Z2 | Run `npm ci && npm run typecheck && npm run build` + HTTP smoke for `/api/zones/*` on a machine with registry access | Codex | verified locally on PR #11 review: npm ci, 83/83 tests, full typecheck, build and isolated HTTP smoke pass; merged in PR #11 at `f4b1e71` | Results in §3 |
-| Z3 | Replace demo leader one-time code with WebAuthn passkey verifier (`StepUpVerifier` interface in `lib/zones/identity.ts`) | Codex or Claude | todo | Passkey assertion verified server-side |
+| Z3 | Replace demo leader one-time code with WebAuthn passkey verifier (`StepUpVerifier` interface in `lib/zones/identity.ts`) | Claude + Codex review | implemented in PR #16; code is bootstrap-only once enrolled | Server cryptographic/replay/concurrency tests; real-device browser ceremony pending |
 | Z4 | Webcam provider: MediaPipe Face Landmarker yaw → `lib/focus/selector.ts` → `POST /api/zones/focus`; keyboard/tap fallback | Claude (frontend) | doing (claude) | Head turn selects; tap activates |
 | Z5 | Native AirPods companion (Swift, `CMHeadphoneMotionManager`) mirroring `selector.ts` and posting `focus` events | Codex | todo (needs Mac + AirPods) | Device test notes |
 | Z6 | Add `request_clarification` (5th tool) to the Bolna agent config; get_task_evidence `focus:"memory"` for Team Memory | Codex | todo (agent change gated) | Config regenerated |
@@ -138,9 +153,45 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 
 | L1 | Landing page (story-driven, motion) at `/`; board moved to `/board` | Claude | done (`claude/landing-page`, stacked on PR #11) | SSR render OK; esbuild bundle + Playwright screenshots desktop/mobile, 0 console errors; full Next build pending CI |
 | L2 | Upgrade motion with GSAP ScrollTrigger / R3F head model once deps can be installed; add the product film (Remotion) | Codex | todo | No regressions in reduced-motion |
-| M13 | Resolve/retarget PR #13 onto current main; preserve authenticated workspace links, reduced-motion behavior and truthful capability copy; validate and merge | Codex | conflicts resolved on isolated `codex/review-landing`; npm ci, 86 tests, full typecheck, build and production HTTP smoke pass; updated-head CI/merge pending | Updated head passes checks and merges into main; calls remain held |
+| M13 | Resolve/retarget PR #13 onto current main; preserve authenticated workspace links, reduced-motion behavior and truthful capability copy; validate and merge | Codex | merged at `4810784`; npm ci, 86 tests, full typecheck, build, production HTTP smoke and CI passed | Merge verified; calls remain held |
+
+### Current workspace audit
+
+| Capability | Status | Evidence / gap |
+| --- | --- | --- |
+| Bolna agent wired to our endpoints | **Created and read back**, six configured functions; voice unverified | [Integration evidence](integrations.md); all calls held for named-participant confirmation |
+| **Spatial zones backend** (LEFT Team Memory · CENTER Leader Desk · RIGHT Code Navigator), leader escalation, live-STT ingestion, FocusInput, Bolna callback dedupe | **Merged in PR #11; passkey/visual UI additions in PR #16** | HTTP gates, ticket resolution, persisted read-back and callbacks exercised with isolated fixtures. Real speech capture/provider timing remain unverified. |
+
+| Stage (architecture image) | Status | Evidence / gap |
+| --- | --- | --- |
+| 01 Role + consent gate | **Implemented** | Server-owned roles (`lib/zones/identity.ts`), device sessions, call tokens; consent per device (`live.ts`). Tests: `zones.test.ts` |
+| 01 Leader passkey | **Implemented, browser-untested** | Credential-bound WebAuthn ES256 verify with node:crypto (`lib/zones/webauthn.ts`); synced passkeys are possible. Synthetic real P-256 signatures cover malformed input, replay, counter reset and concurrent assertions. **Needs:** real Touch ID run on a stable HTTPS origin; [setup](workspace-setup.md). |
+| 02 Spatial selector | **Backend + manual provider done** | Focus/activation gate, selector maths (`lib/focus/selector.ts`), keyboard ←↑→ on `/team`. **Missing:** MediaPipe webcam provider (needs `@mediapipe/tasks-vision` install), AirPods Swift companion (needs Mac + AirPods) |
+| 03a Live context (app STT) | **Ingestion API done; no capture UI** | `/api/zones/utterance` with consent/dedupe/seq/revocation. **Missing:** browser mic capture + STT provider choice |
+| 03b Verified sources | **GitHub live; approved Wispr share imported privately** | Existing LIVE import remains selected in its private runtime. PR #16 separately adds `data/demo/meeting.kkb.json`, a clearly labelled reconstructed FIXTURE; a project-name search returning no matches does not invalidate the approved shared note. No meeting-to-code link is invented. |
+| 04 Reconcile + versioned memory | **Implemented** | Deterministic reconcile, append-only log, decision versions, context version, read-back |
+| LEFT/CENTER/RIGHT agents | **Implemented** | Team Memory + escalation; Leader Desk; SHA-pinned Code Navigator. Actual Graphify retrieval remains optional; built-in visual static graph is separate, candidate-only, with a public fixture preview (339 nodes/909 edges @ `ac4197b`). Authenticated `/team` loads only the selected authorized snapshot graph. |
+| 05 Protected tools + 2 ledgers | **Implemented** | Four original runtime tools, optional spatial and clarification paths; work ledger and communication ledger with interruption recovery. Six spatial functions persisted in the configured provider agent; current evidence in integrations. |
+| Bolna voice runtime | **Configured; no live voice verified** | Agent setup authorized and persisted read-back complete. All browser/phone calls remain held for the final confirmation naming a consenting participant (D-038). |
+| Supabase | **Not started (optional)** | JSONL baseline kept per mandate (no migration without parity tests) |
+| 0G Compute | **Not started (optional)** | — |
+
+| ID | Task | Owner | Status | Acceptance / next step |
+| --- | --- | --- | --- | --- |
+| M16 | Review/resolve/merge PR #16 against current main; preserve graph and leader security; validate UI routes and passkey flows | Codex | fixes pushed through `6bd4ef7`, retargeted to main and conflict-free; user taking merge after updated-head CI | 107 tests, full typecheck, production build and isolated HTTP smoke pass at integrated `6bd4ef7` (2026-11-15); refreshed fixture graph eval 6/8, two misses remain explicit. No provider calls or real-device browser ceremony. |
+| GH1 | Public repository URL onboarding | Unclaimed | todo; public unauthenticated adapter reads already verified; current snapshot setup is operator-driven | Accept/normalize a GitHub repository URL, confirm selected files/commit, fetch the matching clone, build a private SHA-pinned snapshot and read back repository/freshness. Keep participant access gates. [Current setup](workspace-setup.md). |
+| GH2 | Private repository connection and lifecycle | Unclaimed | todo, user requested 2026-11-15; server `GITHUB_TOKEN` transport exists, no private end-to-end verification | Add GitHub App install/repository picker, read-only Contents/Pull requests/Checks permissions, encrypted server credentials, short-lived token refresh, revocation/disconnect and denial/expiry tests. Verify source/PR/check access and participant scopes before saying connected. [Setup and API requirements](workspace-setup.md). |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 ~15:50 · Claude · PR #16 rebased on main (kept Codex's step-up hardening + Graphify import). Added demo meeting notes (Charan lead, Harsh teammate), screen-zone → Bolna focus + `focus:"code"` graph answers, MCP stdio server, app icon + agent glyphs + colour system (`docs/design/colors.md`), landing "Wispr hears it. The evidence decides it." pipeline, Manim scenes, Bolna prompt. 109 tests pass (synthetic).
+- 2026-11-15 · Codex · Integrated the contributor's force-rewritten PR #16 history and new hypothetical demo notes without overwriting review safeguards (`6bd4ef7`). Both remote main `daf6d28` and refreshed author head `0a9c870` are ancestors. Regenerated public graph examples only from the explicit FIXTURE snapshot at `ac4197b`: 339 nodes/909 edges; graph evaluation 6/8 (two misses). All 107 tests, full typecheck, production build, isolated production HTTP smoke, relative doc links and whitespace pass. Public GitHub read remains verified without credentials. User is taking the merge; CI on the updated branch remains the final gate. Calls stay held.
+
+- 2026-11-15 · Codex · PR #16 review preserves main's actual Graphify adapter, authenticated board redirect, call hold and source/OTP safeguards. Adds credential-bound passkey verification with strict parsing, atomic counter + step-up events, single-use challenges and bootstrap-code shutdown after enrollment. Static graph queries are candidate-only and task/repository gated; `/team` loads the selected authorized graph rather than the bundled fixture. Public preview stays FIXTURE and honors reduced motion. Default graph output is ignored/private; LIVE-to-demo export is refused. Added [workspace/API setup](workspace-setup.md) and user-requested GH1/GH2 onboarding tasks. Public GitHub adapter read without a token verified PR #13 and its exact-head checks. Local 107/107 tests, typecheck, production build, isolated production HTTP smoke and graph evaluation (5/8) passed/recorded; final merged-head checks pending. Real-device passkeys and calls were not run.
+
+- 2026-11-15 · Codex · Claimed M16 after user requested conflict resolution and merge of PR #16. PR #13 is merged at `4810784`; current main also includes the actual Graphify adapter. Preserve those implementations in a separate review worktree, retarget PR #16 to main, and reconcile one-time-code/passkey guards rather than replacing earlier security fixes. Reviewing private graph-output defaults and WebAuthn parsing/concurrency before merge. Calls remain held.
+
+- 2026-11-15 ~15:40 · Claude · `claude/code-graph-leader-device`: reconstructed two-person meeting (FIXTURE, from dictated instructions; Wispr MCP had no matching meeting/notes), Graphify-style code graph + explainable queries + eval, device-bound WebAuthn leader passkey, `/team` and `/leader` pages, landing graph section. 82 tests pass (synthetic). Figma MCP: View seat on Starter plan, so no design files were created.
 
 - 2026-11-15 · Codex · M13 merge review: retargeted landing PR #13 from the old PR #11 branch to main, preserving merged PR #11/#12 and evaluation planning. Fixed the two code-review findings: legacy authenticated root URLs redirect to `/board` with all query values retained, and reduced-motion preference now gates JS timers/rAF, SVG animation, smooth scrolling and CSS transitions. Initial SSR is static with final counters/text; fictional labels remain visible after manual interaction. Removed current passkey/headset claims and retained future-work labels. Verified the historical code excerpt against the pinned git object and checked all three statistic links against their primary sources. 86/86 tests, full typecheck, production build, isolated HTTP smoke, local documentation links and whitespace pass. HTTP checks cover root/board and the auth-preserving redirect. Post-change interactive browser/device QA and real calls were not run; calls stay held.
 
