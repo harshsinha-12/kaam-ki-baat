@@ -2,7 +2,13 @@
 
 A voice teammate that connects what a team agreed in a meeting with what its GitHub repository shows, then helps each teammate take the next useful action.
 
-**Stage:** planning, handoff integration, and MCP setup. Application implementation is on hold while further context is being supplied.
+**Stage:** architecture converged. Application implementation is authorized and starts with Claude Opus on its own branch. Real calls, agent changes, deployment, and merging each need a separate instruction.
+
+## Start here (plain version)
+
+1. Read [architecture.md](docs/architecture.md). It explains the problem, the direction, and the build order.
+2. Read [integration-design.md](docs/integration-design.md). It explains exactly how Wispr Flow and Bolna connect to the system.
+3. Read [decisions.md](docs/decisions.md). It lists every decision, whether it is confirmed, and what is still open.
 
 ## Working with coding agents
 
