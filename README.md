@@ -2,7 +2,7 @@
 
 A voice teammate that connects what a team agreed in a meeting with what its GitHub repository shows, then helps each teammate take the next useful action.
 
-**Stage:** architecture converged. Application implementation is authorized and starts with Claude Opus on its own branch. Real calls, agent changes, deployment, and merging each need a separate instruction.
+**Stage:** the application core, four runtime tools, evidence specialists and GitHub adapter are implemented. Current demo work and exact verification results are tracked in [the plan](docs/plan.md). Real calls, agent changes, deployment, and merging each need a separate instruction.
 
 ## Start here (plain version)
 
@@ -27,6 +27,6 @@ Start with [AGENTS.md](AGENTS.md) for the required instruction reads, implementa
 
 ## Development setup
 
-The handoff proposes one Next.js + TypeScript application with a small durable task store. This is a planning baseline; no application dependencies, routes, database, or runtime have been created.
+The application uses Next.js and TypeScript with a local append-only JSONL store. Run `npm ci`, `npm test`, `npm run typecheck`, and `npm run build`. Copy `.env.example` to ignored `.env.local` and supply random server keys before starting the app. Meeting import, live calls and evaluations have their own verification gates; see [voice setup](docs/bolna/agent.md).
 
 Use **Kaam Ki Baat** as the project name everywhere. The repository is [harshsinha-12/kaam-ki-baat](https://github.com/harshsinha-12/kaam-ki-baat).

@@ -55,20 +55,22 @@ Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 - **Fix Navigator** — target file + enclosing function + line + nearest test + `npm test -- <file>`; GitHub permalinks pinned to SHA. Never edits code.
 - **Evidence Verifier** — `lib/core/reconcile.ts` (deterministic): ownership state, PR open/merged, checks on the *current* SHA vs stale, last saved update. Never says "works in production".
 
-## 3. Current status — last verified 2026-11-15 (Codex, G1 branch on merged PR #5)
+## 3. Current status — last verified 2026-11-15 (Codex, demo-readiness branch)
 
 | Thing | State | Evidence |
 | --- | --- | --- |
 | Domain core + 4 runtime tools + 3 specialists | **Implemented** | `lib/**`, commit on PR #2 |
-| Unit + vertical-slice tests | **36/36 pass** (`tsx --test`, Node 20.20.0 locally) | G1 branch includes five new GitHub pagination/rate-limit regressions plus merged PR #5 tests |
+| Unit + vertical-slice tests | **41/41 pass** (`tsx --test`, Node 20.20.0 locally) | Combined core/adapter tests, recovered evaluation privacy/finalization tests, and Bolna configuration tests |
 | Core typecheck (`tsconfig.core.json`) | **Pass** | local `npm run typecheck`, TypeScript 5.9 |
 | Install, full typecheck, production build locally | **Pass**: `npm install`, `npm ci`, `npm run typecheck`, `npm run build` | Node 20.20.0; `package-lock.json` pins dependencies; Next.js 15.5.29 |
-| CI workflow | **Passed** on PR #5 head `b63f4a8`; user merged it at `e005380`. G1 PR CI not yet checked | CI now uses `npm ci`, full typecheck, tests, Next build |
+| CI workflow | **Passed** on PR #5 head `b63f4a8`; user merged it at `e005380`. PR #7 and main `6a5b2a3` CI passed; recovery PR CI pending | CI now uses `npm ci`, full typecheck, tests, Next build |
 | GitHub adapter (live) | **Verified live read** on G1 branch: PR #2 merged, with head and merge-SHA checks | Fixture snapshot at `3795e28`: 28 files, 1 PR, 3 checks; meeting remains synthetic |
 | Demo dry run (real tool handlers, no Bolna) | Works; output reviewed | `npm run demo:dry` — NOT call evidence |
 | Developer MCP connections | **Reconnected and catalogs verified live**: Bolna 121 tools; Wispr 16 tools | Codex configuration + remote MCP initialize/tools-list; Bolna account read passed. See [integrations.md](integrations.md) |
 | Wispr: approved meeting read end-to-end | **BLOCKED — needs user to pick the meeting** | — |
-| Bolna agent wired to our endpoints | **NOT STARTED** — needs public HTTPS URL (tunnel) | — |
+| HTTP callback path | **Verified with FIXTURE data**: 11 local HTTP checks passed; public HTTPS unauthenticated POST returned 401 | Auth, brief, evidence, save/read-back, replay, ownership refusal, changes and board; NOT telephone evidence |
+| Bolna agent wired to our endpoints | **Prepared, not created** — four-function private config generated; provider context forwarding unverified | [voice setup](bolna/agent.md); awaits explicit agent-change authorization |
+| Evaluation recorder + board polish | **Recovered and implemented** from PR #6 without replacing PR #7 adapter | `lib/eval/recorder.ts`, `scripts/eval-call.ts`, `app/page.tsx`; real-call evaluation pending |
 | Real calls >45 s (need 3) | **0** | — |
 
 ## 4. Task board
@@ -81,16 +83,20 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | U1 | **Pick the ONE approved Wispr meeting** (title/date or link) and confirm the demo repo = this repo | **User** | blocked (needs user) | Meeting ID recorded in decisions.md D-021 |
 | U2 | Name 1–3 consenting test participants; they consent on record (no phone numbers in git) | **User** | todo | Consent note per person (who, when, how) |
 | W1 | Wispr import: `get_meeting` + paginated transcript for U1 → `data/private/meeting.json` (`source: "LIVE"`, only decision/assignment passages, with char offsets) and `data/private/project.json` (real participants + tasks, ownership state from exact words) | Claude (has Wispr MCP) | blocked on U1 | `npm run snapshot` prints `LIVE snapshot` |
-| G1 | Harden GitHub adapter: pagination, rate-limit errors, unit test with mocked fetch; ensure checks for head SHA appear once CI runs | Codex | done on `codex/github-adapter-hardening` (pending PR merge) | 36 tests, typecheck, production build, and live GitHub fixture snapshot pass |
-| B1 | Tunnel: `npm run dev` + `cloudflared tunnel --url http://localhost:3000` (or ngrok); record URL in `.env.local` only | Codex / user machine | todo | `curl -X POST $URL/api/tools/get_my_brief` returns 401 without key |
+| G1 | Harden GitHub adapter: pagination, rate-limit errors, unit test with mocked fetch; ensure checks for head SHA appear once CI runs | Codex | done (PR #7 merged at `6a5b2a3`) | 36 tests, typecheck, production build, and live GitHub fixture snapshot pass |
+| B1 | Tunnel: `npm run dev` + `cloudflared tunnel --url http://localhost:3000` (or ngrok); record URL in `.env.local` only | Codex / user machine | verified locally (temporary server/tunnel running) | `curl -X POST $URL/api/tools/get_my_brief` returns 401 without key |
 | B2 | **Needs user go-ahead (AGENTS.md gate).** Bolna agent "Kaam Ki Baat" via Bolna MCP: one persona (Hinglish), 4 custom functions → `$URL/api/tools/<name>`, Bearer `KKB_TOOL_KEY`, `call_token` from `user_data`. Write exact config to `docs/bolna/agent.md` (no secrets). Confirm schema with Bolna `search_docs` first | Codex | todo | `get_agent` shows 4 functions; config committed |
 | B3 | **Needs user go-ahead (AGENTS.md gate).** First real call (V1): `npm run call:token -- --participant <id> --consent "<who/when>"` → Bolna call with `user_data.call_token` | User + Codex | blocked on U2, B2 | Execution ID, duration >45 s, tool calls in `data/runtime/events.jsonl` |
-| E1 | Evaluation recorder: pull Bolna `get_execution` → `docs/evals/<callId>.md` (ID, agent version, duration, tool results, what was communicated, failures) | Codex | todo | 1 eval file per real call |
+| E1 | Evaluation recorder: pull Bolna `get_execution` → `docs/evals/<callId>.md` (ID, agent version, duration, tool results, what was communicated, failures) | Codex | implemented on `codex/demo-readiness`; real-call acceptance pending | 1 eval file per real call |
 | F1 | V1 failure → **dictate fix requirement with Wispr Flow** → implement → V2 replay of same scenario | Claude + user | todo | V1 vs V2 table in `docs/evals/` |
-| UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | todo | Screenshot in PR |
+| UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | implemented on `codex/demo-readiness`; prior synthetic visual QA retained in PR #6 | Screenshot in PR |
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 · Codex · Recovered PR #6 evaluation recorder/tests and board polish onto `6a5b2a3` without replacing newer GitHub/save fixes. Added a development-only four-function Bolna configuration generator with private output, two configuration tests, a fixture-only HTTP smoke runner, voice setup/runbook, and corrected stale README/evaluation status. 41/41 tests and full typecheck pass; production build passed after recovery. Eleven actual local HTTP checks passed against clearly labelled FIXTURE data; public HTTPS callback rejects requests without credentials (401). Server keys, temporary URL and generated provider configuration stay in ignored local files. Missing evaluation audit evidence is reported as unavailable rather than zero failures/acknowledgments, covered by a regression test. No meeting imported, agent changed or phone call placed. User questions for meeting selection and agent/call authorization remain pending.
+
+- 2026-11-15 · Codex · Claimed recovery/demo-readiness on `codex/demo-readiness` from `origin/main` `6a5b2a3`. PR #6 is marked merged but its merge `8199bc0` is not an ancestor of current main; evaluation recorder and board polish are absent. Recover those selected files only, preserve PR #7 adapter and PR #5 write fixes, then validate and prepare the callback/configuration path. Live meeting selection, agent-change permission and call consent remain pending user input.
 
 - 2026-11-15 · Codex · G1 claimed and implemented in an isolated worktree on `codex/github-adapter-hardening`, initially based on merged PR #2 (`457a6a0`), then rebased onto merged PR #5 (`e005380`). GitHub adapter follows same-resource pagination, rejects incomplete PR files and failed later pages, preserves actual check SHAs, bounds request time, and reports primary/secondary rate limits without echoing provider bodies. Five new regression tests. Bolna and Wispr reconnected in Codex; live catalogs returned 121 and 16 tools respectively, and Bolna account read passed. No meeting imported, agent changed, call placed, or deployment performed. Next: approved meeting selection → W1, then B1/B2 with the existing agent/call authorization gates.
 
