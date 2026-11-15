@@ -101,6 +101,7 @@ function useCountUp(target: number, run: boolean, ms = 1400) {
 // agent you select; a soft light cone lands on that agent.
 const TURN: Record<Zone, number> = { team_memory: -28, leader_desk: 0, code_navigator: 28 };
 function Listener({ zone }: { zone: Zone }) {
+  const reduced = useContext(ReducedMotion);
   const color = ZONE_HEX[zone];
   const look = zone === "team_memory" ? -1 : zone === "code_navigator" ? 1 : 0;
   return (
@@ -124,7 +125,7 @@ function Listener({ zone }: { zone: Zone }) {
             <g key={x}>
               <rect x={x - 4} y={y - 6} width="8" height="12" rx="4" fill="#f2efe6" />
               <rect x={x - 1.6} y={y + 4} width="3.2" height="10" rx="1.6" fill="#f2efe6" />
-              <circle cx={x} cy={y} r="9" fill="none" stroke={color} strokeOpacity=".55" strokeWidth="1.2"><animate attributeName="r" values="7;12;7" dur="2.4s" repeatCount="indefinite" /><animate attributeName="stroke-opacity" values=".6;0;.6" dur="2.4s" repeatCount="indefinite" /></circle>
+              <circle cx={x} cy={y} r="9" fill="none" stroke={color} strokeOpacity=".55" strokeWidth="1.2">{!reduced && <><animate attributeName="r" values="7;12;7" dur="2.4s" repeatCount="indefinite" /><animate attributeName="stroke-opacity" values=".6;0;.6" dur="2.4s" repeatCount="indefinite" /></>}</circle>
             </g>
           ))}
         </svg>

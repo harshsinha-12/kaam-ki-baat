@@ -4,6 +4,8 @@ Status: application core, spatial browser workspace, source import and Bolna con
 
 ## Purpose and users
 
+On 2026-11-15 Harsh additionally selected this repository's Markdown/code for an onboarding call, then requested better listening, less repeated task advice and useful answers to both project and general questions. The [94-second call review](evals/4518451f-0deb-4f8d-a73f-9f1a0dc44609.md) records a useful user-reported conversation that ended with a provider voice error. A reviewed prompt/engine mitigation is persisted; speech replay remains unverified. Repository-only context was prepared per call, separately from the approved meeting. Automatic repository onboarding and saved new task assignments remain future work.
+
 Kaam Ki Baat helps teammates answer: What did we agree? What is my responsibility? Where is the related code? What evidence shows its current state? What should I do next?
 
 Initial target users are small engineering and hackathon teams, junior engineers joining a repository, leads, and reviewers. Start a conversation with useful context instead of asking the caller to recite the project or invent a plan.
