@@ -95,7 +95,10 @@ export function leaderPresence(events: StoredEvent[], participantId: string): { 
  * Lets the phone agent follow what the caller is looking at on screen.
  */
 export function latestActivatedZone(events: StoredEvent[], participantId: string, now = Date.now(), maxAgeMs = 10 * 60_000): Zone | null {
-  const mine = new Set(zoneEvents(events, "device_session").filter((e) => (e.data as unknown as DeviceSession).participantId === participantId).map((e) => e.key));
-  const acts = zoneEvents(events, "activation").filter((e) => mine.has(e.key) && now - Date.parse(e.at) <= maxAgeMs);
+  const mine = new Set(zoneEvents(events, "device_session").filter((e) => {
+    const session = e.data as unknown as DeviceSession;
+    return session.participantId === participantId && Date.parse(session.expiresAt) > now;
+  }).map((e) => e.key));
+  const acts = zoneEvents(events, "activation").filter((e) => mine.has(e.key) && Date.parse(e.at) <= now && now - Date.parse(e.at) <= maxAgeMs);
   return (acts[acts.length - 1]?.data as { zone: Zone } | undefined)?.zone ?? null;
 }

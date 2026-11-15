@@ -142,7 +142,7 @@ function Stage({ zone, onZone, autoplay }: { zone: Zone; onZone: (z: Zone) => vo
       <div className={s.arc}>
         {ZONES.map((z) => (
           <button key={z} type="button" className={s.zone} data-z={z} data-on={zone === z} onClick={() => onZone(z)} aria-pressed={zone === z}>
-            <div className={s.zoneTop}><AgentGlyph zone={z} size={26} active={zone === z} look={zone === "team_memory" ? -1 : zone === "code_navigator" ? 1 : 0} /><span>{SCRIPT[z].side}</span>{z === "leader_desk" && <span className={s.lock}>leader only</span>}</div>
+            <div className={s.zoneTop}><AgentGlyph zone={z} reduced={reduced} size={26} active={zone === z} look={zone === "team_memory" ? -1 : zone === "code_navigator" ? 1 : 0} /><span>{SCRIPT[z].side}</span>{z === "leader_desk" && <span className={s.lock}>leader only</span>}</div>
             <div className={s.zoneName}>{SCRIPT[z].label}</div>
             <div className={s.zoneSub}>{SCRIPT[z].sub}</div>
           </button>
@@ -453,6 +453,7 @@ const HEARS = [
 ];
 
 function HearsUI({ ui, on }: { ui: string; on: boolean }) {
+  const reduced = useContext(ReducedMotion);
   if (ui === "heard") return (
     <div className={`${s.hUi} ${s.hDark}`}>
       <div className={s.hTop}><span className={s.live}>● LISTENING</span><span className={s.tagPill}>EN</span><span className={s.tagPill}>हिं</span><span className={`${s.tagPill} ${s.tagHot}`}>Hinglish</span></div>
@@ -478,7 +479,7 @@ function HearsUI({ ui, on }: { ui: string; on: boolean }) {
   );
   return (
     <div className={`${s.hUi} ${s.hPaper}`}>
-      <div className={s.hTop}><AgentGlyph zone="team_memory" size={22} active /><span style={{ fontWeight: 600 }}>Team Memory</span></div>
+      <div className={s.hTop}><AgentGlyph zone="team_memory" size={22} active reduced={reduced} /><span style={{ fontWeight: 600 }}>Team Memory</span></div>
       <div className={s.bubble}>Freeze abhi decide nahi hua. Main Charan se puchhun?</div>
       <div className={s.meta}>meeting kkb-sync · Harsh · passage 11</div>
     </div>
@@ -486,10 +487,11 @@ function HearsUI({ ui, on }: { ui: string; on: boolean }) {
 }
 
 function Hears() {
+  const reduced = useContext(ReducedMotion);
   const [ref, inView] = useInView<HTMLDivElement>(0.3);
   const [i, setI] = useState(0);
   const [manual, setManual] = useState(false);
-  useEffect(() => { if (!inView || manual) return; const id = setInterval(() => setI((x) => (x + 1) % HEARS.length), 2600); return () => clearInterval(id); }, [inView, manual]);
+  useEffect(() => { if (reduced || !inView || manual) return; const id = setInterval(() => setI((x) => (x + 1) % HEARS.length), 2600); return () => clearInterval(id); }, [inView, manual, reduced]);
   return (
     <div ref={ref} className={s.hears}>
       <div className={s.rail} aria-hidden>
