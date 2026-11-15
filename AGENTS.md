@@ -23,6 +23,8 @@ Repeat the relevant checks when resuming work or when another contributor change
 - Never expose credentials or commit private source data. Do not infer live integration or call success from a configuration entry or synthetic test.
 - Still not authorized without a new explicit user instruction: creating or changing Bolna agents, placing real calls, deploying, and merging. Pushing branches and opening pull requests is authorized.
 
+- **Status and work split:** [docs/plan.md](docs/plan.md) is the single source of truth: branches and lanes, file ownership, task board, and current verified status. Claim a task there before starting it, and update it when you finish.
+
 ## Working with other agents and contributors
 
 - Use a separate branch and, when parallel work needs checkout isolation, a separate worktree. Do not switch or repurpose a shared dirty checkout. Multiple-contributor context does not itself authorize launching additional agents.

@@ -1,5 +1,3 @@
 # Kaam Ki Baat
 
-Before starting any task, read and follow [AGENTS.md](AGENTS.md), including its required startup checks, current scope, contributor coordination, and handoff requirements. Read applicable nested instructions for the files you touch.
-
-`AGENTS.md` is the shared instruction source. Use [docs/plan.md](docs/plan.md) for the current project checkpoint and verify it against the actual checkout before acting.
+Before any task, read [AGENTS.md](AGENTS.md) (rules) and [docs/plan.md](docs/plan.md) (single source of truth: status, lanes, file ownership, task board). Claude's lane is `claude/*` branches owning `lib/core`, `lib/store`, `lib/auth`, `lib/specialists`, `lib/tools`, `app/api/tools`. Update docs/plan.md §3–§5 when you finish.

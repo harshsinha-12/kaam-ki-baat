@@ -1,0 +1,31 @@
+{
+  "_label": "FIXTURE project config. People and meeting are synthetic. Code, PR and checks are read for real from the repository.",
+  "repository": "harshsinha-12/kaam-ki-baat",
+  "paths": ["lib", "tests", "app"],
+  "meetingFile": "data/demo/meeting.fixture.json",
+  "out": "data/demo/snapshot.fixture.json",
+  "participants": [
+    { "id": "p_dev", "name": "Demo Dev", "meetingIds": ["fixture-meeting-001"], "taskIds": ["t_readback", "t_board"] },
+    { "id": "p_lead", "name": "Demo Lead", "meetingIds": ["fixture-meeting-001"], "taskIds": [] }
+  ],
+  "tasks": [
+    {
+      "id": "t_readback",
+      "title": "only say 'saved' after the task update is read back from the store",
+      "meetingId": "fixture-meeting-001",
+      "passageIds": ["fixture-meeting-001#p1", "fixture-meeting-001#p2"],
+      "assignment": { "state": "accepted", "ownerId": "p_dev" },
+      "prNumber": 2,
+      "searchTerms": ["persistverifiedupdate", "read-back"]
+    },
+    {
+      "id": "t_board",
+      "title": "build the three-card specialist board",
+      "meetingId": "fixture-meeting-001",
+      "passageIds": ["fixture-meeting-001#p3"],
+      "assignment": { "state": "proposed", "ownerId": "p_dev" },
+      "prNumber": 2,
+      "searchTerms": ["specialists", "position"]
+    }
+  ]
+}
