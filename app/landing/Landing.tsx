@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import s from "./landing.module.css";
 
 // Kaam Ki Baat landing — the page explains the product by *doing* it:
@@ -11,6 +11,20 @@ type Zone = "team_memory" | "leader_desk" | "code_navigator";
 const ZONES: Zone[] = ["team_memory", "leader_desk", "code_navigator"];
 const ANGLE: Record<Zone, number> = { team_memory: -38, leader_desk: 0, code_navigator: 38 };
 const REPO = "https://github.com/harshsinha-12/kaam-ki-baat";
+const ReducedMotion = createContext(true);
+
+function useMotionPreference() {
+  // Render a static experience until the browser preference is available.
+  const [reduced, setReduced] = useState(true);
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(preference.matches);
+    update();
+    preference.addEventListener("change", update);
+    return () => preference.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
 
 const SCRIPT: Record<Zone, { label: string; side: string; sub: string; ask: string; say: string; src: { t: string; ok?: boolean; warn?: boolean }[] }> = {
   team_memory: {
@@ -20,7 +34,7 @@ const SCRIPT: Record<Zone, { label: string; side: string; sub: string; ask: stri
     src: [{ t: "wispr · sync 11:04 · span 412–498" }, { t: "state: proposed", warn: true }],
   },
   leader_desk: {
-    label: "Leader Desk", side: "Face front", sub: "Leader only. Passkey-gated. Resolves open questions.",
+    label: "Leader Desk", side: "Face front", sub: "Leader only. Fresh verification. Resolves open questions.",
     ask: "1 pending question from Arjun: board owner + deadline.",
     say: "Approved: Arjun owns the board, due Friday — if the read-back fix merges first. Saved and read back.",
     src: [{ t: "decision v2 · approved by Riya", ok: true }, { t: "read-back ✓", ok: true }],
@@ -35,15 +49,17 @@ const SCRIPT: Record<Zone, { label: string; side: string; sub: string; ask: stri
 
 /* ------------------------------------------------------------------ hooks */
 function useInView<T extends Element>(threshold = 0.35): [RefObject<T | null>, boolean] {
+  const reduced = useContext(ReducedMotion);
   const ref = useRef<T>(null);
   const [inView, set] = useState(false);
   useEffect(() => {
+    if (reduced || !("IntersectionObserver" in window)) { set(true); return; }
     const el = ref.current;
     if (!el) return;
     const io = new IntersectionObserver(([e]) => e.isIntersecting && set(true), { threshold });
     io.observe(el);
     return () => io.disconnect();
-  }, [threshold]);
+  }, [threshold, reduced]);
   return [ref, inView];
 }
 
@@ -58,9 +74,10 @@ function Reveal({ children, i = 0, as = "div", className = "" }: { children: Rea
 }
 
 function useCountUp(target: number, run: boolean, ms = 1400) {
+  const reduced = useContext(ReducedMotion);
   const [v, setV] = useState(0);
   useEffect(() => {
-    if (!run) return;
+    if (!run || reduced) return;
     let raf = 0;
     const t0 = performance.now();
     const tick = (t: number) => {
@@ -70,12 +87,13 @@ function useCountUp(target: number, run: boolean, ms = 1400) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [target, run, ms]);
-  return v;
+  }, [target, run, ms, reduced]);
+  return reduced ? target : v;
 }
 
 /* ------------------------------------------------------- spatial stage */
 function Head({ zone }: { zone: Zone }) {
+  const reduced = useContext(ReducedMotion);
   // Top-down head: nose points where you're looking; AirPods glow on the ears.
   const color = zone === "team_memory" ? "var(--left)" : zone === "leader_desk" ? "var(--center)" : "var(--right)";
   return (
@@ -89,22 +107,25 @@ function Head({ zone }: { zone: Zone }) {
         <path d="M60 22 L67 34 L53 34 Z" fill="#3a3832" />
         <circle cx="25" cy="66" r="7" fill="#f2efe6" />
         <circle cx="95" cy="66" r="7" fill="#f2efe6" />
-        <circle cx="25" cy="66" r="11" fill="none" stroke={color} strokeOpacity=".5"><animate attributeName="r" values="8;14;8" dur="2.4s" repeatCount="indefinite" /></circle>
-        <circle cx="95" cy="66" r="11" fill="none" stroke={color} strokeOpacity=".5"><animate attributeName="r" values="8;14;8" dur="2.4s" repeatCount="indefinite" /></circle>
+        <circle cx="25" cy="66" r="11" fill="none" stroke={color} strokeOpacity=".5">{!reduced && <animate attributeName="r" values="8;14;8" dur="2.4s" repeatCount="indefinite" />}</circle>
+        <circle cx="95" cy="66" r="11" fill="none" stroke={color} strokeOpacity=".5">{!reduced && <animate attributeName="r" values="8;14;8" dur="2.4s" repeatCount="indefinite" />}</circle>
       </svg>
     </div>
   );
 }
 
 function Stage({ zone, onZone, autoplay }: { zone: Zone; onZone: (z: Zone) => void; autoplay: boolean }) {
+  const reduced = useContext(ReducedMotion);
   const script = SCRIPT[zone];
   const words = script.say.split(" ");
   const [n, setN] = useState(0);
   useEffect(() => {
+    if (reduced) return;
     setN(0);
     const id = setInterval(() => setN((x) => (x >= words.length ? x : x + 1)), 95);
     return () => clearInterval(id);
-  }, [zone, words.length]);
+  }, [zone, words.length, reduced]);
+  const visibleWords = reduced ? words.length : n;
 
   const onKey = (e: KeyboardEvent) => {
     if (e.key === "ArrowLeft") onZone("team_memory");
@@ -125,12 +146,12 @@ function Stage({ zone, onZone, autoplay }: { zone: Zone; onZone: (z: Zone) => vo
       </div>
       <Head zone={zone} />
       <div className={s.transcript} aria-live="polite">
-        <div className={s.who}><span>{zone === "leader_desk" ? "Leader inbox" : "You"}</span><span>{autoplay ? "demo · fictional team" : "you're driving"}</span></div>
+        <div className={s.who}><span>{zone === "leader_desk" ? "Leader inbox" : "You"}</span><span>{autoplay ? "demo · fictional team" : "interactive demo · fictional team"}</span></div>
         <div style={{ color: "var(--mute)", marginBottom: 6 }}>“{script.ask}”</div>
         <div>
-          {words.map((w, i) => <span key={`${zone}-${i}`} className={`${s.word} ${i < n ? s.wordOn : ""}`}>{w} </span>)}
+          {words.map((w, i) => <span key={`${zone}-${i}`} className={`${s.word} ${i < visibleWords ? s.wordOn : ""}`}>{w} </span>)}
         </div>
-        <div className={`${s.src} ${n >= words.length ? s.srcOn : ""}`}>
+        <div className={`${s.src} ${visibleWords >= words.length ? s.srcOn : ""}`}>
           {script.src.map((x) => <span key={x.t} className={`${s.tag} ${x.ok ? s.tagOk : ""} ${x.warn ? s.tagWarn : ""}`}>{x.t}</span>)}
         </div>
       </div>
@@ -139,33 +160,35 @@ function Stage({ zone, onZone, autoplay }: { zone: Zone; onZone: (z: Zone) => vo
 }
 
 function HeroStage() {
+  const reduced = useContext(ReducedMotion);
   const [zone, setZone] = useState<Zone>("team_memory");
   const [auto, setAuto] = useState(true);
   useEffect(() => {
-    if (!auto) return;
+    if (!auto || reduced) return;
     const id = setInterval(() => setZone((z) => ZONES[(ZONES.indexOf(z) + 1) % 3]), 6500);
     return () => clearInterval(id);
-  }, [auto]);
-  return <Stage zone={zone} autoplay={auto} onZone={(z) => { setAuto(false); setZone(z); }} />;
+  }, [auto, reduced]);
+  return <Stage zone={zone} autoplay={auto && !reduced} onZone={(z) => { setAuto(false); setZone(z); }} />;
 }
 
 /* ------------------------------------------------------------- sections */
 function Stats() {
+  const reduced = useContext(ReducedMotion);
   const [ref, inView] = useInView<HTMLDivElement>(0.3);
   const a = useCountUp(55, inView);
   const b = useCountUp(69, inView);
   const c = useCountUp(61, inView);
   const [lit, setLit] = useState(0);
   useEffect(() => {
-    if (!inView) return;
+    if (!inView || reduced) return;
     const id = setInterval(() => setLit((x) => (x >= 55 ? x : x + 1)), 22);
     return () => clearInterval(id);
-  }, [inView]);
+  }, [inView, reduced]);
   return (
     <div ref={ref} className={s.stats}>
       <div className={s.stat}>
         <div className={s.big}>{a}%</div>
-        <div className={s.dots} aria-hidden>{Array.from({ length: 100 }, (_, i) => <span key={i} className={`${s.dot} ${i < lit ? s.dotOn : ""}`} />)}</div>
+        <div className={s.dots} aria-hidden>{Array.from({ length: 100 }, (_, i) => <span key={i} className={`${s.dot} ${i < (reduced ? 55 : lit) ? s.dotOn : ""}`} />)}</div>
         <div className={s.statText}>of people say <b style={{ color: "var(--ink)" }}>next steps are unclear</b> when a meeting ends.</div>
         <div className={s.cite}>Microsoft Work Trend Index 2023 · 31,000 workers · <a href="https://www.microsoft.com/en-us/worklab/work-trend-index/will-ai-fix-work" target="_blank" rel="noreferrer">source</a></div>
       </div>
@@ -186,8 +209,9 @@ function Stats() {
 }
 
 function DoubtLoop() {
+  const reduced = useContext(ReducedMotion);
   const [sec, setSec] = useState(0);
-  useEffect(() => { const id = setInterval(() => setSec((x) => x + 1), 1000); return () => clearInterval(id); }, []);
+  useEffect(() => { if (reduced) return; const id = setInterval(() => setSec((x) => x + 1), 1000); return () => clearInterval(id); }, [reduced]);
   const nodes = [
     { t: "Meeting ends", m: "“someone will own it”" },
     { t: "Slack ping", m: "“wait, who owns this?”" },
@@ -202,7 +226,7 @@ function DoubtLoop() {
         <Reveal><div className={s.eyebrow}>The doubt loop</div></Reveal>
         <Reveal i={1}><h2 className={s.h2}>Every team runs it. <em>Nobody</em> owns it.</h2></Reveal>
         <Reveal i={2}><p className={s.lede}>The decision was spoken, then never written down properly. The code changed, but nobody checked which commit. The one person who knows is busy. So people guess, and guesses ship.</p></Reveal>
-        <Reveal i={3}><div className={s.timer}>You've been on this page for <b>{Math.floor(sec / 60)}:{String(sec % 60).padStart(2, "0")}</b>. A blocked teammate has been waiting at least that long for a one-line answer.</div></Reveal>
+        <Reveal i={3}><div className={s.timer}>{reduced ? "Unresolved questions can leave teammates waiting for a sourced answer." : <>Illustrative waiting timer: <b>{Math.floor(sec / 60)}:{String(sec % 60).padStart(2, "0")}</b>. Unresolved questions can leave teammates blocked.</>}</div></Reveal>
       </div>
       <svg viewBox="0 0 360 340" className={s.loopSvg} role="img" aria-label="Meeting, ping, waiting, guess, rework — and back again">
         <circle cx={cx} cy={cy} r={R} className={s.loopPath} />
@@ -217,7 +241,7 @@ function DoubtLoop() {
             </g>
           );
         })}
-        <circle r="5" fill="var(--warn)"><animateMotion dur="9s" repeatCount="indefinite" path={`M ${cx} ${cy - R} A ${R} ${R} 0 1 1 ${cx - 0.01} ${cy - R}`} /></circle>
+        {!reduced && <circle r="5" fill="var(--warn)"><animateMotion dur="9s" repeatCount="indefinite" path={`M ${cx} ${cy - R} A ${R} ${R} 0 1 1 ${cx - 0.01} ${cy - R}`} /></circle>}
       </svg>
     </div>
   );
@@ -230,6 +254,7 @@ const DIVE: { z: Zone; n: string; title: string; body: string; chips: string[] }
 ];
 
 function ZonesDive() {
+  const reduced = useContext(ReducedMotion);
   const [active, setActive] = useState<Zone>("team_memory");
   const refs = useRef<(HTMLDivElement | null)[]>([]);
   useEffect(() => {
@@ -239,7 +264,7 @@ function ZonesDive() {
   }, []);
   return (
     <div className={s.scrolly}>
-      <div className={s.sticky}><Stage zone={active} autoplay={false} onZone={(z) => { setActive(z); refs.current[ZONES.indexOf(z)]?.scrollIntoView({ behavior: "smooth", block: "center" }); }} /></div>
+      <div className={s.sticky}><Stage zone={active} autoplay={false} onZone={(z) => { setActive(z); refs.current[ZONES.indexOf(z)]?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" }); }} /></div>
       <div>
         {DIVE.map((d, i) => (
           <div key={d.z} data-z={d.z} ref={(el) => { refs.current[i] = el; }} className={`${s.stepCard} ${active === d.z ? s.stepOn : ""}`}>
@@ -257,20 +282,21 @@ function ZonesDive() {
 const PIPE = [
   { t: "Member asks left", d: "“Who owns the board?”", say: "> memory_ask → proposed only" },
   { t: "No verified answer", d: "Says so. Offers to escalate.", say: "> ticket_create (confirmed: true)" },
-  { t: "Leader approves", d: "Passkey step-up, explicit confirm.", say: "> leader_resolve · expected v1" },
+  { t: "Leader approves", d: "Verified role, fresh step-up, confirm.", say: "> leader_resolve · expected v1" },
   { t: "Store + read-back", d: "Versioned, append-only, verified.", say: "> decision v2 · read-back ✓ · ctx+1" },
   { t: "Requester gets source", d: "Now, or on the next call.", say: "> “Approved by Riya: …”" },
 ];
 
 function Escalation() {
+  const reduced = useContext(ReducedMotion);
   const [ref, inView] = useInView<HTMLDivElement>(0.4);
   const [step, setStep] = useState(0);
   const [manual, setManual] = useState(false);
   useEffect(() => {
-    if (!inView || manual) return;
+    if (!inView || manual || reduced) return;
     const id = setInterval(() => setStep((x) => (x + 1) % PIPE.length), 1700);
     return () => clearInterval(id);
-  }, [inView, manual]);
+  }, [inView, manual, reduced]);
   const pct = (step / (PIPE.length - 1)) * 100;
   return (
     <div ref={ref} className={s.pipe}>
@@ -394,12 +420,13 @@ function Architecture() {
 
 /* ------------------------------------------------------------------ page */
 export default function Landing() {
+  const reduced = useMotionPreference();
   const [scrolled, setScrolled] = useState(false);
   const onScroll = useCallback(() => setScrolled(window.scrollY > 8), []);
   useEffect(() => { window.addEventListener("scroll", onScroll, { passive: true }); return () => window.removeEventListener("scroll", onScroll); }, [onScroll]);
 
   return (
-    <div className={s.page}>
+    <ReducedMotion.Provider value={reduced}><div className={s.page} data-reduced-motion={reduced}>
       <a href="#main" className={s.skip}>Skip to content</a>
       <nav className={s.nav} style={{ boxShadow: scrolled ? "0 10px 30px -20px #000" : "none" }}>
         <a href="#" className={s.brand}><span className={s.logo}>K</span>Kaam Ki Baat</a>
@@ -441,7 +468,7 @@ export default function Landing() {
         <section id="zones" className={s.section}>
           <Reveal><div className={s.eyebrow}>Three agents, one voice</div></Reveal>
           <Reveal i={1}><h2 className={s.h2}>Where you look decides <em>who</em> answers.</h2></Reveal>
-          <Reveal i={2}><p className={s.lede}>Inspired by Air Agents' idea of agents placed around you. AirPods head tracking runs through a native companion; a webcam or the keyboard works anywhere. A turn only selects an agent. You still choose to talk.</p></Reveal>
+          <Reveal i={2}><p className={s.lede}>Inspired by Air Agents' idea of agents placed around you. Keyboard and tap controls work now. Webcam input and a native AirPods companion are planned. A turn only selects an agent; you still choose to talk.</p></Reveal>
           <ZonesDive />
         </section>
 
@@ -477,7 +504,7 @@ export default function Landing() {
               <li>Head-turn selector logic with dwell + hysteresis</li>
             </ul></div>
             <div className={s.statusCol}><h3>Next</h3><ul>
-              <li>One approved Wispr meeting imported live</li>
+              <li>Verify the configured voice path in a real call</li>
               <li>Three consented phone calls &gt; 45 s</li>
               <li>Passkey step-up and webcam + AirPods providers</li>
               <li>Optional Supabase realtime, once tests match</li>
@@ -498,6 +525,6 @@ export default function Landing() {
         <span>Kaam Ki Baat · built at a 3-hour hackathon with Wispr Flow, Bolna and GitHub.</span>
         <span>Demo conversations on this page are fictional.</span>
       </footer>
-    </div>
+    </div></ReducedMotion.Provider>
   );
 }
