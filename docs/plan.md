@@ -58,6 +58,7 @@ Board UI  /?key=KKB_BOARD_KEY  ← GET /api/board (cards only, no transcripts)
 ## 3. Current status — last verified 2026-11-15 ~14:20 IST (Claude, sandbox)
 
 | Thing | State | Evidence |
+| E1 recorder | Implemented; real-call acceptance blocked | scripts/eval-call.ts fetches execution or reads private get_execution JSON; allowlisted metadata report, exclusive writes, pending duration handling; synthetic privacy tests |
 | B1 temporary tunnel | PASS | Public HTTPS POST get_my_brief without key returned 401 unauthorized; URL only in ignored .env.local; dev/tunnel process must remain running |
 | G1 adapter | PASS | Pagination + rate-limit + partial failure tests; 31/31 tests, full typecheck; ignored FIXTURE snapshot has successful checks at PR #2 head 8767273 |
 | X1 local validation | PASS | 2026-11-15: npm install, npm run typecheck, npm test (28/28), npm run build; Node 25.9.0, Next 15.5.29 |
@@ -84,15 +85,17 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | U2 | Name 1–3 consenting test participants; they consent on record (no phone numbers in git) | **User** | todo | Consent note per person (who, when, how) |
 | W1 | Wispr import: `get_meeting` + paginated transcript for U1 → `data/private/meeting.json` (`source: "LIVE"`, only decision/assignment passages, with char offsets) and `data/private/project.json` (real participants + tasks, ownership state from exact words) | Claude (has Wispr MCP) | blocked on U1 | `npm run snapshot` prints `LIVE snapshot` |
 | G1 | Harden GitHub adapter: pagination, rate-limit errors, unit test with mocked fetch; ensure checks for head SHA appear once CI runs | Codex | done (3e686e2) | Test passes; snapshot shows ≥1 check on PR #2 head |
-| B1 | Tunnel: `npm run dev` + `cloudflared tunnel --url http://localhost:3000` (or ngrok); record URL in `.env.local` only | Codex / user machine | done (B1 verification commit) | `curl -X POST $URL/api/tools/get_my_brief` returns 401 without key |
+| B1 | Tunnel: `npm run dev` + `cloudflared tunnel --url http://localhost:3000` (or ngrok); record URL in `.env.local` only | Codex / user machine | done (6656310) | `curl -X POST $URL/api/tools/get_my_brief` returns 401 without key |
 | B2 | **Needs user go-ahead (AGENTS.md gate).** Bolna agent "Kaam Ki Baat" via Bolna MCP: one persona (Hinglish), 4 custom functions → `$URL/api/tools/<name>`, Bearer `KKB_TOOL_KEY`, `call_token` from `user_data`. Write exact config to `docs/bolna/agent.md` (no secrets). Confirm schema with Bolna `search_docs` first | Codex | todo | `get_agent` shows 4 functions; config committed |
 | B3 | **Needs user go-ahead (AGENTS.md gate).** First real call (V1): `npm run call:token -- --participant <id> --consent "<who/when>"` → Bolna call with `user_data.call_token` | User + Codex | blocked on U2, B2 | Execution ID, duration >45 s, tool calls in `data/runtime/events.jsonl` |
-| E1 | Evaluation recorder: pull Bolna `get_execution` → `docs/evals/<callId>.md` (ID, agent version, duration, tool results, what was communicated, failures) | Codex | todo | 1 eval file per real call |
+| E1 | Evaluation recorder: pull Bolna `get_execution` → `docs/evals/<callId>.md` (ID, agent version, duration, tool results, what was communicated, failures) | Codex | blocked (recorder implemented; real call awaits B2/B3 approval and U2) | 1 eval file per real call |
 | F1 | V1 failure → **dictate fix requirement with Wispr Flow** → implement → V2 replay of same scenario | Claude + user | todo | V1 vs V2 table in `docs/evals/` |
 | UI1 | Polish board: active-card animation, LIVE/FIXTURE badge prominent, timeline of tool calls | Codex | todo | Screenshot in PR |
 | C1 | Core done: store, auth, specialists, 4 tools, slice test | Claude | **done** (this PR) | 25/25 tests |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-15 · Codex · E1 recorder implemented: `npx tsx scripts/eval-call.ts --execution <UUID> --call-id <local ID>` (BOLNA_API_KEY via environment), or `--input data/private/execution.json`; report in docs/evals, no raw strings exported. Uses documented GET /executions/{id}; live acceptance blocked until approved calls exist.
 
 - 2026-11-15 · Codex · B1: local Next dev + cloudflared tunnel verified 401 without key; temporary URL recorded only in .env.local. No Bolna operation.
 
