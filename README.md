@@ -40,6 +40,8 @@ Call it and ask, in Hindi, English or both. Three agents sit around you; a head 
 
 Live site: <https://kaam-ki-baat-one.vercel.app/> · Demo meeting and three-call test plan: [docs/demo/meeting-notes.md](docs/demo/meeting-notes.md)
 
+**Demo film (2:34):** [docs/demo/kaam-ki-baat-demo.mp4](docs/demo/kaam-ki-baat-demo.mp4) · subtitles [.srt](docs/demo/kaam-ki-baat-demo.srt) · source in [docs/demo/video-source](docs/demo/video-source/).
+
 **How the codebase grew:** [`/story`](https://kaam-ki-baat-one.vercel.app/story) shows every merged PR on one line, with lanes for Team Memory, Leader Desk, Code Navigator and the rest. Ask "who approves when the leader wasn't clear?" and it traces PR #9 → #11 → #16 → #18, in sentences the voice agent can read out (`GET /api/story?q=…`). Rebuild with `npm run story`.
 
 ### Deploy your own copy on Vercel

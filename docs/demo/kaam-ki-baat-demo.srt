@@ -1,0 +1,119 @@
+1
+00:00:05,150 --> 00:00:08,950
+Every team meeting starts with ideas and ends with decisions.
+
+2
+00:00:09,250 --> 00:00:12,850
+And a few hours later, we're all asking the same questions.
+
+3
+00:00:13,250 --> 00:00:15,100
+What did we actually decide?
+
+4
+00:00:15,250 --> 00:00:16,600
+Who's responsible?
+
+5
+00:00:16,650 --> 00:00:19,300
+And did that work ever make it into the code?
+
+6
+00:00:31,100 --> 00:00:32,900
+That's why we built Kaam Ki Baat.
+
+7
+00:00:33,150 --> 00:00:38,000
+It connects our conversations from Wispr Flow with actual GitHub code,
+
+8
+00:00:38,150 --> 00:00:41,500
+and uses Bolna to make that entire context conversational.
+
+9
+00:00:41,850 --> 00:00:43,750
+And here's the interesting part.
+
+10
+00:00:43,900 --> 00:00:46,650
+Look left to remember what your team discussed.
+
+11
+00:00:46,700 --> 00:00:49,650
+Look straight to access the leader's private agent,
+
+12
+00:00:49,700 --> 00:00:53,050
+and look right to navigate the actual codebase.
+
+13
+00:01:02,600 --> 00:01:05,250
+Okay, so let me show you how this actually works.
+
+14
+00:01:05,550 --> 00:01:06,950
+I'm turning left…
+
+15
+00:01:07,000 --> 00:01:09,150
+Team Memory activates.
+
+16
+00:01:09,200 --> 00:01:14,700
+It uses the Wispr Flow MCP and understands
+
+17
+00:01:15,100 --> 00:01:20,350
+the meeting context — everything that was talked about in the meeting.
+
+18
+00:01:20,800 --> 00:01:24,050
+I can ask it a question from the meeting,
+
+19
+00:01:24,100 --> 00:01:27,250
+or if something hasn't been finalized, we don't have to guess.
+
+20
+00:01:27,300 --> 00:01:31,300
+We can get that verified directly by our leader — by moving to the center.
+
+21
+00:01:38,100 --> 00:01:40,000
+Now here's my favourite part.
+
+22
+00:01:40,050 --> 00:01:45,800
+I need to implement and write code — through an AI agent or by myself.
+
+23
+00:01:45,850 --> 00:01:48,950
+I turn right and go to the Code Navigator.
+
+24
+00:01:49,050 --> 00:01:51,800
+I ask it: show me exactly where this decision
+
+25
+00:01:51,800 --> 00:01:54,300
+is saved in our code, and how we can verify it —
+
+26
+00:01:54,350 --> 00:01:58,300
+how to implement our next feature, and improve the task.
+
+27
+00:02:17,100 --> 00:02:21,550
+So instead of searching through meetings, messages and hundreds of lines of code,
+
+28
+00:02:21,550 --> 00:02:25,200
+we know what was decided, where to look, and what to do next.
+
+29
+00:02:25,400 --> 00:02:26,850
+That's Kaam Ki Baat.
+
+30
+00:02:26,850 --> 00:02:28,450
+Meeting mein bola. Repo mein bana.
