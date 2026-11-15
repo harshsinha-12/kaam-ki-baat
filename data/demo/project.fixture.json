@@ -35,7 +35,8 @@
         "t_readback",
         "t_code_graph",
         "t_film",
-        "t_freeze"
+        "t_freeze",
+        "t_saved_bug"
       ],
       "role": "member",
       "repoAccess": true
@@ -151,6 +152,25 @@
       },
       "searchTerms": [
         "freeze"
+      ]
+    },
+    {
+      "id": "t_saved_bug",
+      "title": "fix the bug where the agent said saved after a timed-out write",
+      "meetingId": "kkb-sync-2026-11-15",
+      "passageIds": [
+        "kkb#12",
+        "kkb#13"
+      ],
+      "assignment": {
+        "state": "accepted",
+        "ownerId": "p_dev"
+      },
+      "prNumber": 11,
+      "searchTerms": [
+        "persistverifiedupdate",
+        "withtimeout",
+        "read-back"
       ]
     }
   ]

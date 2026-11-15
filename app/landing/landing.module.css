@@ -197,9 +197,11 @@
 .hGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 @media (max-width: 1000px) { .hGrid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 620px) { .hGrid { grid-template-columns: 1fr; } .rail { display: none; } }
-.hCol { display: flex; flex-direction: column; align-items: stretch; text-align: left; background: none; border: 0; color: var(--ink); font: inherit; cursor: pointer; padding: 0; opacity: .55; transition: opacity .5s var(--out), transform .5s var(--out); }
+.hCol { display: flex; flex-direction: column; align-items: stretch; text-align: left; background: none; border: 0; color: var(--ink); font: inherit; cursor: pointer; padding: 0; opacity: .82; transition: opacity .5s var(--out), transform .5s var(--out); }
 .hOn { opacity: 1; transform: translateY(-4px); }
-.hUi { height: 220px; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.hOn .hUi { border-color: var(--center); box-shadow: 0 18px 44px -20px rgba(245,196,81,.55); }
+.hOn .hNum { color: var(--center); }
+.hUi { height: 220px; border-radius: 18px; transition: border-color .4s var(--out), box-shadow .4s var(--out); padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
 .hDark { background: #12141f; border: 1px solid #23263a; }
 .hDashed { background: #15140f; border: 1px dashed #3a3832; justify-content: center; }
 .hPaper { background: #17160f; border: 1px solid #2a2820; }
@@ -225,8 +227,8 @@
 .bubble { background: #0b0b0c; border-radius: 12px; padding: 12px; font-size: 14px; line-height: 1.45; }
 .meta { font: 11px var(--mono); color: var(--mute); }
 .hNum { font: 12px var(--mono); color: var(--mute); margin-top: 16px; }
-.hTitle { font-family: var(--serif); font-size: 24px; letter-spacing: -.01em; margin-top: 4px; }
-.hBody { color: var(--mute); font-size: 14.5px; line-height: 1.55; margin-top: 6px; }
+.hTitle { font-family: var(--serif); font-size: 25px; color: var(--ink); letter-spacing: -.01em; margin-top: 4px; }
+.hBody { color: #b9b5aa; font-size: 14.5px; line-height: 1.55; margin-top: 6px; }
 
 /* ---------- code graph ---------- */
 .graphBox { margin-top: 40px; display: grid; grid-template-columns: 1.6fr 1fr; gap: 0; border: 1px solid var(--line); border-radius: 24px; overflow: hidden;
