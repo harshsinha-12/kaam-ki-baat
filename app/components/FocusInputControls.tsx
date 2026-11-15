@@ -127,7 +127,7 @@ export function FocusInputControls({ onConfirmedFocus }: { onConfirmedFocus: (fo
   const airpodsFresh = airpods?.fresh && Date.now() - Date.parse(airpods.receivedAt) <= 6000;
   const webcamLease = controller.current?.lease;
   return <section className={styles.inputPanel} aria-label="Focus input controls">
-    <div className={styles.inputTop}><div><span className={styles.eyebrow}>Workspace control</span><h3>Focus input</h3></div><span className={styles.connectionBadge} data-state={connection}>{changing ? "Switching…" : connection}</span></div>
+    <div className={styles.inputTop}><div><span className={styles.eyebrow}>Workspace control</span><h3>Focus input</h3></div><span className={styles.connectionBadge} data-state={connection}>{changing ? "Switching…" : connection === "connected" ? "Head controls connected" : connection}</span></div>
     {!deviceToken ? <form className={styles.connect} onSubmit={e => {
       e.preventDefault(); const token = draft.trim(); setDeviceToken(token); setDraft("");
       try { sessionStorage.setItem("kkb_session", token); } catch { /* private mode */ }
