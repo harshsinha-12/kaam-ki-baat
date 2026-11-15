@@ -88,9 +88,17 @@ export async function runZoneAction(rt: ZoneRuntime, action: ZoneAction, token: 
       const access = zoneAccess(actor, "code_navigator");
       if (!access.allowed) return r(403, { ok: false, error: access.reason });
       const g = getCodeGraph(rt.snapshot);
-      const pr = rt.snapshot.pullRequests[0];
+      const task = typeof body.task_id === "string" ? rt.snapshot.tasks.find(t => t.id === body.task_id && actor.participant.taskIds.includes(t.id) && actor.meetingIds.includes(t.meetingId)) : undefined;
+      if (body.task_id && !task) return r(403, { ok: false, error: "task not authorized" });
+      const pr = task?.prNumber != null ? rt.snapshot.pullRequests.find(p => p.number === task.prNumber && p.repository === rt.snapshot.repository) : undefined;
       const a = queryGraph(g, String(body.question ?? ""), rt.snapshot.files, new Set(pr?.changedFiles ?? []));
-      return r(200, { ok: true, ...a, sha: g.sha, repository: g.repository, label: rt.snapshot.label });
+      // Return only this authorized snapshot, with a bounded visual subset.
+      // Prefer the answer path so truncation cannot hide its code pointers.
+      const selected = new Set(a.subgraph.nodes);
+      const nodes = [...g.nodes.filter(n => selected.has(n.id)), ...g.nodes.filter(n => !selected.has(n.id))].slice(0, 600);
+      const ids = new Set(nodes.map(n => n.id));
+      const graph = { nodes, edges: g.edges.filter(e => ids.has(e.from) && ids.has(e.to)).slice(0, 1800), godNodes: g.godNodes.filter(id => ids.has(id)), sha: g.sha, repository: g.repository };
+      return r(200, { ok: true, ...a, graph, sha: g.sha, repository: g.repository, label: rt.snapshot.label, engine: "builtin_static_graph" });
     }
     case "leader_resolve": { const x = await resolveTicket(rt.store, rt.snapshot, actor, body); return x.ok ? r(200, x) : fail(x); }
   }

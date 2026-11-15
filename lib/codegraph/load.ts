@@ -1,10 +1,10 @@
 import type { EvidenceSnapshot } from "../contracts";
 import { buildCodeGraph, type CodeGraph } from "./graph";
 
-// Graph is derived from the SHA-pinned snapshot and cached per SHA.
-const cache = new Map<string, CodeGraph>();
+// Selected files can differ between snapshots of the same repository/SHA.
+// Cache by immutable snapshot identity so one selection cannot leak into another.
+const cache = new WeakMap<EvidenceSnapshot, CodeGraph>();
 export function getCodeGraph(s: EvidenceSnapshot): CodeGraph {
-  const key = `${s.repository}@${s.pinnedSha}`;
-  if (!cache.has(key)) cache.set(key, buildCodeGraph(s.repository, s.pinnedSha, s.files));
-  return cache.get(key)!;
+  if (!cache.has(s)) cache.set(s, buildCodeGraph(s.repository, s.pinnedSha, s.files));
+  return cache.get(s)!;
 }

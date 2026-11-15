@@ -18,6 +18,7 @@ export type ZoneKind =
   | "presence"
   | "bolna_execution"
   | "passkey"
+  | "passkey_verified"
   | "webauthn_challenge"
   | "webauthn_used";
 
@@ -38,8 +39,9 @@ export function deviceSessionByHash(events: StoredEvent[], tokenHash: string): D
 }
 
 export function latestStepUp(events: StoredEvent[], sessionId: string): { method: string; expiresAt: string } | null {
-  const ups = zoneEvents(events, "step_up").filter((e) => e.key === sessionId);
-  return ups.length ? (ups[ups.length - 1].data as { method: string; expiresAt: string }) : null;
+  const ups = zoneEvents(events).filter((e) => (e.kind === "step_up" || e.kind === "passkey_verified") && e.key === sessionId);
+  const latest = ups[ups.length - 1];
+  return latest ? ((latest.kind === "passkey_verified" ? latest.data.stepUp : latest.data) as { method: string; expiresAt: string }) : null;
 }
 
 export function latestConsent(events: StoredEvent[], sessionId: string): Consent | null {

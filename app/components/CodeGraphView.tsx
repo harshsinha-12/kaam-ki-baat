@@ -13,8 +13,17 @@ const PALETTE = ["#7cc4ff", "#f5c451", "#ff8a65", "#6fdc8c", "#b48cff", "#ff6bb5
 export function CodeGraphView({ graph, highlight = [], height = 460, onPick }: { graph: ViewGraph; highlight?: string[]; height?: number; onPick?: (n: ViewNode) => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const hl = useRef(new Set<string>());
+  const redraw = useRef<(() => void) | null>(null);
   const [hover, setHover] = useState<ViewNode | null>(null);
+  const [reduced, setReduced] = useState(true);
   hl.current = new Set(highlight);
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(preference.matches);
+    update(); preference.addEventListener("change", update);
+    return () => preference.removeEventListener("change", update);
+  }, []);
+  useEffect(() => { redraw.current?.(); }, [highlight]);
 
   useEffect(() => {
     const c = canvas.current;
@@ -23,7 +32,6 @@ export function CodeGraphView({ graph, highlight = [], height = 460, onPick }: {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     let W = c.clientWidth || 800, H = height;
     c.width = W * dpr; c.height = H * dpr;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     // keep files + the most connected symbols so the picture stays legible
     const keep = new Set(graph.nodes.map((n) => n.id)); // all nodes, so any answer path can light up
     const nodes = graph.nodes.filter((n) => keep.has(n.id)).map((n, i) => {
@@ -36,7 +44,7 @@ export function CodeGraphView({ graph, highlight = [], height = 460, onPick }: {
 
     const tick = () => {
       t++;
-      const alpha = reduce ? 0 : Math.max(0.02, 1 - t / 400);
+      const alpha = Math.max(0.02, 1 - t / 400);
       for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
         const a = nodes[i], b = nodes[j];
         const dx = a.x - b.x, dy = a.y - b.y, d2 = Math.max(64, dx * dx + dy * dy);
@@ -57,7 +65,7 @@ export function CodeGraphView({ graph, highlight = [], height = 460, onPick }: {
         n.x = Math.max(12, Math.min(W - 12, n.x + n.vx)); n.y = Math.max(12, Math.min(H - 12, n.y + n.vy));
       }
       draw();
-      raf = requestAnimationFrame(tick);
+      if (!reduced && t < 400) raf = requestAnimationFrame(tick);
     };
 
     const draw = () => {
@@ -94,11 +102,13 @@ export function CodeGraphView({ graph, highlight = [], height = 460, onPick }: {
     };
     const move = (e: MouseEvent) => setHover(pick(e));
     const click = (e: MouseEvent) => { const n = pick(e); if (n && onPick) onPick(n); };
-    const resize = () => { W = c.clientWidth; c.width = W * dpr; };
+    redraw.current = draw;
+    const resize = () => { W = c.clientWidth; c.width = W * dpr; draw(); };
     c.addEventListener("mousemove", move); c.addEventListener("click", click); window.addEventListener("resize", resize);
-    raf = requestAnimationFrame(tick);
-    return () => { cancelAnimationFrame(raf); c.removeEventListener("mousemove", move); c.removeEventListener("click", click); window.removeEventListener("resize", resize); };
-  }, [graph, height, onPick]);
+    draw();
+    if (!reduced) raf = requestAnimationFrame(tick);
+    return () => { cancelAnimationFrame(raf); redraw.current = null; c.removeEventListener("mousemove", move); c.removeEventListener("click", click); window.removeEventListener("resize", resize); };
+  }, [graph, height, onPick, reduced]);
 
   return (
     <div style={{ position: "relative" }}>

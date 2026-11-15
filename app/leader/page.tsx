@@ -4,7 +4,7 @@ import { b64u, fromB64u, zone } from "../zones/client";
 import s from "../zones/zones.module.css";
 
 // CENTER · Leader Desk. Opens only for the server-verified leader after a
-// passkey check on THIS device (Touch ID / Face ID / Windows Hello). The first
+// credential-bound passkey check (Touch ID / Face ID / Windows Hello). The first
 // enrolment is gated by the one-time leader code; after that, only the passkey works.
 
 type Me = { participant?: { name: string }; role?: string; stepUpFresh?: boolean; error?: string; snapshot?: { label: string } };
@@ -19,8 +19,10 @@ export default function Leader() {
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
-    const m = await zone<Me>("me"); setMe(m.data);
-    if (m.data.stepUpFresh) { const r = await zone<{ pending: Pending[] }>("leader_inbox"); if (r.data.pending) setPending(r.data.pending); }
+    try { const m = await zone<Me>("me"); setMe(m.data);
+      if (m.data.stepUpFresh) { const r = await zone<{ pending: Pending[] }>("leader_inbox"); if (r.status === 200 && r.data.pending) setPending(r.data.pending); else setPending([]); }
+      else setPending([]);
+    } catch { setMe(null); setPending([]); setMsg("Cannot connect. Retrying…"); }
   }, []);
   useEffect(() => { refresh(); const id = setInterval(refresh, 4000); return () => clearInterval(id); }, [refresh]);
 
@@ -29,6 +31,7 @@ export default function Leader() {
     try {
       if (!me?.stepUpFresh) { const r = await zone("leader_step_up", { code }); if (r.status !== 200) throw new Error(r.data.error); }
       const o = await zone<{ challenge: string; rpId: string; user: { id: string; name: string } }>("passkey_options", { purpose: "register" });
+      if (o.status !== 200) throw new Error(o.data.error);
       const cred = (await navigator.credentials.create({ publicKey: {
         challenge: fromB64u(o.data.challenge), rp: { id: o.data.rpId, name: "Kaam Ki Baat" },
         user: { id: fromB64u(o.data.user.id), name: o.data.user.name, displayName: o.data.user.name },
@@ -37,7 +40,7 @@ export default function Leader() {
       } })) as PublicKeyCredential;
       const res = cred.response as AuthenticatorAttestationResponse;
       const r = await zone("passkey_register", { clientDataJSON: b64u(res.clientDataJSON), attestationObject: b64u(res.attestationObject) });
-      setMsg(r.status === 200 ? "This device is now the only key to the Leader Desk." : `Not enrolled: ${r.data.error}`);
+      setMsg(r.status === 200 ? "Passkey enrolled. Unlock with it to open this session." : `Not enrolled: ${r.data.error}`);
     } catch (e) { setMsg(`Not enrolled: ${(e as Error).message}`); }
     setBusy(false); refresh();
   };
@@ -59,10 +62,12 @@ export default function Leader() {
   };
 
   const resolve = async (p: Pending) => {
+    try {
     const d = draft[p.id];
     const r = await zone<{ contextVersion: number; decision: { version: number } }>("leader_resolve", { ticket_id: p.id, statement: d?.statement, conditions: d?.conditions || undefined, confirmed: d?.confirm === true, expected_version: p.decision?.version ?? 0 });
     setMsg(r.status === 200 ? `Saved and read back: decision v${r.data.decision.version}, context v${r.data.contextVersion}. The teammate will see it with your name on it.` : `Not saved: ${r.data.error}`);
     refresh();
+    } catch { setMsg("Not saved: connection failed. Refresh before retrying."); }
   };
 
   if (me?.error) return <main className={s.page}><p>Open this page from your leader session link. {me.error}</p></main>;
@@ -72,7 +77,7 @@ export default function Leader() {
     <main className={s.page}>
       <div className={s.top}>
         <h1 className={s.title}>Leader Desk · {me?.participant?.name ?? "…"}</h1>
-        <span className={s.badge} style={{ borderColor: me?.stepUpFresh ? "var(--ok)" : "var(--center)" }}>{me?.stepUpFresh ? "unlocked on this device" : "locked"}</span>
+        <span className={s.badge} style={{ borderColor: me?.stepUpFresh ? "var(--ok)" : "var(--center)" }}>{me?.stepUpFresh ? "session unlocked" : "locked"}</span>
       </div>
       {!me?.stepUpFresh && (
         <section className={`${s.card} ${s.activeC}`} style={{ maxWidth: 620 }}>

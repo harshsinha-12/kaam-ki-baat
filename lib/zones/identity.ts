@@ -98,11 +98,12 @@ export function hmacCodeVerifier(secret: string | undefined): StepUpVerifier {
 export async function stepUp(store: EventStore, actor: Actor, verifier: StepUpVerifier, proof: unknown, now = new Date()) {
   if (actor.role !== "leader") return { ok: false as const, reason: "only the verified leader can unlock the Leader Desk" };
   if (actor.channel !== "device") return { ok: false as const, reason: "step-up must happen on an authenticated device" };
-  if (credentials(await store.all(), actor.participant.id).length > 0)
-    return { ok: false as const, reason: "a device passkey is enrolled — unlock with your passkey on that device" };
+
   const expiresAt = new Date(now.getTime() + STEP_UP_MINUTES * 60_000).toISOString();
   type Result = { ok: true; expiresAt: string } | { ok: false; reason: string };
   return store.appendGuarded<Result>((events) => {
+    if (credentials(events, actor.participant.id).length > 0)
+      return { reject: { ok: false, reason: "a passkey is enrolled — unlock with that credential" } };
     const proofHash = verifier.method === "server_otp" && typeof proof === "string" ? hashToken(`${actor.sessionId}:${proof}`) : undefined;
     if (proofHash && zoneEvents(events, "step_up").some(e => e.key === actor.sessionId && e.data.proofHash === proofHash))
       return { reject: { ok: false, reason: "one-time proof has already been used" } };
