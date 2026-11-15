@@ -28,13 +28,14 @@ it("requires fresh browser consent, preloads only the authorized brief and persi
       assert.equal(body.agent_id, "test-agent");
       assert.equal(body.user_data.call_token, token);
       assert.match(body.user_data.opening_brief, /Sync/);
+      assert.equal(body.user_data.current_task_id, "t1", "preload the authorized task ID so the model need not invent one from the meeting title");
       assert.doesNotMatch(body.user_data.opening_brief, /Private|test-provider-key/);
-      assert.deepEqual(Object.keys(body.user_data).sort(), ["call_token", "opening_brief"]);
+      assert.deepEqual(Object.keys(body.user_data).sort(), ["call_token", "current_task_id", "opening_brief"]);
       return Response.json({ agent_id: "test-agent", run_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", sip_password: "ephemeral-test" });
     };
     assert.equal((await POST(request({}))).status, 400);
     assert.equal(requests, 0);
-    assert.equal((await POST(request({ consented: true }))).status, 200);
+    assert.equal((await POST(request({ consented: true, current_task_id: "t_private" }))).status, 200);
     assert.equal((await POST(request({ consented: true }))).status, 409);
     assert.equal(requests, 1);
     const events = await rt.store.all();
