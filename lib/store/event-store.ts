@@ -22,6 +22,12 @@ export interface CallSession {
   expiresAt: string;
 }
 
+// A copied .env.example leaves optional keys blank. Blank is unset, not "the current directory".
+export function eventsLogPath(envValue = process.env.KKB_EVENTS_FILE): string {
+  const chosen = envValue?.trim() || "data/runtime/events.jsonl";
+  return path.resolve(chosen);
+}
+
 export class EventStore implements UpdateRepository {
   private events: StoredEvent[] = [];
   private chain: Promise<unknown> = Promise.resolve();
