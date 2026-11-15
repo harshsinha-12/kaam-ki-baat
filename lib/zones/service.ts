@@ -2,7 +2,7 @@ import type { EvidenceSnapshot } from "../contracts";
 import type { EventStore } from "../store/event-store";
 import { navigateCode } from "./code";
 import { acknowledge, createTicket, deliveries, leaderInbox, markDelivered, requestLeaderCall, resolveTicket, setPresence, withdraw } from "./escalation";
-import { activateZone, recordFocus, zoneAccess } from "./focus";
+import { activateZone, readFocusInput, recordFocus, recordFocusInputStatus, selectFocusInput, zoneAccess } from "./focus";
 import { hmacCodeVerifier, resolveDeviceActor, stepUp, type StepUpVerifier } from "./identity";
 import { ingestUtterance, setConsent } from "./live";
 import { askTeamMemory, nameOf } from "./memory";
@@ -22,7 +22,7 @@ export interface ZoneRuntime {
 }
 
 export const ZONE_ACTIONS = [
-  "me", "focus", "activate", "consent", "utterance", "memory_ask", "ticket_create", "ticket_withdraw", "ticket_call_leader",
+  "me", "focus", "focus-input", "focus-input-status", "activate", "consent", "utterance", "memory_ask", "ticket_create", "ticket_withdraw", "ticket_call_leader",
   "deliveries", "delivery_seen", "delivery_ack", "code_navigate", "leader_step_up", "leader_presence", "leader_inbox", "leader_resolve",
   "passkey_options", "passkey_register", "passkey_assert", "code_graph_query",
 ] as const;
@@ -50,6 +50,8 @@ export async function runZoneAction(rt: ZoneRuntime, action: ZoneAction, token: 
         snapshot: { label: rt.snapshot.label, repository: rt.snapshot.repository, pinnedSha: rt.snapshot.pinnedSha },
       });
     }
+    case "focus-input": { const x = Object.keys(body).length ? await selectFocusInput(rt.store, actor, body) : await readFocusInput(rt.store, actor); return x.ok ? r(200, x) : fail(x); }
+    case "focus-input-status": { const x = await recordFocusInputStatus(rt.store, actor, body); return x.ok ? r(200, x) : fail(x); }
     case "focus": { const x = await recordFocus(rt.store, actor, body); return x.ok ? r(200, x) : fail(x); }
     case "activate": { const x = await activateZone(rt.store, actor, body); return x.ok ? r(200, x) : fail(x); }
     case "consent": { const x = await setConsent(rt.store, actor, body); return x.ok ? r(200, x) : fail(x); }
