@@ -302,11 +302,11 @@
 @media (max-width: 600px) { .listener { width: 30%; top: 26%; } .agentKey { display: none; } .agentName { font-size: 12px; } }
 
 /* ================= cursor spotlight on cards ================= */
-[data-spot] { --mx: 50%; --my: 50%; position: relative; isolation: isolate; }
-[data-spot]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+.page [data-spot] { --mx: 50%; --my: 50%; position: relative; isolation: isolate; }
+.page [data-spot]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
   background: radial-gradient(420px circle at var(--mx) var(--my), color-mix(in srgb, var(--spot, #f2efe6) 10%, transparent), transparent 60%); opacity: 0; transition: opacity .35s var(--out); }
-[data-spot]:hover::after { opacity: 1; }
-[data-spot]:hover { border-color: color-mix(in srgb, var(--spot, #f2efe6) 35%, var(--line)); }
+.page [data-spot]:hover::after { opacity: 1; }
+.page [data-spot]:hover { border-color: color-mix(in srgb, var(--spot, #f2efe6) 35%, var(--line)); }
 
 /* meaning-coloured stats */
 .statTag { align-self: flex-start; font: 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; border-radius: 999px; padding: 3px 9px; border: 1px solid; }
