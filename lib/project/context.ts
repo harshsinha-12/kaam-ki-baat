@@ -34,7 +34,7 @@ export function projectContext(snapshot: EvidenceSnapshot, question = "What does
   // each named system; a generic transport match must not crowd either out.
   const connection = /\b(?:link|connect|integrat)\w*\b/i.test(question) && terms.length > 1;
   const boundary = connection ? scored.filter(x => x.score > 0 && /\.md$/.test(x.file.path)).slice(0, 2) : [];
-  const connects = (text: string) => /readFile|fetch\s*\(|https?:\/\/|\burl\s*:|JSON\.parse/.test(text) ? 1 : 0;
+  const connects = (text: string) => /readFile|fetch\s*\(|https?:\/\/|JSON\.parse/.test(text) ? 1 : 0;
   const endpoints = connection ? terms.flatMap(term => {
     const match = scored.filter(x => /\.[cm]?[jt]sx?$/.test(x.file.path) && (x.file.path + "\n" + x.file.content).toLowerCase().includes(term))
       .sort((a, b) => connects(b.file.content) - connects(a.file.content) || terms.filter(t => b.file.content.toLowerCase().includes(t)).length - terms.filter(t => a.file.content.toLowerCase().includes(t)).length || b.score - a.score)[0];
