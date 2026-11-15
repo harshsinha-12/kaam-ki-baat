@@ -122,7 +122,8 @@ export function queryGraph(g: CodeGraph, question: string, files: { path: string
   const words = question.toLowerCase().split(/[^a-z0-9_-]+/).filter((t) => t.length > 2 && !STOP.has(t));
   const stem = (w: string) => (w.length > 5 ? w.replace(/(ing|ies|es|ed|s)$/, "") : w);
   const terms = [...new Set(words.map(stem).filter((t) => t.length > 2))];
-  const phrases = words.slice(0, -1).map((w, i) => `${w}-${words[i + 1]}`); // "read back" ~ "read-back"
+  // "read back" ~ read-back / read_back / readback (identifier styles)
+  const phrases = words.slice(0, -1).flatMap((w, i) => [`${w}-${words[i + 1]}`, `${w}_${words[i + 1]}`, `${w}${words[i + 1]}`]);
   const content = new Map(files.map((f) => [f.path, f.content.toLowerCase()]));
   const byId = new Map(g.nodes.map((n) => [n.id, n]));
   // IDF: rare terms ("hysteresis", "dedupe") decide; common ones ("read", "code") barely count.
@@ -138,11 +139,13 @@ export function queryGraph(g: CodeGraph, question: string, files: { path: string
     const header = fileHeader(text);
     const nameHits = terms.filter((t) => name.includes(t.replace(/-/g, "")));
     const bodyHits = terms.filter((t) => !nameHits.includes(t) && body.includes(t));
-    const phraseHits = phrases.filter((p) => body.includes(p));
+    const phraseHits = phrases.filter((p) => body.includes(p) || name.includes(p));
     const headerHits = terms.filter((t) => !nameHits.includes(t) && !bodyHits.includes(t) && header.includes(t));
     const hits = [...nameHits, ...bodyHits, ...phraseHits, ...headerHits];
     const kindBias = n.kind === "function" ? 1.5 : n.kind === "class" ? 1 : n.kind === "const" ? 0.5 : -1;
-    const score = w(nameHits) * 2 + w(bodyHits) + phraseHits.length * 2 + w(headerHits) * 0.6 + kindBias + Math.min(1, (n.degree ?? 0) / 20);
+    // Behaviour lives in lib/ and app/api; .tsx pages mostly hold copy about it.
+    const layerBias = n.path.endsWith(".tsx") ? -2.5 : n.path.startsWith("scripts/") ? -1 : 0;
+    const score = w(nameHits) * 2 + w(bodyHits) + phraseHits.length * 2 + w(headerHits) * 0.6 + kindBias + layerBias + Math.min(1, (n.degree ?? 0) / 20);
     if (hits.length && (!best || score > best.score)) best = { n, score, hits };
   }
   if (!best) return { seed: null, path: [], subgraph: { nodes: [], edges: [] }, match: "none", explanation: ["No symbol in the graph matches that question at this commit."] };
