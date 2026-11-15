@@ -13,7 +13,7 @@
 .label { font:11px ui-monospace, Menlo, monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--mute); }
 .h { font-size:18px; font-weight:620; margin:6px 0 12px; }
 .row { display:flex; gap:8px; }
-.input { flex:1; background:#0e0e0d; border:1px solid var(--line); border-radius:12px; color:var(--ink); padding:11px 13px; font:inherit; font-size:14px; }
+.input { flex:1; min-width:0; background:#0e0e0d; border:1px solid var(--line); border-radius:12px; color:var(--ink); padding:11px 13px; font:inherit; font-size:14px; }
 .input:focus { outline:none; border-color:#4a473e; }
 .btn { border-radius:999px; padding:10px 16px; font-weight:600; font-size:14px; border:1px solid var(--line); background:transparent; color:var(--ink); cursor:pointer; }
 .btn:disabled { opacity:.5; cursor:not-allowed; }
@@ -28,3 +28,46 @@
 .zbtn { flex:1; text-align:left; border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:14px; padding:10px 12px; cursor:pointer; font:inherit; }
 .zbtnOn { border-color:var(--ink); }
 .lock { opacity:.45; }
+
+.workspaceName { color:var(--mute); font-weight:400; }
+.welcome { display:flex; align-items:center; justify-content:space-between; gap:28px; padding:20px 0 28px; }
+.welcome h2 { font-size:clamp(26px,3.2vw,42px); line-height:1.12; letter-spacing:-.045em; font-weight:550; margin:12px 0; max-width:650px; }
+.welcome p { color:var(--mute); font-size:15px; line-height:1.6; margin:0; max-width:620px; }
+.connection { flex-shrink:0; border:1px solid var(--line); background:var(--card); padding:11px 15px; border-radius:999px; font-size:13px; }
+.connection span { margin-right:6px; }
+.connectCard { background:var(--card); border:1px solid #4a473e; border-radius:18px; padding:22px; display:grid; grid-template-columns:1fr 1fr; align-items:center; gap:28px; margin:0 0 20px; }
+.connectCard h2 { font-size:17px; margin:0 0 8px; font-weight:550; }
+.connectCard p { color:var(--mute); font-size:14px; line-height:1.6; margin:0; }
+.guide { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; padding:22px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin-bottom:18px; }
+.guide b { font-weight:550; font-size:14px; }
+.step { display:inline-block; font:11px ui-monospace,Menlo,monospace; color:var(--mute); margin-right:12px; }
+.guide p { font-size:13px; line-height:1.65; color:var(--mute); margin:9px 0 0 28px; }
+.workspaceTools { display:flex; justify-content:space-between; gap:20px; align-items:center; margin:0 0 18px; font-size:12px; color:var(--mute); }
+.workspaceTools p { margin:0; line-height:1.6; }
+.workspaceTools a { color:var(--ink); white-space:nowrap; text-decoration:none; border-bottom:1px solid var(--mute); padding-bottom:3px; }
+.empty { padding:22px 0 4px; min-height:100px; }
+.empty p { color:var(--mute); font-size:14px; line-height:1.7; max-width:560px; margin:10px 0; }
+.zbtn:disabled { cursor:default; }
+.btn:focus-visible,.zbtn:focus-visible,.workspaceTools a:focus-visible { outline:2px solid var(--left); outline-offset:4px; }
+@media(max-width:700px) { .welcome { align-items:flex-start; flex-direction:column; gap:16px; } .connectCard,.guide { grid-template-columns:1fr; gap:18px; } .workspaceTools { align-items:flex-start; flex-direction:column; gap:12px; } .zones { gap:5px; } .zbtn { padding:10px 8px; font-size:13px; } .zbtn .label { font-size:9px; letter-spacing:.04em; } }
+@media(prefers-reduced-motion:reduce) { .card { transition:none; } }
+
+.motionIntro { display:flex; align-items:center; justify-content:space-between; gap:24px; margin:26px 0 16px; }
+.motionIntro h2 { margin:9px 0; font-size:23px; letter-spacing:-.025em; font-weight:550; }
+.motionIntro p { margin:0; max-width:760px; color:var(--mute); font-size:14px; line-height:1.7; }
+.motionIntro .badge { flex-shrink:0; }
+.centerSelected { opacity:1; border-color:var(--center); box-shadow:0 0 28px -12px var(--center); }
+.leaderHint { display:flex; justify-content:space-between; align-items:center; gap:20px; margin-bottom:18px; }
+.leaderHint h2 { font-size:20px; margin:8px 0; }
+.leaderHint p { color:var(--mute); font-size:14px; line-height:1.6; margin:0; }
+.leaderHint a { text-decoration:none; flex-shrink:0; }
+@media(max-width:700px) { .motionIntro,.leaderHint { flex-direction:column; align-items:flex-start; } }
+
+.welcome { padding:8px 0 20px; } .welcome h2 { font-size:clamp(26px,3vw,36px); margin:8px 0; }
+.repoPanel { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px; margin-bottom:14px; }
+.repoHeading { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:14px; }
+.repoHeading h2 { font-size:17px; margin:0 0 5px; font-weight:550; }.repoHeading p { color:var(--mute); font-size:13px; margin:0; }
+.projectActions { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-top:14px; }.projectActions label { color:var(--mute); font-size:12px; }
+.setupRow { display:flex; gap:12px; align-items:flex-start; margin-bottom:16px; }.setupDisclosure { flex:1; min-width:0; border:1px solid var(--line); border-radius:12px; padding:12px 16px; }.setupDisclosure summary { cursor:pointer; font-size:13px; color:var(--ink); }.setupHint { color:var(--mute); font-size:13px; line-height:1.7; }
+.zones { position:sticky; top:0; z-index:4; background:var(--bg); padding:8px 0; } .card { scroll-margin-top:95px; }
+@media(max-width:700px) { .setupRow { flex-direction:column; }.setupDisclosure { width:100%; box-sizing:border-box; }.repoHeading { align-items:flex-start; flex-direction:column; }.repoPanel .row { flex-wrap:wrap; }.repoPanel .row .input { flex-basis:100%; }.projectActions label { width:100%; } }

@@ -1,3 +1,4 @@
+import { projectContext } from "../project/context";
 import { randomBytes } from "node:crypto";
 import type { EvidenceSnapshot, Task } from "../contracts";
 import { resolveCaller, type Caller } from "../auth/call-session";
@@ -28,7 +29,7 @@ export interface Runtime {
 }
 
 export type ToolResponse = { status: number; body: Record<string, unknown> };
-export const TOOL_NAMES = ["get_my_brief", "get_task_evidence", "get_changes", "record_task_update", "request_clarification"] as const;
+export const TOOL_NAMES = ["get_my_brief", "get_task_evidence", "get_changes", "record_task_update", "request_clarification", "get_project_context"] as const;
 export type ToolName = (typeof TOOL_NAMES)[number];
 
 export async function runTool(rt: Runtime, tool: ToolName, body: Record<string, unknown>): Promise<ToolResponse> {
@@ -77,6 +78,11 @@ function pickTask(rt: Runtime, caller: Caller, requested?: unknown): Task | unde
 async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Record<string, unknown>): Promise<ToolResponse> {
   const callId = caller.session.callId;
   switch (tool) {
+    case "get_project_context": {
+      if (caller.participant.repoAccess === false) return { status: 403, body: { ok: false, error: "Repository access denied" } };
+      const context = projectContext(rt.snapshot, String(body.question ?? "What does this project do?").slice(0, 2000));
+      return ok({ ...context, speak: context.passages.length ? "I found the relevant repository sources. I will explain them and mention any uncertainty." : "I could not find an answer in the approved repository files.", evidenceIds: context.passages.map(p => `${p.path}:${p.lineStart}`) });
+    }
     case "get_my_brief": {
       // Leader answers waiting for this person come first (delivery after reconnect).
       const actor = callActor(caller);
