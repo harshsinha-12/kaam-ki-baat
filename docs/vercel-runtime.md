@@ -30,3 +30,18 @@ Local development continues using JSONL and private files when Redis is unset. O
 This adapter reads the append-only log to build projections. It is suitable for the current demonstration workload; large audit histories need indexed projections/retention and capacity monitoring. Enable database backups and choose a permanent plan appropriate to the data. A temporary agent database with an expiry is not production hosting.
 
 Synthetic adapter/concurrency tests establish application behavior. They do not prove a database was provisioned, a deployment succeeded, provider callbacks were repointed, or browser audio works. Record those outcomes separately in `docs/plan.md`.
+
+## Verified environment setup — 2026-11-15
+
+| Environment | Storage namespace | Browser calling |
+| --- | --- | --- |
+| Vercel Production | `kaam-ki-baat-production` | Enabled; approved agent callbacks use the canonical Vercel origin |
+| Root `.env.local` / managed localhost | `kaam-ki-baat-production` | Enabled; intentionally mirrors the production workspace |
+| Vercel Preview | `kaam-ki-baat-preview` | Disabled; use a separately authorized agent/routing setup before enabling |
+| Vercel Development | `kaam-ki-baat-development` | Disabled by default |
+
+All targets have their REST storage credentials, immutable snapshot key, server authentication/Bolna keys and site metadata setting. Source snapshot and initial audit/evaluations were imported/read back into the isolated namespaces. Production origin/RP match `kaam-ki-baat-xi.vercel.app`; Development targets localhost. Preview origin/RP overrides are blank: configure the exact preview origin before a leader passkey ceremony. There is no claim of a physical passkey check on previews.
+
+Only `NEXT_PUBLIC_SITE_URL` is public configuration. Redis credentials, Bolna credentials and operator/server keys have no public prefix. `KKB_EVAL_DIR`, `KKB_SNAPSHOT` and `KKB_EVENTS_FILE` are not required on Vercel. Root legacy local paths were preserved and are ignored by the hosted adapter while Redis is configured. Local settings are backed up privately; no credentials or source passages are committed.
+
+The operator's eval token and prepared `/evals#b=…` links are saved in ignored `data/private/evaluation-access.txt`. `/evals` HTML opens publicly; transcripts/context are operator-authenticated. Capability fragments are consumed and removed from the address bar. Use the prepared link again after a full reload because operator credentials are page-memory only.
