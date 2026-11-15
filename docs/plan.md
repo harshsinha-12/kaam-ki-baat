@@ -5,6 +5,14 @@ Rules live in [AGENTS.md](../AGENTS.md). Design lives in [architecture.md](archi
 
 Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competition.md)).
 
+## Live deployment review — 2026-11-15 (external audit, no private provider actions)
+
+- Public https://kaam-ki-baat-xi.vercel.app reported deployed source SHA `cdcc9101`, correct GitHub origin, but `/api/health` reported `snapshot.loaded=false` because a developer-machine snapshot path was configured on that observed deployment.
+- `main` subsequently gained hosted Redis runtime loading/health changes. **Re-deploy and recheck** whether hosted snapshot and event storage are actually configured; do not infer readiness merely from the PR.
+- Public `/graph` bundles static code graph at `317a348` (454 nodes, 1,277 edges, 18 communities), older than the deployed commit. This PR adds explicit freshness labels but does not rebuild its code index.
+- The repo already has an explicitly labeled hypothetical meeting. A companion [Scratchpad rehearsal and QA matrix](demo/QA_MEETING_SCENARIO.md) is available; it must remain `FIXTURE`, not a fabricated Wispr Notetaker recording.
+- Review and test details: [live graph audit](audits/live-team-graph-review-2026-11-15.md). No new live call, meeting import or browser animation test was performed in this PR.
+
 ## 0. Goal of the demo (the vertical slice)
 
 > **One approved Wispr meeting → one codebase finding → one exact code pointer → one personalized Bolna call → one verifiably saved action.**
