@@ -16,6 +16,6 @@ export async function POST(req: Request, ctx: { params: Promise<{ tool: string }
   }
   let body: Record<string, unknown> = {};
   try { body = (await req.json()) as Record<string, unknown>; } catch { /* empty body */ }
-  const res = await runTool(getRuntime(), tool as ToolName, body);
+  const res = await runTool(await getRuntime(), tool as ToolName, body);
   return NextResponse.json(res.body, { status: res.status });
 }

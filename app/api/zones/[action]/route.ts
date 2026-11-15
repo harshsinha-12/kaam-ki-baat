@@ -22,7 +22,7 @@ async function handle(req: Request, ctx: { params: Promise<{ action: string }> }
     if (!parsed) return NextResponse.json({ ok: false, error: "expected a bounded JSON object" }, { status: 400 });
     body = parsed;
   }
-  const rt = getRuntime();
+  const rt = await getRuntime();
   const res = await runZoneAction({ store: rt.store, snapshot: rt.snapshot }, action as ZoneAction, token, body);
   return NextResponse.json(res.body, { status: res.status });
 }

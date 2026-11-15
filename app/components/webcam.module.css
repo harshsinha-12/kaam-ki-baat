@@ -92,3 +92,13 @@
   .cameraIcon { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .zone, .poseMarker, .headPosition, .tracker .controls button { transition: none; } }
+
+/* Keep the camera and orientation guide centered in the teammate workspace. */
+.compactTracker {
+  width:100%; max-width:840px; justify-self:center; margin:8px auto 0;
+  grid-template-columns:minmax(0,1fr);
+  grid-template-areas:"heading" "preview" "message" "orientation" "controls" "details";
+}
+.compactTracker .preview, .compactTracker .orientation { width:min(100%,640px); justify-self:center; }
+.compactTracker .message { text-align:center; }
+.compactTracker .controls { justify-content:center; }

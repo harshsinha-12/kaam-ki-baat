@@ -1,11 +1,11 @@
 "use client";
 import type { CSSProperties } from "react";
 import s from "../zones/zones.module.css";
+import type { FlowStage } from "./flow-state";
 
 // How a question travels, drawn live: voice → Wispr → Kaam Ki Baat → (Leader | Code).
 // `stage` is derived from what the workspace is doing right now, so the pulse
 // follows the user's own question instead of looping a canned animation.
-export type FlowStage = 0 | 1 | 2 | 3 | 4;
 const STEPS = [
   { k: "voice", t: "You ask", d: "voice or text, Hinglish is fine" },
   { k: "wispr", t: "Wispr Flow", d: "meeting heard, words cleaned up" },
