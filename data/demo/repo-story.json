@@ -1,0 +1,871 @@
+{
+  "repository": "harshsinha-12/kaam-ki-baat",
+  "generatedFromSha": "55bbb55",
+  "firstCommit": {
+    "sha": "b79a16f",
+    "at": "2026-11-15T07:24:17.000Z",
+    "author": "Harsh Sinha",
+    "subject": "Initial Setup"
+  },
+  "totalCommits": 146,
+  "areas": [
+    {
+      "id": "plan",
+      "label": "Plan & team rules",
+      "color": "#c9c4b6",
+      "plain": "the shared plan and the rules every agent and teammate follows.",
+      "keywords": [
+        "plan",
+        "rules",
+        "agents",
+        "architecture",
+        "decision",
+        "docs",
+        "handoff",
+        "process"
+      ]
+    },
+    {
+      "id": "memory",
+      "label": "Team Memory",
+      "color": "#7cc4ff",
+      "plain": "what the team said in the meeting, imported from Wispr Flow and kept with exact quotes.",
+      "keywords": [
+        "meeting",
+        "memory",
+        "wispr",
+        "decided",
+        "decision",
+        "brief",
+        "transcript",
+        "team memory",
+        "said",
+        "left",
+        "freeze"
+      ]
+    },
+    {
+      "id": "leader",
+      "label": "Leader Desk",
+      "color": "#f5c451",
+      "plain": "the leader-only desk where open questions are escalated and approved.",
+      "keywords": [
+        "leader",
+        "approve",
+        "approval",
+        "escalate",
+        "escalation",
+        "clarify",
+        "passkey",
+        "desk",
+        "private",
+        "charan",
+        "center"
+      ]
+    },
+    {
+      "id": "code",
+      "label": "Code Navigator",
+      "color": "#ff8a65",
+      "plain": "finding the exact file, function, line and test behind a decision.",
+      "keywords": [
+        "code",
+        "navigator",
+        "file",
+        "function",
+        "line",
+        "graph",
+        "search",
+        "where",
+        "saved",
+        "graphify",
+        "right",
+        "repo",
+        "codebase"
+      ]
+    },
+    {
+      "id": "evidence",
+      "label": "PR & CI checks",
+      "color": "#6fdc8c",
+      "plain": "reading pull requests and test results from GitHub, pinned to a commit.",
+      "keywords": [
+        "github",
+        "ci",
+        "check",
+        "checks",
+        "pull",
+        "test passed",
+        "verify",
+        "evidence",
+        "sha",
+        "commit",
+        "merged"
+      ]
+    },
+    {
+      "id": "voice",
+      "label": "Voice calls",
+      "color": "#b48cff",
+      "plain": "the Bolna voice agent: phone and browser calls, listening and speaking.",
+      "keywords": [
+        "voice",
+        "call",
+        "calls",
+        "bolna",
+        "phone",
+        "speak",
+        "listen",
+        "microphone",
+        "mic",
+        "audio"
+      ]
+    },
+    {
+      "id": "focus",
+      "label": "Head turn & input",
+      "color": "#5ee3d1",
+      "plain": "choosing an agent by turning your head, with the webcam, AirPods or keyboard.",
+      "keywords": [
+        "head",
+        "turn",
+        "look",
+        "webcam",
+        "camera",
+        "airpods",
+        "focus",
+        "keyboard",
+        "tracking",
+        "spatial",
+        "zone",
+        "zones"
+      ]
+    },
+    {
+      "id": "site",
+      "label": "Website & demo",
+      "color": "#ff6bb5",
+      "plain": "the landing page, workspace screens, code graph pages and deployment.",
+      "keywords": [
+        "website",
+        "site",
+        "landing",
+        "page",
+        "ui",
+        "screen",
+        "deploy",
+        "vercel",
+        "demo",
+        "board",
+        "workspace"
+      ]
+    },
+    {
+      "id": "quality",
+      "label": "Tests & call reviews",
+      "color": "#d6e36b",
+      "plain": "automated tests and the review of each real call.",
+      "keywords": [
+        "test",
+        "tests",
+        "evaluation",
+        "eval",
+        "review",
+        "quality",
+        "bug",
+        "fix",
+        "acceptance"
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "id": "idea",
+      "title": "1 · The idea, written down",
+      "plain": "The plan, the rules for working in parallel, and one agreed architecture."
+    },
+    {
+      "id": "core",
+      "title": "2 · The evidence core",
+      "plain": "The brain: decisions tied to code, safe task updates and GitHub evidence."
+    },
+    {
+      "id": "zones",
+      "title": "3 · Three zones come alive",
+      "plain": "Left, center and right agents in the browser, plus the leader's escalation desk."
+    },
+    {
+      "id": "explain",
+      "title": "4 · Making it understandable",
+      "plain": "A landing page, a code graph and private access for the leader's device."
+    },
+    {
+      "id": "senses",
+      "title": "5 · Hearing and seeing the team",
+      "plain": "The first real phone call, webcam head tracking and AirPods motion."
+    },
+    {
+      "id": "demo",
+      "title": "6 · Demo-ready",
+      "plain": "Call reviews, deployment, voice that follows your head, and the graph explorer."
+    }
+  ],
+  "prs": [
+    {
+      "number": 1,
+      "branch": "docs/kaam-ki-baat-planning",
+      "title": "Project plan",
+      "what": "Harsh wrote the first plan: which tools to connect and how each call will be judged.",
+      "chapter": "idea",
+      "areas": [
+        "plan"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T07:53:15.000Z",
+      "mergeSha": "80d61ee",
+      "filesChanged": 16,
+      "topFolders": [
+        "docs",
+        "docs/reference",
+        "root"
+      ]
+    },
+    {
+      "number": 3,
+      "branch": "docs/agent-startup",
+      "title": "Agent ground rules",
+      "what": "Shared start-up and hand-off rules, so Claude, Codex and the team can work side by side.",
+      "chapter": "idea",
+      "areas": [
+        "plan"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T08:01:17.000Z",
+      "mergeSha": "9a20794",
+      "filesChanged": 4,
+      "topFolders": [
+        "root",
+        "docs"
+      ]
+    },
+    {
+      "number": 4,
+      "branch": "docs/architecture-convergence-claude",
+      "title": "One architecture",
+      "what": "The design was settled in one place: three agents, one evidence core, one source of truth.",
+      "chapter": "idea",
+      "areas": [
+        "plan"
+      ],
+      "authors": [
+        "Claude"
+      ],
+      "mergedAt": "2026-11-15T08:06:00.000Z",
+      "mergeSha": "a6f6a14",
+      "filesChanged": 8,
+      "topFolders": [
+        "docs",
+        "root"
+      ]
+    },
+    {
+      "number": 2,
+      "branch": "feat/evidence-core-spatial-specialists",
+      "title": "Evidence core",
+      "what": "The heart of the product: a decision is linked to its code, its pull request and its test, with left, center and right specialists.",
+      "chapter": "core",
+      "areas": [
+        "code",
+        "evidence",
+        "quality"
+      ],
+      "authors": [
+        "Claude",
+        "Charan Rathore"
+      ],
+      "mergedAt": "2026-11-15T08:21:14.000Z",
+      "mergeSha": "457a6a0",
+      "filesChanged": 46,
+      "topFolders": [
+        "root",
+        "tests",
+        "lib/core"
+      ]
+    },
+    {
+      "number": 5,
+      "branch": "codex/task-write-review-fixes",
+      "title": "Safe task updates",
+      "what": "Saving a task update became one-at-a-time and only for the accepted owner, so nothing is overwritten.",
+      "chapter": "core",
+      "areas": [
+        "evidence",
+        "quality"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T08:27:41.000Z",
+      "mergeSha": "e005380",
+      "filesChanged": 7,
+      "topFolders": [
+        "tests",
+        ".github/workflows",
+        "docs"
+      ]
+    },
+    {
+      "number": 7,
+      "branch": "codex/github-adapter-hardening",
+      "title": "Sturdier GitHub reading",
+      "what": "GitHub evidence now reads every page of results and says plainly when GitHub limits requests.",
+      "chapter": "core",
+      "areas": [
+        "evidence"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T08:31:21.000Z",
+      "mergeSha": "6a5b2a3",
+      "filesChanged": 8,
+      "topFolders": [
+        "docs",
+        "docs/reference",
+        "lib/adapters"
+      ]
+    },
+    {
+      "number": 8,
+      "branch": "codex/demo-readiness",
+      "title": "Demo readiness",
+      "what": "Call reviews were recovered and Bolna was given the web addresses it calls back to.",
+      "chapter": "core",
+      "areas": [
+        "voice",
+        "quality"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T08:43:37.000Z",
+      "mergeSha": "4d72575",
+      "filesChanged": 13,
+      "topFolders": [
+        "scripts",
+        "root",
+        "docs"
+      ]
+    },
+    {
+      "number": 9,
+      "branch": "docs/spatial-live-context-v2",
+      "title": "Spatial design",
+      "what": "Charan specified how looking left, straight or right picks an agent, and how questions escalate to the leader.",
+      "chapter": "zones",
+      "areas": [
+        "focus",
+        "leader",
+        "plan"
+      ],
+      "authors": [
+        "Charan Rathore"
+      ],
+      "mergedAt": "2026-11-15T08:44:52.000Z",
+      "mergeSha": "c64d8bc",
+      "filesChanged": 2,
+      "topFolders": [
+        "docs"
+      ]
+    },
+    {
+      "number": 10,
+      "branch": "codex/spatial-website-agent",
+      "title": "Browser workspace",
+      "what": "The three zones appeared in the browser and the Bolna agent could act on the page.",
+      "chapter": "zones",
+      "areas": [
+        "focus",
+        "voice",
+        "site"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T08:53:05.000Z",
+      "mergeSha": "f7100a6",
+      "filesChanged": 23,
+      "topFolders": [
+        "lib/spatial",
+        "docs",
+        "root"
+      ]
+    },
+    {
+      "number": 11,
+      "branch": "claude/leader-escalation-backend",
+      "title": "Leader escalation",
+      "what": "When the team asks something nobody decided, it goes to the leader; the answer is verified and replayed to whoever asked.",
+      "chapter": "zones",
+      "areas": [
+        "leader",
+        "memory"
+      ],
+      "authors": [
+        "Harsh Sinha",
+        "Claude"
+      ],
+      "mergedAt": "2026-11-15T09:28:11.000Z",
+      "mergeSha": "f4b1e71",
+      "filesChanged": 28,
+      "topFolders": [
+        "lib/zones",
+        "tests",
+        "root"
+      ]
+    },
+    {
+      "number": 14,
+      "branch": "feat/post-call-evaluation",
+      "title": "Call review notes",
+      "what": "A short design for reviewing each real call after it ends.",
+      "chapter": "zones",
+      "areas": [
+        "quality"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T09:30:11.000Z",
+      "mergeSha": "99d0f78",
+      "filesChanged": 2,
+      "topFolders": [
+        "docs"
+      ]
+    },
+    {
+      "number": 12,
+      "branch": "codex/live-demo",
+      "title": "Live meeting import",
+      "what": "A real, approved meeting was imported with exact quotes, and calls were held until the participant confirmed consent.",
+      "chapter": "zones",
+      "areas": [
+        "memory",
+        "voice"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T09:34:59.000Z",
+      "mergeSha": "2dcbf07",
+      "filesChanged": 18,
+      "topFolders": [
+        "docs",
+        "tests",
+        "docs/bolna"
+      ]
+    },
+    {
+      "number": 13,
+      "branch": "claude/landing-page",
+      "title": "Landing page",
+      "what": "A story-driven landing page with an interactive stage of the three zones.",
+      "chapter": "explain",
+      "areas": [
+        "site"
+      ],
+      "authors": [
+        "Harsh Sinha",
+        "Claude"
+      ],
+      "mergedAt": "2026-11-15T09:40:29.000Z",
+      "mergeSha": "4810784",
+      "filesChanged": 6,
+      "topFolders": [
+        "app/landing",
+        "app/board",
+        "app"
+      ]
+    },
+    {
+      "number": 15,
+      "branch": "codex/graphify-context",
+      "title": "Code context retrieval",
+      "what": "The Code Navigator learned to pull the right functions and their neighbours from a code graph.",
+      "chapter": "explain",
+      "areas": [
+        "code"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T09:40:43.000Z",
+      "mergeSha": "daf6d28",
+      "filesChanged": 20,
+      "topFolders": [
+        "docs",
+        "root",
+        "lib/evidence"
+      ]
+    },
+    {
+      "number": 16,
+      "branch": "claude/code-graph-leader-device",
+      "title": "Code graph & leader device",
+      "what": "Phone answers from the code graph, a passkey so only the leader's device opens the Leader Desk, and demo meeting notes.",
+      "chapter": "explain",
+      "areas": [
+        "code",
+        "leader",
+        "memory",
+        "site"
+      ],
+      "authors": [
+        "Claude",
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T09:55:50.000Z",
+      "mergeSha": "146e277",
+      "filesChanged": 41,
+      "topFolders": [
+        "data/demo",
+        "lib/zones",
+        "scripts"
+      ]
+    },
+    {
+      "number": 18,
+      "branch": "codex/pr16-access-followup",
+      "title": "Access follow-up",
+      "what": "Tightened who can see which evidence, and kept call routing safe.",
+      "chapter": "explain",
+      "areas": [
+        "leader",
+        "code"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T10:03:07.000Z",
+      "mergeSha": "f31048a",
+      "filesChanged": 12,
+      "topFolders": [
+        "docs",
+        "tests",
+        "root"
+      ]
+    },
+    {
+      "number": 19,
+      "branch": "codex/first-call-setup",
+      "title": "First phone call",
+      "what": "The first real Bolna phone call ran 48 seconds, and the task it talked about now carries over correctly.",
+      "chapter": "senses",
+      "areas": [
+        "voice",
+        "quality"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T10:07:58.000Z",
+      "mergeSha": "eef464a",
+      "filesChanged": 11,
+      "topFolders": [
+        "docs",
+        "tests",
+        "app/api"
+      ]
+    },
+    {
+      "number": 20,
+      "branch": "codex/sprint-input-integration",
+      "title": "Input arbitration",
+      "what": "Webcam head tracking was added, and only one input at a time can choose the active agent.",
+      "chapter": "senses",
+      "areas": [
+        "focus"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T10:14:01.000Z",
+      "mergeSha": "f0fac30",
+      "filesChanged": 21,
+      "topFolders": [
+        "app/components",
+        "lib/focus",
+        "lib/zones"
+      ]
+    },
+    {
+      "number": 21,
+      "branch": "claude/understanding-first-principles",
+      "title": "First-principles answers",
+      "what": "Code answers are explained from first principles inside the browser, with keyboard shortcuts and a test plan.",
+      "chapter": "senses",
+      "areas": [
+        "code",
+        "site",
+        "focus"
+      ],
+      "authors": [
+        "Claude"
+      ],
+      "mergedAt": "2026-11-15T10:16:33.000Z",
+      "mergeSha": "6bd9852",
+      "filesChanged": 20,
+      "topFolders": [
+        "data/demo",
+        "app/components",
+        "app/landing"
+      ]
+    },
+    {
+      "number": 22,
+      "branch": "codex/browser-focus-inputs",
+      "title": "Webcam controls",
+      "what": "The webcam controls were placed into the workspace and styled to match.",
+      "chapter": "senses",
+      "areas": [
+        "focus",
+        "site"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T10:21:00.000Z",
+      "mergeSha": "72afca9",
+      "filesChanged": 8,
+      "topFolders": [
+        "app/components",
+        "docs/bolna",
+        "docs"
+      ]
+    },
+    {
+      "number": 24,
+      "branch": "codex/airpods-companion",
+      "title": "AirPods companion",
+      "what": "A small Mac app reads AirPods head motion so turning your head picks the agent.",
+      "chapter": "senses",
+      "areas": [
+        "focus"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T10:21:42.000Z",
+      "mergeSha": "f4a7561",
+      "filesChanged": 17,
+      "topFolders": [
+        "native/airpods",
+        "app/landing",
+        "docs"
+      ]
+    },
+    {
+      "number": 23,
+      "branch": "codex/repository-onboarding-call",
+      "title": "Better listening",
+      "what": "The voice agent listens better and guides a teammate through the repository on a call.",
+      "chapter": "senses",
+      "areas": [
+        "voice",
+        "code"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T10:24:47.000Z",
+      "mergeSha": "5f71410",
+      "filesChanged": 12,
+      "topFolders": [
+        "docs",
+        "app/landing",
+        "docs/bolna"
+      ]
+    },
+    {
+      "number": 26,
+      "branch": "feat/post-call-evaluation",
+      "title": "Call review ledger",
+      "what": "Each real call gets a small private review and an acceptance record.",
+      "chapter": "demo",
+      "areas": [
+        "quality"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T10:25:25.000Z",
+      "mergeSha": "e0d20ce",
+      "filesChanged": 7,
+      "topFolders": [
+        "docs",
+        "lib/eval",
+        "docs/evals"
+      ]
+    },
+    {
+      "number": 25,
+      "branch": "claude/vercel-deploy-person",
+      "title": "Listener avatar & deploy",
+      "what": "An expressive listening avatar on the site, and automatic deployment to Vercel on every merge.",
+      "chapter": "demo",
+      "areas": [
+        "site"
+      ],
+      "authors": [
+        "Harsh Sinha",
+        "Claude"
+      ],
+      "mergedAt": "2026-11-15T10:28:05.000Z",
+      "mergeSha": "11a20b2",
+      "filesChanged": 3,
+      "topFolders": [
+        ".github/workflows",
+        "app/landing",
+        "docs"
+      ]
+    },
+    {
+      "number": 27,
+      "branch": "codex/sprint-final-integration",
+      "title": "Final integration",
+      "what": "The prepared browser demo connects without copying any secret tokens.",
+      "chapter": "demo",
+      "areas": [
+        "voice",
+        "site"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T10:32:59.000Z",
+      "mergeSha": "7acb341",
+      "filesChanged": 10,
+      "topFolders": [
+        "scripts",
+        "app/board",
+        "app/components"
+      ]
+    },
+    {
+      "number": 28,
+      "branch": "codex/demo-env-replay",
+      "title": "Repository guide",
+      "what": "The team workspace follows the camera, and the Bolna agent got a guide to this repository.",
+      "chapter": "demo",
+      "areas": [
+        "focus",
+        "code",
+        "voice"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T10:47:15.000Z",
+      "mergeSha": "c65495f",
+      "filesChanged": 11,
+      "topFolders": [
+        "app/components",
+        "app/zones",
+        "app/api"
+      ]
+    },
+    {
+      "number": 29,
+      "branch": "claude/demo-graph-voice",
+      "title": "Live demo graph",
+      "what": "A live code graph on the site, voice waveforms, and clear 'asking' and 'answering' moments.",
+      "chapter": "demo",
+      "areas": [
+        "site",
+        "code",
+        "voice"
+      ],
+      "authors": [
+        "Claude"
+      ],
+      "mergedAt": "2026-11-15T10:47:59.000Z",
+      "mergeSha": "317a348",
+      "filesChanged": 11,
+      "topFolders": [
+        "docs/images",
+        "app/components",
+        "app/landing"
+      ]
+    },
+    {
+      "number": 30,
+      "branch": "codex/voice-selected-agent",
+      "title": "Voice follows your head",
+      "what": "Continuous voice chat now talks to whichever agent your head is pointing at.",
+      "chapter": "demo",
+      "areas": [
+        "voice",
+        "focus"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T10:50:46.000Z",
+      "mergeSha": "573ad43",
+      "filesChanged": 8,
+      "topFolders": [
+        "docs",
+        "app/api",
+        "app/components"
+      ]
+    },
+    {
+      "number": 31,
+      "branch": "claude/code-graph-explorer",
+      "title": "Code graph explorer",
+      "what": "A searchable code graph page that shows exactly how the Code Navigator found its answer.",
+      "chapter": "demo",
+      "areas": [
+        "code",
+        "site"
+      ],
+      "authors": [
+        "Claude"
+      ],
+      "mergedAt": "2026-11-15T11:02:53.000Z",
+      "mergeSha": "4f22903",
+      "filesChanged": 15,
+      "topFolders": [
+        "data/demo",
+        "scripts",
+        "app/graph"
+      ]
+    },
+    {
+      "number": 32,
+      "branch": "codex/visible-voice-start",
+      "title": "Visible voice start",
+      "what": "The voice start button and microphone state stay visible while head tracking is on.",
+      "chapter": "demo",
+      "areas": [
+        "voice",
+        "focus"
+      ],
+      "authors": [
+        "Harsh Sinha"
+      ],
+      "mergedAt": "2026-11-15T11:03:22.000Z",
+      "mergeSha": "55bbb55",
+      "filesChanged": 6,
+      "topFolders": [
+        "app/components",
+        "docs/evals",
+        "app/zones"
+      ]
+    }
+  ]
+}

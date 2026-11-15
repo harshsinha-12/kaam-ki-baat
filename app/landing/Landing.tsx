@@ -769,7 +769,7 @@ export default function Landing() {
           <GraphSection />
           <Reveal i={3}>
             <p className={s.lede}>Search it in plain words or by name. On 28 development questions, the right function was in the top three 93% of the time (keyword ranking alone: 46%). On 12 questions held out from tuning: 33% versus 17%. <a href={`${REPO}/blob/main/docs/codegraph/EVAL.md`} target="_blank" rel="noreferrer">Read the eval</a>.</p>
-            <div className={s.ctaRow} style={{ opacity: 1, animation: "none" }}><a href="/graph" className={`${s.btn} ${s.primary}`}>Explore the code graph →</a></div>
+            <div className={s.ctaRow} style={{ opacity: 1, animation: "none" }}><a href="/graph" className={`${s.btn} ${s.primary}`}>Explore the code graph →</a><a href="/story" className={s.btn}>How the codebase grew →</a></div>
           </Reveal>
         </section>
 

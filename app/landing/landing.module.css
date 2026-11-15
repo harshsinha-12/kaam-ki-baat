@@ -202,7 +202,7 @@
 .hOn .hUi { border-color: var(--center); box-shadow: 0 18px 44px -20px rgba(245,196,81,.55); }
 .hOn .hNum { color: var(--center); }
 .hUi { height: 220px; border-radius: 18px; transition: border-color .4s var(--out), box-shadow .4s var(--out); padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
-.hDark { background: #12141f; border: 1px solid #23263a; }
+.hDark { background: #050505; border: 1px solid #1d1d1b; }
 .hDashed { background: #15140f; border: 1px dashed #3a3832; justify-content: center; }
 .hPaper { background: #17160f; border: 1px solid #2a2820; }
 .hTop { display: flex; align-items: center; gap: 6px; font-size: 12px; }
