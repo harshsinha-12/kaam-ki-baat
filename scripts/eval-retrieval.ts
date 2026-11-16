@@ -109,7 +109,7 @@ const lines = [
 console.log(lines.join("\n"));
 if (process.argv.includes("--write")) {
   mkdirSync("docs/evals", { recursive: true });
-  const summary = (r: ReturnType<typeof run>) => Object.fromEntries(Object.entries(r.out).map(([m, v]) => [m, Object.fromEntries((Object.keys(v.per[0] ?? {}) as (keyof Scores)[]).map((k) => [k, +mean(v.per.map((p) => p[k])).toFixed(4)]).concat([["latencyMs", +mean(v.ms).toFixed(2)]]))]));
+  const summary = (r: ReturnType<typeof run>) => Object.fromEntries(Object.entries(r.out).map(([m, v]) => [m, Object.fromEntries((Object.keys(v.per[0] ?? {}) as (keyof Scores)[]).map((k): [string, number] => [String(k), +mean(v.per.map((p) => p[k])).toFixed(4)]).concat([["latencyMs", +mean(v.ms).toFixed(2)]]))]));
   writeFileSync("docs/evals/code-search.json", JSON.stringify({ repository: s.repository, sha: s.pinnedSha, dev: summary(dev), heldOut: summary(held), stress: summary(stress), test: summary(test), n: { dev: dev.n, heldOut: held.n, stress: stress.n, test: test.n } }, null, 2) + "\n");
   writeFileSync("docs/evals/code-search.md", lines.join("\n"));
 }

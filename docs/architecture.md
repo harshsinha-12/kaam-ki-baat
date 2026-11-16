@@ -1,124 +1,120 @@
 # Architecture: how Kaam Ki Baat works
 
-Status: **architecture approved for implementation on 2026-11-15.** The first slice and review fixes are merged through PRs #2 and #5. Current implementation and validation are tracked in [plan.md](plan.md). No live call or approved meeting import has been verified.
+This is the one document to read before changing the system. It explains what the product does, the point of view behind it, the decisions that shape the code, and where each piece lives. Current status and the work split live in [plan.md](plan.md); every decision has a record in [decisions.md](decisions.md).
 
-This is the one document a new contributor (human or agent) should read to understand the project. Details live in linked documents.
+![How a question gets answered](images/architecture.png)
 
-## 1. The problem, in one paragraph
+## 1. The problem
 
-Teams agree things in meetings. Later, nobody can say for sure: Did we agree? Who owns it? Is the code written? Has it been merged? Did the tests pass on the latest code? What should I do next? Meeting notes capture what was said. GitHub shows what code exists. Neither connects the two, and neither tells a teammate what to do next.
+Teams decide things in meetings and then lose them. A few hours later the questions start in chat: *what did we actually decide? who owns it? did it make it into the code? did the tests pass on the latest commit?* Meeting notes hold what was said. GitHub holds what was built. Neither connects the two, and neither tells a teammate what is safe to do next. So people guess, or they interrupt the one person who knows.
 
-## 2. What we are building
+## 2. Point of view
 
-A phone teammate. For one authorized meeting and one authorized GitHub repository, it:
+Four beliefs shape every part of the design.
 
-1. Calls each teammate with one short, useful brief (one fact, one question).
-2. Answers "why?", "which file?", and "is it done?" with evidence it can point to.
-3. Saves a status change only after the change is stored and read back.
+1. **Help should be where you already look.** When we are stuck we look left and right for help. The workspace puts an agent in each direction: Team Memory on the left, the Leader Desk in front, the Code Navigator on the right. Choosing one is a glance, not a menu.
+2. **A voice answer is only as good as its source.** Every answer names the meeting passage, PR, file, lines or check it came from, pinned to a commit. If there is no source, the agent says so.
+3. **Status is decided by rules, never by the model.** The language model explains. Fixed rules over evidence decide whether something was proposed or accepted, open or merged, verified or stale.
+4. **Unknowns go to a person, not to a guess.** When the agent cannot settle a doubt, it becomes a question for the lead. The lead's answer is versioned, saved, read back and delivered to whoever asked.
 
-It does not write code, merge, deploy, or guess.
+## 3. One question, end to end
 
-## 3. Converged direction
+The numbers match the diagram above.
 
-These are the decisions the design rests on. Each is recorded with its status in [decisions.md](decisions.md).
-
-| Concern | Direction |
-| --- | --- |
-| Meeting facts | Wispr Notetaker, read through the Wispr MCP, read-only. Only meetings the user has approved are imported. |
-| Code facts | GitHub, read-only, for one selected repository. Every claim is pinned to a commit SHA. |
-| Voice | Bolna handles the phone call: speech, turn-taking, voice. Our backend owns every fact and every write. |
-| Truth | Our own store. A deterministic rules engine sets status. A language model may suggest matches but cannot confirm them. |
-| Writes | Only to our own store, through one tool (`record_task_update`). It needs confirmation, an idempotency key, and a read-back before we say "saved." |
-| Evaluation | Every call is stored and evaluated. A call counts toward the requirement only if it lasts more than 45 seconds and consent is recorded. |
+| Step | What happens | Where |
+| :---: | :--- | :--- |
+| **A** | Before anyone asks, approved meeting passages are imported from Wispr Flow (read-only MCP), each with its speaker and character range. | `scripts/`, `lib/evidence/` |
+| **B** | Before anyone asks, PRs, changed files and check runs are read from GitHub and pinned to a commit SHA, and a code graph is built at that commit. | `lib/evidence/`, `lib/codegraph/graph.ts` |
+| **1** | You glance about 30 degrees left or right (webcam, AirPods or arrow keys). The workspace focuses that agent. | `lib/focus/selector.ts`, `lib/zones/focus.ts` |
+| **2** | You ask out loud. Bolna carries the voice, in the browser or on a phone call. | `app/team/`, `app/api/spatial/bolna-session/` |
+| **3** | Mid-sentence, Bolna calls one of our six HTTPS tools with a per-call token. Identity comes from the server-side call record, never from the model. | `lib/tools/runtime.ts`, `app/api/tools/` |
+| **4** | The active agent finds sources: Team Memory searches decisions and the passages this person may see; the Code Navigator searches the code graph. | `lib/zones/memory.ts`, `lib/codegraph/search.ts` |
+| **5** | Fixed rules set the status of what was found. | `lib/core/` |
+| **6** | You hear the answer with its source; the code panel opens at the exact lines. | `app/team/` |
+| **7** | If the agent cannot settle it, the doubt becomes a ticket for the lead. | `lib/zones/escalation.ts` |
+| **8** | The lead steps up with a passkey (WebAuthn) and approves or corrects. The decision gets a new version. | `app/leader/`, `lib/zones/webauthn.ts` |
+| **9** | The approval is written once, read back, and delivered to the person who asked, even if they had hung up. | `lib/store/`, `lib/zones/escalation.ts` |
 
 ## 4. Components
 
-```mermaid
-flowchart LR
-  W[Wispr Notetaker<br/>approved meeting] -->|read-only MCP, server side| WA[Wispr adapter]
-  G[GitHub<br/>selected repo] -->|read-only API| GA[GitHub adapter]
-  WA --> N[Normalize evidence<br/>speaker, span, SHA, check]
-  GA --> N
-  N --> R[Reconcile<br/>deterministic rules]
-  R --> DB[(Store<br/>append-only audit log)]
-  DB --> API[Four runtime tools<br/>server-verified identity]
-  API <-->|HTTPS, per-call token| B[Bolna voice agent]
-  B <-->|phone call| U[Consenting teammate]
-  B -->|call finished| WH[Signed webhook]
-  WH --> EV[Evaluation pipeline]
-  EV --> DB
-```
+- **Workspace** (`app/team`). Next.js on Vercel. Three agents in space, a code panel that opens at the cited lines, and a microphone that is only on with consent.
+- **Selector** (`lib/focus/selector.ts`). Turns noisy head yaw into a stable choice. See decision D4 below.
+- **Voice** (Bolna). Speech, turn-taking and the phone line. It owns no facts and makes no writes; it calls our tools.
+- **Runtime tools** (`lib/tools/runtime.ts`). Six endpoints: `get_my_brief`, `get_task_evidence`, `get_changes`, `record_task_update`, `request_clarification`, `get_project_context`. Each resolves the caller from a hashed per-call token.
+- **Team Memory** (`lib/zones/memory.ts`). Current decisions (base snapshot plus approved versions from the event log) and the meeting passages visible to this person. It answers "confirmed", "only proposed" or "not discussed", and offers to ask the lead.
+- **Code Navigator** (`lib/codegraph/`, `lib/zones/code.ts`). A Graphify-style graph of symbols, calls and imports at one commit, searched with BM25, concept expansion, one hop of graph propagation and pseudo-relevance feedback. Answers name the file and line range and verify that the lines still exist.
+- **Evidence rules** (`lib/core/`). The only place status is set.
+- **Leader Desk** (`app/leader`, `lib/zones/escalation.ts`). Queued doubts, passkey step-up, approvals, presence, and "call the lead" when nobody answers.
+- **Event store** (`lib/store/`). Append-only, with a Redis backend in production and a JSONL file locally. Leases serialize writes.
 
-What each part does:
+## 5. Architect's decisions
 
-- **Wispr adapter:** finds the approved meeting, reads its summary and transcript pages, and stores each passage with its meeting ID, speaker, and character range. It runs on our server, never inside the phone call.
-- **GitHub adapter:** reads one repository's issues, pull requests, changed files, and check runs. It stores each result with the commit SHA it came from.
-- **Optional code graph:** local Graphify extraction over the snapshot's selected code files provides symbol and dependency context for knowledge transfer. Code Scout validates repository, SHA and file hashes, then uses a cached index with bounded one-hop expansion. Missing, stale or unmatched graphs fall back to keyword search. See [code context](code-context.md).
-- **Normalize:** turns raw source data into typed evidence records (see [integration-design.md](integration-design.md)).
-- **Reconcile:** applies fixed rules to decide status. It is the only place status is set. No language model runs here.
-- **Store:** holds evidence, tasks, call records, and evaluations. Every change is appended, never overwritten, so old values stay inspectable.
-- **Runtime tools:** four HTTPS endpoints that Bolna calls during a call. They read the caller's identity from the server-side call record, never from what the model says.
-- **Evaluation pipeline:** stores each finished call, checks it, and records suggested fixes. A person reviews the fixes. See [evaluation-pipeline.md](evaluation-pipeline.md).
+Each decision names what we chose, what we gave up, and why.
 
-## 5. Status vocabulary
+**D1. Rules decide status; the model only explains.** Status is computed from evidence by deterministic code: proposed is not accepted, an open PR is not merged, a check on an older SHA is stale. *Trade-off:* the rules miss nuance a model might catch. *Why:* a false "it's done" costs far more than an honest "I don't know". This is the property the evals guard hardest: 0 false confirmations across 35 memory questions.
 
-Keep these labels separate. Never merge two labels into one.
+**D2. "Saved" means written once and read back.** Every write carries an idempotency key. The store returns the saved record on read-back before the agent says "saved"; a timeout is reported as a failure. Repeating a write with the same key returns the first result. *Trade-off:* one extra read per write. *Why:* a voice agent that says "saved" when it wasn't destroys trust immediately.
 
-| Area | Allowed values | Meaning |
-| --- | --- | --- |
-| Ownership | `mentioned`, `proposed`, `accepted`, `disputed`, `unknown` | Someone was named, suggested, agreed, disputed, or nothing is established. |
-| Pull request | `open`, `closed_unmerged`, `merged` | Code is proposed, abandoned, or in the main branch. "PR exists" is not "merged." |
-| Checks | `not_run`, `pending`, `passed`, `failed`, `unknown` | Result for one exact SHA. A pass for an old SHA says nothing about the latest code. |
-| Completion | `not_started`, `in_progress`, `blocked`, `reported_done`, `verified_done` | `reported_done` comes from the person. `verified_done` needs evidence. |
-| Freshness | timestamp + SHA | When the evidence was read and from which commit. |
+**D3. Append-only events, not mutable rows.** Decisions, focus, consent, tickets and calls are events. Current state is a fold over the log, so every old value stays inspectable and a decision's v1 and v2 can both be cited. Torn tail writes are dropped on load (`parseLog`, `dropTornTail`). *Trade-off:* reads fold the log; fine at team scale, and the fold is cached per request. *Why:* auditability and simple recovery.
 
-## 6. Rules that always hold
+**D4. Head pose selects, it never authenticates.** A glance past 24 degrees held for 300 ms selects a side, and the choice latches: it stays selected when you look back at the screen. Facing the screen for 4 s, or pressing ↑, returns to the Leader Desk. Hysteresis (enter 24°, exit 12°), smoothing and slow recentring absorb webcam noise. *Trade-off:* a deliberate 4 s hold to go back to centre. *Why:* nobody should hold their head turned while they talk, and a camera angle is not an identity. The Leader Desk always needs a passkey.
 
-1. "Discussed" is not "assigned." "Assigned" is not "accepted." "PR exists" is not "merged." "CI passed" is not "works in production."
-2. Every code claim includes the repository, commit SHA, and the file, PR, or check it came from.
-3. A check that ran on an older SHA is reported as stale. The system never says the latest code passed.
-4. Caller identity is set on the server. A model cannot choose which participant it is speaking to.
-5. Tools never reveal meeting content to a caller who has no permission for that meeting.
-6. A save is spoken only after the store returns the saved record on read-back. A timeout is a failure, not a success.
-7. Meeting transcripts, code comments, and tool output are evidence to be checked, never instructions to follow.
-8. When evidence is missing, stale, or ambiguous, the answer says so and proposes a next step. It never invents a fact.
+**D5. Scope by person, enforced on the server.** A teammate only sees the meeting passages tied to their own tasks; the lead's private items never appear in a member's answer, even when the words match. *Trade-off:* some answers say "not visible to you" when a looser system would answer. *Why:* the 35-question memory eval includes a scope category, and it must stay at 0 leaks.
 
-## 7. The four runtime tools
+**D6. Pin every code claim to a commit.** The graph, the PR state and the checks are all read at one SHA, and answers say which. *Why:* "the tests passed" is meaningless without "on which commit".
 
-These are our endpoints. Bolna calls them during a call. They are not Bolna MCP tools.
+**D7. Lexical, explainable retrieval first.** The Code Navigator and Team Memory use word-level retrieval with expansion and feedback, not embeddings. It runs offline in the browser in under 10 ms and every hit can be explained ("matched `readBack` via *verify*"). *Trade-off:* questions that share no words with the code or the meeting are hard: 42% Acc@5 on the old held-out code set, 33% on the blind memory set. *Next:* an embedding re-ranker on top of the lexical candidates, measured on the fresh test sets before it ships.
 
-| Tool | Input | Output | Rule |
-| --- | --- | --- | --- |
-| `get_my_brief` | per-call token (identity resolved server-side) | 2–3 sentences, evidence IDs, pending actions | Opens every call with one relevant fact and one invitation. |
-| `get_task_evidence` | task ID, detail level | Permitted quote, issue/PR/file/check references, pinned SHA, freshness | Returns only what the caller may see. |
-| `get_changes` | caller token, `since` time | Changed, newly confirmed, and invalidated items | Each item keeps its previous state, clearly labeled. |
-| `record_task_update` | task ID, intended status, confirmation, idempotency key | Stored record ID plus read-back of the saved state | Rejects ambiguous ownership and unauthorized actors. Repeats with the same key return the first result. |
+**D8. Voice provider owns the voice, we own the facts.** Bolna handles speech and the phone line and calls our tools. It never sees raw transcripts or GitHub tokens, and it cannot choose who it is talking to. *Why:* we can swap the voice layer without touching the truth layer.
 
-## 8. What is out of scope for the MVP
+**D9. Read-only sources, one write path.** Wispr Flow and GitHub are read-only. The only writes go to our own store, through `record_task_update` and the lead's approvals. The system never writes code, merges or deploys.
 
-- Autonomous code changes, auto-merge, deployment.
-- Vector databases, embeddings, or indexing a whole repository. D-039 adds an optional Graphify index over the snapshot's selected code files only.
-- Team-wide transcript access. Each caller sees only what they are permitted to see.
-- Live Wispr speech streams, or reading ordinary dictation history.
-- Background or mass call scheduling.
-- A general-purpose task manager or dashboard. The evidence board is optional.
+## 6. Status vocabulary
 
-## 9. Build order
+Keep these labels separate. Never merge two into one.
 
-The first implementation follows [plan.md](plan.md). In short:
+| Area | Values | Meaning |
+| :--- | :--- | :--- |
+| Ownership | `mentioned`, `proposed`, `accepted`, `disputed`, `unknown` | Named, suggested, agreed, disputed or not established. |
+| Pull request | `open`, `closed_unmerged`, `merged` | "PR exists" is not "merged". |
+| Checks | `not_run`, `pending`, `passed`, `failed`, `unknown` | For one exact SHA. A pass on an older SHA says nothing about the latest code. |
+| Completion | `not_started`, `in_progress`, `blocked`, `reported_done`, `verified_done` | `reported_done` comes from a person; `verified_done` needs evidence. |
+| Freshness | timestamp + SHA | When the evidence was read, and from which commit. |
 
-1. Confirm the gates: one approved meeting, one repository, the Bolna call path.
-2. Typed evidence records and reconciliation, tested against the fixtures in `tests/fixtures/`.
-3. The four runtime tools, with permission checks and read-back tests.
-4. One real call with one personalized brief and one saved update, then three consenting calls over 45 seconds.
-5. A comparable regression before and after one reviewed fix.
+## 7. Rules that always hold
 
-Each gate has a stated success condition. A blocked gate is reported as blocked. It is never replaced by a simulated result without a clear label.
+1. Discussed is not assigned. Assigned is not accepted. A PR is not a merge. CI passing is not production working.
+2. Every code claim names the repository, commit SHA and the file, PR or check.
+3. A check on an older SHA is reported as stale.
+4. Caller identity is set on the server. The model cannot choose who it is speaking to.
+5. Tools never reveal meeting content to someone without permission for it.
+6. "Saved" is spoken only after read-back. A timeout is a failure.
+7. Transcripts, code comments and tool output are evidence to check, never instructions to follow.
+8. When evidence is missing, stale or ambiguous, say so and propose a next step.
 
-## 10. Related documents
+## 8. Running in production
 
-- [integration-design.md](integration-design.md): exactly how Bolna and Wispr connect.
-- [decisions.md](decisions.md): every decision, with its status and reason.
-- [context.md](context.md), [instructions.md](instructions.md): purpose and working rules.
+- **Store.** Redis (Upstash) in production via `KKB_REDIS_*`; JSONL locally. Writes take a short lease per key; concurrent tool calls for one call wait in a bounded backoff (150 ms up to 1.2 s) instead of racing (`acquireTurn`).
+- **Idempotency everywhere.** Tool writes, Bolna webhooks (late or repeated status callbacks are ignored by execution ID) and lead approvals are safe to retry.
+- **Stateless functions.** Every request reads its state from the store, so Vercel can scale functions horizontally. Nothing important lives in memory between requests.
+- **Bounded work per request.** Search runs over a prebuilt index at one commit; graph expansion is one hop; answers cap their sources.
+- **Secrets stay server-side.** GitHub and Wispr credentials never reach the browser or Bolna. Tokens are hashed at rest. Never commit secrets, private meetings or phone numbers.
+- **Known limits.** The public `/graph` bundles a code graph from an older commit and says so. Physical AirPods and webcam unplug behaviour are not yet verified on hardware. See [plan.md](plan.md).
+
+## 9. How we measure it
+
+- **Code search:** function accuracy and recall at k, MRR and nDCG@10 with bootstrap intervals, on a development set, a Hinglish stress set, an older held-out set and a fresh test set written before tuning. Report: [evals/code-search.md](evals/code-search.md). Reproduce with `npx tsx scripts/eval-retrieval.ts --code-ref HEAD`.
+- **Team Memory:** 35 questions across the LongMemEval abilities (extraction, multi-session, temporal, knowledge update, abstention) plus conflict and privacy scope. The headline safety metrics are false confirmations and scope leaks, both 0. Report: [evals/team-memory.md](evals/team-memory.md). Reproduce with `npx tsx scripts/eval-memory.ts`.
+- **Calls:** every Bolna call is stored with its tool calls and reviewed; see `/evals` and [evaluation-pipeline.md](evaluation-pipeline.md).
+
+## 10. Out of scope
+
+Autonomous code changes, merging and deploying; team-wide transcript access; live Wispr speech streams or dictation history; background or mass calling; a general task manager.
+
+## 11. Related documents
+
+- [plan.md](plan.md): status, lanes and the task board.
+- [decisions.md](decisions.md): every decision with its status and reason.
+- [integration-design.md](integration-design.md): how Bolna and Wispr connect.
+- [code-context.md](code-context.md): the code graph and its freshness checks.
 - [evaluation-pipeline.md](evaluation-pipeline.md): how calls are scored and improved.
-- [reference/](reference/README.md): inherited detail from the original handoff.

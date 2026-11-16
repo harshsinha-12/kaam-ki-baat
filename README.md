@@ -2,157 +2,128 @@
 
 **Meeting mein bola. Repo mein bana?**
 
-Your team's conversations are full of decisions. Your repository is full of changes. **Kaam Ki Baat connects the two—then helps you find what matters, who can confirm it, and where to act.**
+A voice teammate for engineering teams. Glance left to ask what the team decided, face the screen to reach the lead, glance right to land on the exact line of code. Every answer comes with its source, and nothing is called "saved" until it has been read back.
 
-[Architecture](docs/architecture.md) · [How it works](#how-it-works) · [Run locally](#run-locally) · [Deployment checklist](docs/deployment-verification.md) · [Build status](docs/plan.md)
+[Live site](https://kaam-ki-baat-xi.vercel.app) · [Workspace](https://kaam-ki-baat-xi.vercel.app/team) · [Architecture](docs/architecture.md) · [Evals](#evals) · [Run locally](#run-locally)
 
-> **Hosting status:** The Vercel **Own Track** account has an older project named `kaam-ki-baat` linked to **a different GitHub origin** (`charan-rathore/kaam-ki-baat`). The public site for **this** repository (`harshsinha-12/kaam-ki-baat`) is **not yet verified**. We will add the live-demo link only after its production commit and public accessibility match. See [deployment status and setup](docs/deployment-verification.md). Never treat an illustrated landing-page conversation as proof of a completed Bolna call.
+![How a question gets answered: 1 glance, 2 ask, 3 tool call, 4 find, 5 check, 6 answer; 7 doubt, 8 approve, 9 read back; A meeting quotes from Wispr Flow and B code and CI from GitHub are synced before you ask](docs/images/architecture.png)
 
-![The product story: conversation → project evidence → action](docs/images/demo-graph.png)
+Follow the numbers. **1–6** you ask and hear the answer with its source. **7–9** if the agent is unsure, the lead decides and it is saved and read back. **A** and **B** are synced before you ask.
 
-**Demo film (1:15):** [docs/demo/kaam-ki-baat-demo-75s.mp4](docs/demo/kaam-ki-baat-demo-75s.mp4) · [subtitles](docs/demo/kaam-ki-baat-demo-75s.srt) · [source](docs/demo/video-source/)
+## The problem
 
-## The experience
+Teams decide things in meetings and then lose them. Hours later the questions start in Slack: *what did we actually decide? who owns it? did it make it into the code?* The person who knows is in another meeting, so people guess, and guesses ship.
 
-Three agents sit around a teammate. Choose one by a deliberate head turn, with the webcam, or by clicking a card. **Head movement selects an agent; it never authenticates a person or grants permission.**
+<img src="docs/media/slack.gif" width="49%" alt="Questions piling up in Slack after a sprint sync"> <img src="docs/media/problem.gif" width="49%" alt="68% lack focus time, 57% of the day goes to communication, 55% say next steps are unclear, 61% of developers search 30+ minutes a day">
 
-| Direction | Agent | Why you'd use it |
+68% of people say they lack uninterrupted focus time, 57% of the workday goes to meetings, chat and email, and 55% say next steps after a meeting are unclear ([Microsoft Work Trend Index 2023](https://www.microsoft.com/en-us/worklab/work-trend-index/will-ai-fix-work)). 61% of developers spend more than 30 minutes a day searching for answers ([Stack Overflow Developer Survey 2024](https://survey.stackoverflow.co/2024/professional-developers)).
+
+## How it feels
+
+When we are stuck, we look left and right for help. Kaam Ki Baat puts an agent in each direction.
+
+![Turning left wakes Team Memory; the lead approves from the centre; turning right opens the Code Navigator](docs/media/agents.gif)
+
+| Look | Agent | Ask it |
 | :--- | :--- | :--- |
-| **← Left** | **Team Memory** | “What did we decide?” See approved meeting evidence, not invented assignments. Escalate unanswered questions to the leader. |
-| **↑ Center** | **Leader Desk** | “Can we confirm this?” Leader-only, role-checked decisions, conditional approvals and source-linked changes. |
-| **Right →** | **Code Navigator** | “Where does it live?” See the repository, pinned SHA, relevant file, function, lines and regression test. |
+| ← left | **Team Memory** | "What did we decide?" It answers from approved meeting passages, says when something was only proposed, and offers to ask the lead instead of guessing. |
+| front | **Leader Desk** | Lead only, behind a passkey. Approves or corrects a decision; the new version is written once and read back. |
+| right → | **Code Navigator** | "Where is that in the code?" It walks the repo's code graph to the file, the lines and the test, pinned to a commit. |
 
-![A teammate asks a question and gets an evidence-linked response](docs/images/hero-asking.png)
-![A code-grounded answer with its source](docs/images/hero-answer.png)
+**Glance and latch.** A natural 30 to 40 degree glance selects a side within about a third of a second, and the choice stays selected when you look back at the screen, so you never have to hold your head turned while you talk. Facing the screen for four seconds, or pressing ↑, returns to the Leader Desk. Head pose only *selects* an agent; it never proves who you are. Webcam, native AirPods motion and the arrow keys all drive the same selector ([`lib/focus/selector.ts`](lib/focus/selector.ts), mirrored in [`native/airpods`](native/airpods)).
 
-### Gestures and controls
+## How a question flows
 
-| Input | Behavior | Requirement |
-| :--- | :--- | :--- |
-| Look or turn **left** | Select Team Memory | Calibrated webcam or compatible native AirPods motion |
-| Face **front** | Select Leader Desk | Leader account required for privileged actions; head pose is **not** identity |
-| Look or turn **right** | Select Code Navigator | Repository access required for code evidence |
-| **A** / left arrow, **↑**, **L** / right arrow, or click | Select an agent manually | Works without camera or AirPods |
-| Speak | Ask the active agent a question | Explicit audio/microphone consent and a configured voice runtime |
+![From what you said, to the line that shipped](docs/media/flow.gif)
 
-AirPods orientation uses Apple's native Core Motion APIs and compatible hardware; ordinary browser Bluetooth audio does **not** expose AirPods head tracking. Webcam selection and a manual fallback are separate paths. Physical AirPods verification is tracked in [the build plan](docs/plan.md).
+1. **Wispr Flow** supplies reviewed, consented meeting passages through a read-only import. Each passage keeps its speaker and character range.
+2. **GitHub** supplies PRs, changed files and check runs, each pinned to a commit SHA, plus a code graph of the repository (454 nodes, 1,277 edges at the indexed commit).
+3. **Fixed rules decide status**, not the model: proposed is not accepted, an open PR is not merged, a check on an older commit is stale. The language model only explains.
+4. **Bolna** carries the voice, in the browser or on a phone call, and calls six authenticated HTTPS tools mid-sentence ([`lib/tools/runtime.ts`](lib/tools/runtime.ts)).
+5. Unknown answers become **questions for the lead**. The approved answer comes back with its source, even if you hung up in the meantime.
 
-The landing page contains an **illustrative, animated experience**, distinct from real phone or browser-voice sessions. Animation respects `prefers-reduced-motion` in the source. Run the [visual QA steps](docs/deployment-verification.md#animation-and-interaction-qa) before claiming that every animation renders on a deployed browser.
+<img src="docs/media/code-walk.gif" width="100%" alt="Code Navigator walks from the decision to persistVerifiedUpdate and highlights the read-back lines in GitHub, then runs the tests">
 
-## How it works
+| Team Memory | Leader Desk | Code Navigator |
+| :---: | :---: | :---: |
+| ![Team Memory says the freeze time was only proposed](docs/media/team-memory.png) | ![The lead approves 3:45 and Bolna confirms with the team](docs/media/leader-desk.png) | ![Code graph walk and the highlighted read-back lines](docs/media/code-navigator.png) |
 
-```text
-ONE authorized Wispr meeting               ONE authorized GitHub repository
-       │ read-only MCP                          │ PRs · commits · checks
-       └────────────────────┬───────────────────┘
-                            ▼
-             Permissioned evidence engine
-        meeting intent ≠ accepted responsibility
-          open PR ≠ merged · old CI ≠ verified
-                            ▼
-          Versioned task and evidence state
-                  ┌─────────┼───────────┐
-                  ▼         ▼           ▼
-             Team Memory  Leader Desk  Code Navigator
-                  └─────────┼───────────┘
-                            ▼
-            Bolna voice + protected HTTP tools
-                            ▼
-             Verified read-back and audit
-```
+*Product visuals are frames from the launch film, rendered from the same flows the app implements; demo conversations are fictional.*
 
-[Detailed architecture](docs/architecture.md) · [Wispr/Bolna integration boundaries](docs/integration-design.md) · [Spatial live-context design](docs/spatial-live-context-v2.md)
+## Evals
 
-![Code graph: trace a relevant function and its dependencies](docs/images/code-graph.png)
+Numbers from our own repository and calls, built by the team that wrote the code, so read them as a regression guard rather than a public benchmark. Full reports: [code search](docs/evals/code-search.md), [Team Memory](docs/evals/team-memory.md).
 
-### What the integrations actually do
+![Eval charts](docs/media/evals.gif)
 
-- **Wispr Flow** supplies **reviewed, consented meeting context** through read-only MCP. Team Memory searches permitted imported meetings, with exact passage citations and a meeting selector. See [selected-meeting import and access](docs/wispr-meetings.md). The documented MCP is not a continuous per-device microphone stream.
-- **GitHub** provides repository evidence at a pinned commit. PR merge state and CI check SHA are evaluated separately.
-- **Bolna** powers voice sessions; its management MCP is separate from the application's protected runtime HTTP tools. See [agent setup](docs/bolna/agent.md).
-- **Spatial inputs** choose a logical agent. Native AirPods head tracking, webcam-based head pose and keyboard/mouse controls are separate providers.
-- **Our evidence engine** records approved revisions and verified task updates. It preserves a distinction between a tool completing work and the result actually being communicated.
+**Code search (Code Navigator).** Metrics follow repository-level retrieval practice: function accuracy and recall at k, MRR and nDCG@10, with bootstrap 95% intervals ([CoIR](https://arxiv.org/abs/2407.02883) and the graded nDCG@10 protocol of CoREB). The method is lexical-semantic: BM25 over symbols, concept expansion, one hop of graph propagation and pseudo-relevance feedback. It runs offline in the browser with no embeddings.
 
-![Understanding a spoken request, linking evidence and responding](docs/images/how-it-hears.png)
+| Question set | n | Keyword (BM25) Acc@5 | Ours Acc@5 | Ours MRR@10 | Ours nDCG@10 |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| Development (used to tune) | 28 | 46% | 100% | 0.68 | 0.72 |
+| Hinglish and colloquial stress | 14 | 36% | 71% | 0.40 | 0.44 |
+| Earlier held-out | 12 | 17% | 42% | 0.20 | 0.25 |
+| **Fresh test, written before this round of tuning** | 22 | 50% | **77%** | 0.45 | 0.55 |
 
-## Product walkthrough
+On the fresh test set the change in this round moved Acc@5 from 64% to 77% and nDCG@10 from 0.51 to 0.55. The held-out gap shows where lexical search stops: questions that share no words with the code. One caveat: the same people wrote the test questions and the search changes.
 
-The source-based scenario is intentionally straightforward:
+**Team Memory.** Question types follow the five long-term memory abilities in [LongMemEval](https://arxiv.org/abs/2410.10813) (ICLR 2025): extraction, multi-session, temporal reasoning, knowledge updates and abstention. A conflict category follows [MemoryAgentBench](https://openreview.net/pdf?id=ea2b7a90e40507191ac122fb5aabc382faa44318) (ICLR 2026), and a privacy-scope category checks per-person visibility. The safety numbers matter most: across 35 questions there were **0 false confirmations and 0 out-of-scope passages**. Abstention, conflict, scope, knowledge-update and Hinglish questions are all correct; reworded questions that share no words with the meeting reach 75% on the dev set and **33% on a blind set**, which is the honest limit of word matching and the reason the next step is embedding re-ranking.
 
-1. A teammate asks, **“Code freeze kab hai—3:30 ya 3:45?”** Team Memory should distinguish a *proposal* from a *confirmed decision*.
-2. When no confirmed answer exists, the teammate can request leader clarification rather than receiving a guess.
-3. An authenticated leader reviews and approves an exact answer, including conditions. A successful save requires a persisted read-back.
-4. The teammate can ask where the relevant implementation lives. Code Navigator returns a SHA-pinned file, function and test.
+**Tests.** 148 to 223 passing tests across the hackathon day on GitHub Actions with zero failures, now 230+ including torn-write recovery, concurrent tool calls and the glance-and-latch selector.
 
-**Important:** The landing-page walkthrough uses illustrative example data. Actual Wispr imports, leader escalations, Bolna tool execution, hardware input and testing evidence are tracked individually in [docs/plan.md](docs/plan.md) and [docs/integrations.md](docs/integrations.md). A screenshot is not proof of a live external integration.
+**Calls.** Seven real Bolna attempts, each with a written review: three phone calls (48 s, 94 s, 50 s; the 94 s call ended with a voice-provider error) and four browser attempts. See [`/evals`](https://kaam-ki-baat-xi.vercel.app/evals).
 
-### Evidence, not just transcripts
+## What makes it different
 
-![Why this problem matters](docs/images/problem-stats.png)
+- **Where you look is the interface.** Three agents are placed in space, like teammates around a desk. Choosing one is a glance, not a menu.
+- **Proposed is not decided.** Status comes from fixed rules over evidence. The model is never allowed to promote "someone said maybe" into "confirmed".
+- **Saved means read back.** Every write is idempotent, written once and read back before the agent says "saved". A timeout is a failure.
+- **Scoped by person.** Each teammate only sees the meeting passages tied to their own tasks; the lead's private items never leak into a member's answer.
+- **The lead stays in the loop.** Unknowns become tickets for the lead, approved behind a passkey, versioned, and delivered back with their source.
 
-A practical team problem: decisions are spoken once, then reconstructed across notes, issues, code reviews and chat. When sources disagree, the cost is repeated questions and incorrect assumptions. Kaam Ki Baat is designed to show **what was proposed, what was approved, what was implemented and what was verified**—without treating any of those states as interchangeable.
-
-## Explore the repository
-
-| Area | What is here |
-| :--- | :--- |
-| [`app/landing/`](app/landing) | Storytelling landing page and motion design |
-| [`app/team/`](app/team) | Team Memory experience |
-| [`app/leader/`](app/leader) | Leader review and approval interface |
-| [`app/graph/`](app/graph) | Interactive code graph |
-| [`app/story/`](app/story) | A visual history of the repository's work |
-| [`app/components/`](app/components) | Agent selection, spatial controls, code focus and visual components |
-| [`lib/`](lib) | Evidence, authorization, specialist routing and tool contracts |
-| [`native/airpods/`](native/airpods) | Native AirPods companion and hardware test instructions |
-| [`tests/`](tests) | Deterministic and integration-oriented regression tests |
-| [`docs/plan.md`](docs/plan.md) | Single source of truth for current project status |
-
-![Repository knowledge linked to relevant code](docs/images/demo-graph.png)
+Read the full reasoning, decisions and trade-offs in [docs/architecture.md](docs/architecture.md).
 
 ## Run locally
 
-**Requirements:** Node.js 20 or later and npm. Clone this repository, then:
+Requires Node.js 20 or later.
 
 ```bash
 git clone https://github.com/harshsinha-12/kaam-ki-baat.git
 cd kaam-ki-baat
 npm ci
+npm test            # 230+ deterministic tests
 npm run typecheck
-npm test
-npm run build
-npm run dev
+npm run dev         # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The public landing page, `/story` and `/graph` can render without private integration credentials. For protected team/leader actions and Bolna calls, configure server-side settings according to [`.env.example`](.env.example) and [the workspace setup guide](docs/workspace-setup.md). Never commit secrets, private meetings or phone numbers.
+The landing page, `/graph`, `/story` and `/evals` render without private credentials. Team and leader actions and Bolna calls need the server-side settings in [`.env.example`](.env.example) and [the workspace setup guide](docs/workspace-setup.md). Never commit secrets, private meetings or phone numbers.
 
-## Publish on Vercel
-
-**Target:** Vercel team **Own Track**, source repository **`harshsinha-12/kaam-ki-baat`**, branch **`main`**.
-
-The existing Own Track project uses a different GitHub origin; don't reuse it as though it contains this repository. First grant the Vercel GitHub App access to `harshsinha-12/kaam-ki-baat`, then create a project from that repository. See [deployment setup and public-access verification](docs/deployment-verification.md).
-
-After a deployment is created, verify its source using:
+Reproduce the evals:
 
 ```bash
-npm run deploy:check -- https://YOUR-PROJECT.vercel.app <expected-full-commit-sha>
+npx tsx scripts/eval-retrieval.ts --code-ref HEAD   # code search, all four question sets
+npx tsx scripts/eval-memory.ts                      # Team Memory
 ```
 
-This checks public routes and `/api/deployment-info` for commit parity. It is **not** a visual animation test; perform the browser QA below as well.
+## Repository map
 
-[Deploy your own copy](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fharshsinha-12%2Fkaam-ki-baat&project-name=kaam-ki-baat&repository-name=kaam-ki-baat) · [Own Track deployment instructions](docs/deployment-verification.md)
+| Path | What lives there |
+| :--- | :--- |
+| [`app/landing/`](app/landing) | Landing page: hook, problem in numbers, agents, evals |
+| [`app/team/`](app/team) | The workspace: three agents, webcam and keyboard selection, code panel |
+| [`app/leader/`](app/leader) | Leader Desk: passkey step-up, approvals |
+| [`app/api/`](app/api) | Zones, Bolna tools, call webhooks, evals, health |
+| [`lib/zones/`](lib/zones) | Focus, escalation, Team Memory, identity, passkeys |
+| [`lib/codegraph/`](lib/codegraph) | Code graph, semantic search, first-principles explanations |
+| [`lib/core/`](lib/core) | Evidence rules, verified persistence, conversation ledger |
+| [`lib/store/`](lib/store) | Append-only event store, leases, Redis backend |
+| [`lib/focus/`](lib/focus) | Head-turn selector and webcam pose |
+| [`native/airpods/`](native/airpods) | Native AirPods motion companion |
+| [`scripts/`](scripts) | Snapshot builders, eval harnesses, call tooling |
+| [`docs/plan.md`](docs/plan.md) | Current status and work split |
 
-## Demo and evaluation
+## Built with
 
-The hackathon demo is distinct from a qualifying real voice call. The evaluation plan requires three consenting calls **each strictly over 45 seconds** and a documented improvement supported by actual execution logs. We do not substitute fictional landing-page transcripts or motion demos for real call evidence.
+[Wispr Flow](https://wisprflow.ai) for meeting context, [Bolna](https://bolna.ai) for voice, GitHub for code evidence, Next.js on Vercel. Built at **Build Out Loud**, the voice-only hackathon by Wispr Flow and Bolna (Bengaluru, 15 November 2026). The spatial interaction idea is inspired by [Air Agents](https://github.com/ahmedfahim21/Spatial-Agents).
 
-[Competition requirements](docs/competition.md) · [Evaluation pipeline](docs/evaluation-pipeline.md) · [Demo notes](docs/demo/meeting-notes.md)
-
-## Building with Claude and Codex
-
-Read [`AGENTS.md`](AGENTS.md) and [`CLAUDE.md`](CLAUDE.md) before changing code. Keep [`docs/plan.md`](docs/plan.md) updated after meaningful milestones. Make small, reviewable pull requests; don't claim a provider works without a real observed request.
-
-## Credits
-
-Inspired by the **spatial interaction philosophy** of [Air Agents](https://github.com/ahmedfahim21/Spatial-Agents): specialized agents selected through deliberate head motion, with shared context. Our application uses its own permissioned evidence engine, Wispr and Bolna integrations, and GitHub code navigation.
-
-**Kaam Ki Baat** — *Meeting mein bola. Repo mein bana?*
+Agents working on this repo: read [`AGENTS.md`](AGENTS.md) and keep [`docs/plan.md`](docs/plan.md) current.
