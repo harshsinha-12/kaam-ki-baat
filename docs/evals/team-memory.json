@@ -1,0 +1,93 @@
+{
+  "overall": {
+    "n": 35,
+    "kind": 0.8571428571428571,
+    "decision": 0.8148148148148148,
+    "falseConfirm": 0,
+    "leaks": 0,
+    "abstainOk": 1
+  },
+  "byType": [
+    {
+      "type": "extraction",
+      "n": 5,
+      "kind": 1,
+      "decision": 1,
+      "recall": 1,
+      "falseConfirm": 0,
+      "leaks": 0
+    },
+    {
+      "type": "conflict",
+      "n": 3,
+      "kind": 1,
+      "decision": 1,
+      "recall": null,
+      "falseConfirm": 0,
+      "leaks": 0
+    },
+    {
+      "type": "abstention",
+      "n": 4,
+      "kind": 1,
+      "decision": null,
+      "recall": null,
+      "falseConfirm": 0,
+      "leaks": 0
+    },
+    {
+      "type": "scope",
+      "n": 3,
+      "kind": 1,
+      "decision": null,
+      "recall": null,
+      "falseConfirm": 0,
+      "leaks": 0
+    },
+    {
+      "type": "temporal",
+      "n": 2,
+      "kind": 1,
+      "decision": 1,
+      "recall": 1,
+      "falseConfirm": 0,
+      "leaks": 0
+    },
+    {
+      "type": "hinglish",
+      "n": 6,
+      "kind": 1,
+      "decision": 1,
+      "recall": null,
+      "falseConfirm": 0,
+      "leaks": 0
+    },
+    {
+      "type": "paraphrase-dev",
+      "n": 4,
+      "kind": 0.75,
+      "decision": 0.75,
+      "recall": null,
+      "falseConfirm": 0,
+      "leaks": 0
+    },
+    {
+      "type": "paraphrase-test",
+      "n": 6,
+      "kind": 0.3333333333333333,
+      "decision": 0.3333333333333333,
+      "recall": null,
+      "falseConfirm": 0,
+      "leaks": 0
+    },
+    {
+      "type": "update",
+      "n": 2,
+      "kind": 1,
+      "decision": 1,
+      "recall": null,
+      "falseConfirm": 0,
+      "leaks": 0
+    }
+  ]
+}
