@@ -5,19 +5,26 @@
 // Pipeline per sample: calibrate neutral -> EMA filter -> zone with hysteresis
 // -> dwell before emitting a selection -> slow re-centering when idle.
 // It only ever emits SELECTIONS. Activation is a separate explicit gesture.
+//
+// Glance and latch: a 30 to 40 degree glance to a side selects that agent within
+// about half a second, and the choice STAYS when you look back at the screen, so
+// you can activate and talk without holding your head turned. Leader Desk (centre)
+// is chosen by keeping your head at the screen for `centerHoldMs`, or explicitly
+// with the up arrow / a click, which the UI handles.
 
 export type SelectorZone = "team_memory" | "leader_desk" | "code_navigator";
 
 export interface SelectorConfig {
   enterDeg: number; // |yaw| beyond this enters a side zone
   exitDeg: number; // |yaw| must fall below this to leave it (hysteresis, < enterDeg)
-  dwellMs: number; // must stay in a zone this long before selecting
+  dwellMs: number; // must stay in a side zone this long before selecting it
+  centerHoldMs: number; // facing the screen this long returns the selection to Leader Desk
   alpha: number; // EMA smoothing 0..1 (higher = less smoothing)
   maxGapMs: number; // samples further apart than this = tracking lost
   recenterPerSec: number; // fraction of drift absorbed per second while centered
 }
 
-export const DEFAULT_SELECTOR: SelectorConfig = { enterDeg: 22, exitDeg: 12, dwellMs: 450, alpha: 0.35, maxGapMs: 500, recenterPerSec: 0.05 };
+export const DEFAULT_SELECTOR: SelectorConfig = { enterDeg: 24, exitDeg: 12, dwellMs: 300, centerHoldMs: 4000, alpha: 0.35, maxGapMs: 500, recenterPerSec: 0.05 };
 
 export interface SelectorState {
   neutralYaw: number | null;
@@ -76,7 +83,10 @@ export function step(state: SelectorState, yawDeg: number | null, at: number, cf
   }
 
   let emit: SelectorZone | null = null;
-  if (at - next.candidateSince >= cfg.dwellMs && next.selected !== next.candidate) {
+  // Sides select after a short dwell; the centre needs a long hold so looking
+  // back at the screen does not undo a glance.
+  const needed = next.candidate === "leader_desk" && next.selected !== null ? cfg.centerHoldMs : cfg.dwellMs;
+  if (at - next.candidateSince >= needed && next.selected !== next.candidate) {
     next = { ...next, selected: next.candidate };
     emit = next.candidate;
   }

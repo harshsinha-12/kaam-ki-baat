@@ -81,13 +81,16 @@ public struct MotionSelector: Sendable {
         case .teamMemory where filteredYaw >= 12: zone = .teamMemory
         case .codeNavigator where filteredYaw <= -12: zone = .codeNavigator
         default:
-            zone = filteredYaw > 22 ? .teamMemory : (filteredYaw < -22 ? .codeNavigator : .leaderDesk)
+            zone = filteredYaw > 24 ? .teamMemory : (filteredYaw < -24 ? .codeNavigator : .leaderDesk)
         }
         if zone != candidate || resumed || candidateSince == nil {
             candidate = zone
             candidateSince = time
         }
-        guard let candidateSince, time - candidateSince >= 0.45, selected != zone else { return nil }
+        // Glance and latch (mirrors lib/focus/selector.ts): a side needs 0.3 s; looking
+        // back at the screen keeps the side choice unless the head stays centred 4 s.
+        let needed = (zone == .leaderDesk && selected != nil) ? 4.0 : 0.30
+        guard let candidateSince, time - candidateSince >= needed, selected != zone else { return nil }
         selected = zone
         return zone
     }

@@ -41,6 +41,16 @@ Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competiti
 - Core: event log tolerates a torn final line from an interrupted append and removes it before the next write (`parseLog`, `dropTornTail`); overlapping Bolna tool calls wait up to ~3 s for the turn lock instead of failing with 409; `get_changes` validates `since`; leader name comes from the snapshot instead of a hard-coded "Charan"; spoken replies no longer contain em dashes.
 - Tests: `tests/event-store-torn.test.ts`, `tests/runtime-concurrency.test.ts`. Local run without dependencies: 222 pass, 6 fail only because `next`/local `tsx` packages are not installed here; CI is the authoritative check.
 
+## Launch docs, evals and glance-and-latch (Claude, 2026-11-16)
+
+- Branch `claude/launch-docs-evals`, stacked on `claude/ui-redesign` (PR #47). Requested by the user (Charan).
+- Head turn: glance and latch. A side selects after a 300 ms glance past 24°; the choice stays when you look back; facing the screen for 4 s (or ↑) returns to the Leader Desk. Same rule in `lib/focus/selector.ts` and `native/airpods` (Swift not compiled here). Tests updated.
+- Code search: feedback search (rare terms from the top two hits, weight 0.1) and a trimmed generic-synonym list. New fresh test set `TEST_2026_11` (22 questions) committed before tuning. Test set Acc@5 64% → 77%, nDCG@10 0.51 → 0.55. Reports in `docs/evals/code-search.{md,json}`.
+- Team Memory eval (`scripts/eval-memory.ts`, 35 questions, LongMemEval abilities plus conflict and scope): 0 false confirmations, 0 scope leaks; blind reworded set 33%, the known limit of lexical search. Reports in `docs/evals/team-memory.{md,json}`; safety tests in `tests/memory-safety.test.ts`.
+- Docs: new numbered architecture diagram (`docs/images/architecture.{png,svg}`), README rewrite with GIFs and stills from the launch film (`docs/media/`), `docs/architecture.md` rewritten around the nine-step flow and architect decisions D1–D9. Old screenshot images removed.
+- Verification: 227/233 local tests pass; the 6 failures need `next`, local `tsx` or other packages not installable here. Core typecheck clean apart from the same missing packages. CI is authoritative.
+- Pending: the launch video goes into the README and the site after the user approves v5. Merging PR #47 and this PR needs the user.
+
 ## 0. Goal of the demo (the vertical slice)
 
 ### E3 — direct evaluation and workspace access — 2026-11-15

@@ -12,16 +12,17 @@ final class MotionSelectorTests: XCTestCase {
     func testLeftCenterRightNeedDwellAndEmitOnce() {
         var selector = MotionSelector(); selector.calibrate(yaw: 10)
         var time = 0.0
-        func hold(_ yaw: Double) -> [FocusZone] {
+        func hold(_ yaw: Double, count: Int = 30) -> [FocusZone] {
             var emitted: [FocusZone] = []
-            for _ in 0..<30 {
+            for _ in 0..<count {
                 time += 0.05
                 if let z = selector.sample(yaw: yaw, time: time) { emitted.append(z) }
             }
             return emitted
         }
         XCTAssertEqual(hold(45), [.teamMemory])
-        XCTAssertEqual(hold(10), [.leaderDesk])
+        XCTAssertEqual(hold(10), [], "looking back at the screen keeps the side choice")
+        XCTAssertEqual(hold(10, count: 70), [.leaderDesk])
         XCTAssertEqual(hold(-25), [.codeNavigator])
         XCTAssertEqual(hold(-25), [])
     }
