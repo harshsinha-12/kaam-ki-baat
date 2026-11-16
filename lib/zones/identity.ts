@@ -103,7 +103,7 @@ export async function stepUp(store: EventStore, actor: Actor, verifier: StepUpVe
   type Result = { ok: true; expiresAt: string } | { ok: false; reason: string };
   return store.appendGuarded<Result>((events) => {
     if (credentials(events, actor.participant.id).length > 0)
-      return { reject: { ok: false, reason: "a passkey is enrolled — unlock with that credential" } };
+      return { reject: { ok: false, reason: "a passkey is enrolled; unlock with that credential" } };
     const proofHash = verifier.method === "server_otp" && typeof proof === "string" ? hashToken(`${actor.sessionId}:${proof}`) : undefined;
     if (proofHash && zoneEvents(events, "step_up").some(e => e.key === actor.sessionId && e.data.proofHash === proofHash))
       return { reject: { ok: false, reason: "one-time proof has already been used" } };

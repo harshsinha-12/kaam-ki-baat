@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
 import s from "./landing.module.css";
 import graphData from "../../data/demo/codegraph.json";
 import { AgentGlyph } from "../components/AgentGlyph";
@@ -275,49 +275,139 @@ function HeroConsole() {
   return <Console zone={zone} autoplay={auto} keyboard onZone={pick} />;
 }
 
-/* ------------------------------------------------------------- problem */
-function Stats() {
+/* ------------------------------------------------------------- hook */
+// "When we're stuck, we look left and right." The eyes follow the pointer
+// across the section and glance on their own when the pointer is away.
+const HOOK_LINES = ["When we’re stuck, we look left, and right.", "In an exam, you can’t.", "At work, now you can."];
+function Hook() {
   const reduced = useContext(ReducedMotion);
-  const [ref, inView] = useInView<HTMLDivElement>(0.3);
-  const a = useCountUp(55, inView);
-  const b = useCountUp(69, inView);
-  const c = useCountUp(61, inView);
-  const [lit, setLit] = useState(0);
+  const [ref, inView] = useInView<HTMLElement>(0.35, false);
+  const eyes = useRef<HTMLDivElement>(null);
+  const [step, setStep] = useState(0);
+  const pointer = useRef(false);
   useEffect(() => {
     if (!inView || reduced) return;
-    const id = setInterval(() => setLit((x) => (x >= 55 ? x : x + 1)), 22);
+    const id = setInterval(() => setStep((x) => (x + 1) % 4), 2200);
     return () => clearInterval(id);
   }, [inView, reduced]);
+  useEffect(() => {
+    if (pointer.current || !eyes.current) return;
+    eyes.current.style.setProperty("--look", String(reduced ? 0 : [-1, 1, 0, 0][step]));
+  }, [step, reduced]);
+  const onMove = (e: ReactPointerEvent<HTMLElement>) => {
+    if (reduced || !eyes.current) return;
+    pointer.current = true;
+    const r = e.currentTarget.getBoundingClientRect();
+    eyes.current.style.setProperty("--look", (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
+  };
+  const line = reduced ? 2 : Math.min(step, 2);
   return (
-    <div ref={ref} className={s.stats}>
-      <article className={s.stat}>
-        <span className={s.statTag}>Unclear after meetings</span>
-        <div className={s.big}>{a}<span className={s.pct}>%</span></div>
-        <div className={s.dots} aria-hidden>{Array.from({ length: 100 }, (_, i) => <span key={i} className={`${s.dot} ${i < (reduced ? 55 : lit) ? s.dotOn : ""}`} />)}</div>
-        <p className={s.statText}>of people say <b>next steps are unclear</b> when a meeting ends.</p>
-        <div className={s.cite}>Microsoft Work Trend Index 2023 · <a href="https://www.microsoft.com/en-us/worklab/work-trend-index/will-ai-fix-work" target="_blank" rel="noreferrer">source</a></div>
+    <section ref={ref} className={s.hook} onPointerMove={onMove} onPointerLeave={() => { pointer.current = false; }} aria-label="When we are stuck we look left and right. At work, now you can.">
+      <div ref={eyes} className={s.eyes} aria-hidden>
+        {[0, 1].map((i) => <span key={i} className={s.eye}><i className={s.iris} /></span>)}
+      </div>
+      <div className={s.hookLines} aria-hidden>
+        {HOOK_LINES.map((t, i) => <p key={t} className={s.hookLine} data-on={i === line}>{i === 1 ? <>In an exam, <span className={s.strike}>you can’t.</span></> : i === 2 ? <>At work, <em>now you can.</em></> : t}</p>)}
+      </div>
+      <div className={s.hookAgents}>
+        {ZONES.map((z) => <span key={z} data-zone={z}><AgentGlyph zone={z} size={30} active reduced />{SCRIPT[z].label}<small>{SCRIPT[z].side}</small></span>)}
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------- problem */
+function Person({ on }: { on: boolean }) {
+  return <svg viewBox="0 0 24 24" className={s.person} data-on={on} aria-hidden><circle cx="12" cy="7" r="4.2" /><path d="M3.5 22c0-5 3.8-8.2 8.5-8.2s8.5 3.2 8.5 8.2z" /></svg>;
+}
+function Problem() {
+  const reduced = useContext(ReducedMotion);
+  const [ref, inView] = useInView<HTMLDivElement>(0.25);
+  const run = inView || reduced;
+  const focus = useCountUp(68, inView, 1200), comm = useCountUp(57, inView, 1200), next = useCountUp(55, inView, 1200), search = useCountUp(61, inView, 1200);
+  const WTI = "https://www.microsoft.com/en-us/worklab/work-trend-index/will-ai-fix-work";
+  return (
+    <div ref={ref} className={s.problem} data-run={run}>
+      <article className={s.pCard}>
+        <div className={s.pNum}>{focus}<span>%</span></div>
+        <p className={s.pText}>of people don’t get enough <b>uninterrupted focus time</b>.</p>
+        <div className={s.waffle} aria-hidden>{Array.from({ length: 50 }, (_, i) => <span key={i} style={{ "--d": `${(Math.floor(i / 10) + (i % 10)) * 35}ms` } as CSSProperties}><Person on={i < 34} /></span>)}</div>
+        <div className={s.cite}>Microsoft Work Trend Index 2023, 31,000 people · <a href={WTI} target="_blank" rel="noreferrer">source</a></div>
       </article>
-      <article className={s.stat}>
-        <span className={s.statTag}>Time lost</span>
-        <div className={s.big}>{b}<span className={s.pct}>%</span></div>
-        <div className={s.week} aria-hidden>{["Mon", "Tue", "Wed", "Thu", "Fri"].map((d, i) => (
-          <div key={d} className={`${s.day} ${i === 4 && inView ? s.dayLost : ""}`}><span>{d}</span></div>
-        ))}</div>
-        <p className={s.statText}>of developers lose <b>8+ hours a week</b> to inefficiencies. That is a whole working day.</p>
-        <div className={s.cite}>Atlassian and DX, State of DevEx 2024 · <a href="https://www.atlassian.com/blog/development/developer-experience-report-2024" target="_blank" rel="noreferrer">source</a></div>
+      <article className={s.pCard}>
+        <div className={s.pNum}>{comm}<span>%</span></div>
+        <p className={s.pText}>of the workday goes to <b>meetings, chat and email</b>.</p>
+        <div className={s.day} aria-hidden>
+          <div className={s.dayBar}>{[["Meetings", 23, 1], ["Chat", 19, .7], ["Email", 15, .45]].map(([l, v, o], i) => <i key={l as string} style={{ "--w": `${v}%`, "--o": o, "--d": `${i * 180}ms` } as CSSProperties} />)}</div>
+          <div className={s.dayLegend}><span>Meetings 23%</span><span>Chat 19%</span><span>Email 15%</span><span className={s.dim}>Focused work 43%</span></div>
+        </div>
+        <div className={s.cite}>Microsoft Work Trend Index 2023, Microsoft 365 usage · <a href={WTI} target="_blank" rel="noreferrer">source</a></div>
       </article>
-      <article className={s.stat}>
-        <span className={s.statTag}>Waiting for answers</span>
-        <div className={s.big}>{c}<span className={s.pct}>%</span></div>
+      <article className={s.pCard}>
+        <div className={s.pNum}>{next}<span>%</span></div>
+        <p className={s.pText}>say <b>next steps are unclear</b> when a meeting ends.</p>
+        <svg className={s.ring} viewBox="0 0 120 120" aria-hidden><circle cx="60" cy="60" r="48" /><circle cx="60" cy="60" r="48" pathLength={100} style={{ "--p": 55 } as CSSProperties} /></svg>
+        <div className={s.cite}>Microsoft Work Trend Index 2023 · <a href={WTI} target="_blank" rel="noreferrer">source</a></div>
+      </article>
+      <article className={s.pCard}>
+        <div className={s.pNum}>{search}<span>%</span></div>
+        <p className={s.pText}>of developers spend <b>30+ minutes a day</b> searching for answers.</p>
         <svg className={s.clock} viewBox="0 0 120 120" aria-hidden>
-          {Array.from({ length: 60 }, (_, i) => { const ang = (i / 60) * Math.PI * 2 - Math.PI / 2; const on = inView && i < 30;
-            return <line key={i} x1={60 + 44 * Math.cos(ang)} y1={60 + 44 * Math.sin(ang)} x2={60 + (i % 5 ? 50 : 53) * Math.cos(ang)} y2={60 + (i % 5 ? 50 : 53) * Math.sin(ang)}
-              stroke={on ? "#e5e5e5" : "#262626"} strokeWidth={i % 5 ? 2 : 3} strokeLinecap="round" style={{ transition: `stroke .3s ${i * 25}ms` }} />; })}
-          <text x="60" y="58" textAnchor="middle" className={s.clockBig}>30+</text>
-          <text x="60" y="74" textAnchor="middle" className={s.clockSmall}>min a day</text>
+          <path className={s.clockWedge} d="M60 60 L60 10 A50 50 0 0 1 60 110 Z" />
+          {Array.from({ length: 60 }, (_, i) => { const ang = (i / 60) * Math.PI * 2 - Math.PI / 2;
+            return <line key={i} x1={60 + 44 * Math.cos(ang)} y1={60 + 44 * Math.sin(ang)} x2={60 + (i % 5 ? 50 : 53) * Math.cos(ang)} y2={60 + (i % 5 ? 50 : 53) * Math.sin(ang)} stroke={i % 5 ? "#2a2a2a" : "#6a6a6a"} strokeWidth={i % 5 ? 1.5 : 2.5} strokeLinecap="round" />; })}
+          <line className={s.clockHand} x1="60" y1="60" x2="60" y2="18" />
+          <circle cx="60" cy="60" r="3.5" fill="#fafafa" />
         </svg>
-        <p className={s.statText}>of developers spend <b>30+ minutes a day</b> searching for answers.</p>
         <div className={s.cite}>Stack Overflow Developer Survey 2024 · <a href="https://survey.stackoverflow.co/2024/professional-developers" target="_blank" rel="noreferrer">source</a></div>
+      </article>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------- evals */
+// Real numbers: docs/codegraph/EVAL.md (28 dev questions), GitHub Actions test
+// counts on every push on 15 Nov, and the seven recorded Bolna attempts.
+const SEARCH_EVAL: [string, number | null, string][] = [["grep", null, "files only"], ["Keyword (BM25)", 46, "baseline"], ["First graph", 39, "one seed"], ["Semantic graph", 93, "ours"]];
+const TEST_HISTORY: [string, number][] = [["10:14", 148], ["10:16", 155], ["10:18", 158], ["10:19", 155], ["10:21", 156], ["10:24", 156], ["10:25", 167], ["10:31", 169], ["10:43", 172], ["10:47", 173], ["10:48", 173], ["10:53", 173], ["11:01", 173], ["11:03", 179], ["11:20", 183], ["11:24", 187], ["11:27", 193], ["11:38", 193], ["11:44", 193], ["11:51", 203], ["11:58", 193], ["12:05", 194], ["12:08", 207], ["12:11", 207], ["12:21", 217], ["12:45", 220], ["20:19", 223]];
+const CALLS: [string, number, "ok" | "err" | "web" | "idle"][] = [["Phone", 48, "ok"], ["Phone", 94, "err"], ["Phone", 50, "ok"], ["Browser", 158.5, "web"], ["Browser", 102.1, "web"], ["Browser", 11.3, "idle"], ["Browser", 0, "idle"]];
+function Evals() {
+  const reduced = useContext(ReducedMotion);
+  const [ref, inView] = useInView<HTMLDivElement>(0.25);
+  const run = inView || reduced;
+  const lo = 140, hi = 230, W = 560, H = 220;
+  const pts = TEST_HISTORY.map(([, v], i) => `${((i / (TEST_HISTORY.length - 1)) * W).toFixed(1)},${(H - ((v - lo) / (hi - lo)) * H).toFixed(1)}`).join(" ");
+  const last = TEST_HISTORY[TEST_HISTORY.length - 1];
+  return (
+    <div ref={ref} className={s.evals} data-run={run}>
+      <article className={s.eCard}>
+        <header><h3>Code search</h3><span>Right function in the top 3 · 28 questions</span></header>
+        <div className={s.bars}>
+          {SEARCH_EVAL.map(([l, v, sub], i) => (
+            <div key={l} className={s.barCol} data-hl={i === 3}>
+              <b>{v == null ? "n/a" : `${v}%`}</b>
+              <div className={s.barTrack}><i style={{ "--h": `${v ?? 0}%`, "--d": `${i * 120}ms` } as CSSProperties} /></div>
+              <span>{l}</span><small>{sub}</small>
+            </div>))}
+        </div>
+        <p className={s.eNote}>Held-out set of 12 questions never used for tuning: 33% vs 17%. <a href={`${REPO}/blob/main/docs/codegraph/EVAL.md`} target="_blank" rel="noreferrer">Full eval</a></p>
+      </article>
+      <article className={s.eCard}>
+        <header><h3>Tests on every push</h3><span>GitHub Actions, 15 Nov · 0 failures</span></header>
+        <svg className={s.line} viewBox={`-10 -20 ${W + 20} ${H + 40}`} preserveAspectRatio="none" aria-label={`Passing tests rose from ${TEST_HISTORY[0][1]} to ${last[1]}`}>
+          {[150, 175, 200, 225].map((g) => <line key={g} x1="0" x2={W} y1={H - ((g - lo) / (hi - lo)) * H} y2={H - ((g - lo) / (hi - lo)) * H} className={s.grid} />)}
+          <polyline points={pts} pathLength={1} className={s.trend} />
+        </svg>
+        <div className={s.lineFoot}><span>{TEST_HISTORY[0][1]} at {TEST_HISTORY[0][0]}</span><b>{last[1]} / {last[1]} passing</b></div>
+      </article>
+      <article className={s.eCard}>
+        <header><h3>Every call, evaluated</h3><span>7 Bolna attempts · 45 s quality gate</span></header>
+        <div className={s.calls}>
+          <i className={s.gate} style={{ left: `calc(64px + (100% - 124px) * ${45 / 170})` }}><span>45 s</span></i>
+          {CALLS.map(([ch, sec, k], i) => (
+            <div key={i} className={s.callRow}><span>{ch}</span><div><i data-k={k} style={{ "--w": `${Math.max(1, (sec / 170) * 100)}%`, "--d": `${i * 90}ms` } as CSSProperties} /></div><b>{sec}s</b></div>))}
+        </div>
+        <p className={s.eNote}>The 94 s call ended with a voice-provider error. Each call has a written review. <a href="/evals">Open call evals</a></p>
       </article>
     </div>
   );
@@ -332,12 +422,14 @@ const LOOP = [
 ];
 function DoubtLoop() {
   const reduced = useContext(ReducedMotion);
+  const [ref, inView] = useInView<HTMLDivElement>(0.2, false);
   const [sec, setSec] = useState(0);
   const [step, setStep] = useState(0);
-  useEffect(() => { if (reduced) return; const id = setInterval(() => { setSec((x) => x + 1); }, 1000); return () => clearInterval(id); }, [reduced]);
-  useEffect(() => { if (reduced) return; const id = setInterval(() => setStep((x) => (x + 1) % LOOP.length), 1800); return () => clearInterval(id); }, [reduced]);
+  // Timers run only while the section is on screen.
+  useEffect(() => { if (reduced || !inView) return; const id = setInterval(() => { setSec((x) => x + 1); }, 1000); return () => clearInterval(id); }, [reduced, inView]);
+  useEffect(() => { if (reduced || !inView) return; const id = setInterval(() => setStep((x) => (x + 1) % LOOP.length), 1800); return () => clearInterval(id); }, [reduced, inView]);
   return (
-    <div className={s.loopGrid}>
+    <div ref={ref} className={s.loopGrid}>
       <div>
         <Reveal><div className={s.eyebrow}>The doubt loop</div></Reveal>
         <Reveal i={1}><h2 className={s.h2}>Every team runs it. <em>Nobody</em> owns it.</h2></Reveal>
@@ -760,6 +852,7 @@ const NAV = [
   { id: "leads", label: "For leads" },
   { id: "escalation", label: "Escalation" },
   { id: "guards", label: "Guards" },
+  { id: "evals", label: "Evals" },
   { id: "how", label: "Architecture" },
 ];
 
@@ -836,6 +929,8 @@ export default function Landing() {
           <div className={s.heroStage}><HeroConsole /></div>
         </header>
 
+        <Hook />
+
         <section id="demo" className={s.section}>
           <DemoGraph graph={graphData as never} />
         </section>
@@ -843,7 +938,7 @@ export default function Landing() {
         <section id="problem" className={s.section}>
           <Reveal><div className={s.eyebrow}>The cost of “wait, what did we decide?”</div></Reveal>
           <Reveal i={1}><h2 className={s.h2}>Meetings end. <em>Doubt</em> doesn&apos;t.</h2></Reveal>
-          <Stats />
+          <Problem />
         </section>
 
         <section className={s.section}><DoubtLoop /></section>
@@ -880,6 +975,13 @@ export default function Landing() {
           <Reveal><div className={s.eyebrow}>Look right</div></Reveal>
           <Reveal i={1}><h2 className={s.h2}>The answer to “kahan hai?” is a <em>line number</em>.</h2></Reveal>
           <CodeNav />
+        </section>
+
+        <section id="evals" className={s.section}>
+          <Reveal><div className={s.eyebrow}>Evals</div></Reveal>
+          <Reveal i={1}><h2 className={s.h2}>Measured, <em>not guessed</em>.</h2></Reveal>
+          <Reveal i={2}><p className={s.lede}>Numbers from our own repository and our own calls. Written by the team that built it, so read them as a regression guard, not a public benchmark.</p></Reveal>
+          <Evals />
         </section>
 
         <section id="how" className={s.section}>

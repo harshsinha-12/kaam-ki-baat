@@ -39,7 +39,7 @@ export async function runTool(rt: Runtime, tool: ToolName, body: Record<string, 
   const auth = await resolveCaller(rt.store, rt.snapshot, body.call_token ?? body.callToken);
   if (!auth.ok) return { status: auth.status, body: { ok: false, error: auth.reason, speak: "I can't verify who I'm speaking with, so I can't share project details." } };
   const caller = auth.caller;
-  const release = await acquireLease(rt.store, `conversation:${caller.session.callId}`);
+  const release = await acquireTurn(rt, caller.session.callId);
   if (!release) return { status: 409, body: { ok: false, error: "Another turn is being processed.", speak: "Please try that question again in a moment." } };
   try {
     await restoreConversations(rt);
@@ -62,6 +62,16 @@ export async function runTool(rt: Runtime, tool: ToolName, body: Record<string, 
     await persistConversation(rt, caller.session.callId);
     return res;
   } finally { await release(); }
+}
+
+// Voice agents often fire a second tool call while the first is still running.
+// Wait briefly for the turn instead of failing it outright; give up after ~3 s.
+async function acquireTurn(rt: Runtime, callId: string, waitsMs = [150, 300, 500, 800, 1200]) {
+  for (let i = 0; ; i++) {
+    const release = await acquireLease(rt.store, `conversation:${callId}`);
+    if (release || i >= waitsMs.length) return release;
+    await new Promise((r) => setTimeout(r, waitsMs[i]));
+  }
 }
 
 /** Phone callers are never leaders for privileged actions (no step-up on PSTN). */
@@ -108,8 +118,9 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       const context = projectContext(rt.snapshot, question);
       const source = selectedZone === "code_navigator" ? questionSource(rt.snapshot, question, context.passages) : null;
       const sourceFocus = source ? await publishSource(rt.store, caller.participant.id, source, "call") : null;
-      return ok({ ...context, selectedZone, sourceFocus, leaderName:"Charan", ownership: selectedZone === "leader_desk" ? rt.snapshot.tasks.filter(t => caller.taskIds.has(t.id)).map(t => ({ task:t.title, assignment:t.assignment })) : undefined,
-        instructions: context.instructions + (selectedZone === "leader_desk" ? " Leader Desk is selected: explain ownership, open questions and next steps from permitted sources as an AI guide for Charan’s team. You are not the human Charan, do not approve decisions, and do not claim new assignments are saved." : " Code Navigator is selected: explain implementation with exact files, symbols and source links. Graph matches are candidates, not proof of completion."),
+      const leaderName = rt.snapshot.participants.find(p => p.role === "leader")?.name ?? "the team lead";
+      return ok({ ...context, selectedZone, sourceFocus, leaderName, ownership: selectedZone === "leader_desk" ? rt.snapshot.tasks.filter(t => caller.taskIds.has(t.id)).map(t => ({ task:t.title, assignment:t.assignment })) : undefined,
+        instructions: context.instructions + (selectedZone === "leader_desk" ? ` Leader Desk is selected: explain ownership, open questions and next steps from permitted sources as an AI guide for ${leaderName}’s team. You are not the human ${leaderName}, do not approve decisions, and do not claim new assignments are saved.` : " Code Navigator is selected: explain implementation with exact files, symbols and source links. Graph matches are candidates, not proof of completion."),
         speak: context.passages.length ? "I found the relevant repository sources. I will explain them and mention any uncertainty." : "I could not find an answer in the approved repository files.", evidenceIds: context.passages.map(p => `${p.path}:${p.lineStart}`) });
     }
     case "get_my_brief": {
@@ -220,7 +231,9 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       });
     }
     case "get_changes": {
-      const since = typeof body.since === "string" ? body.since : new Date(Date.now() - 24 * 3600_000).toISOString();
+      // Compare ISO strings only: an unparseable "since" falls back to the last 24 hours.
+      const parsedSince = typeof body.since === "string" ? Date.parse(body.since) : NaN;
+      const since = new Date(Number.isFinite(parsedSince) ? parsedSince : Date.now() - 24 * 3600_000).toISOString();
       const events = (await rt.store.all()).filter((e) => e.type === "task_update" && caller.taskIds.has(e.record.taskId));
       const changes = events
         .map((e, i) => ({ e, prev: events.slice(0, i).reverse().find((p) => p.type === "task_update" && e.type === "task_update" && p.record.taskId === e.record.taskId) }))
@@ -237,7 +250,7 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
     case "request_clarification": {
       // Only after the caller explicitly agreed to send the question to the leader.
       const x = await createTicket(rt.store, rt.snapshot, callActor(caller), body);
-      if (!x.ok) return { status: x.status, body: { ok: false, error: x.reason, speak: `I didn't send it — ${x.reason}.` } };
+      if (!x.ok) return { status: x.status, body: { ok: false, error: x.reason, speak: `I didn't send it: ${x.reason}.` } };
       return ok({
         ticketId: x.ticket.id, replayed: x.replayed, state: x.ticket.state,
         speak: x.ticket.answer
@@ -261,7 +274,7 @@ async function dispatch(rt: Runtime, tool: ToolName, caller: Caller, body: Recor
       const conv = rt.conversations.get(callId);
       if (!result.saved) {
         if (conv) conv.cards.evidence_verifier = { ...conv.cards.evidence_verifier, status: "error", summary: `Not saved: ${result.reason}` };
-        return { status: 409, body: { ok: false, saved: false, reason: result.reason, speak: `I couldn't save that — ${result.reason}. I don't have a verified saved update.` } };
+        return { status: 409, body: { ok: false, saved: false, reason: result.reason, speak: `I couldn't save that: ${result.reason}. I don't have a verified saved update.` } };
       }
       if (conv) {
         conv.focus = { ...conv.focus, contextVersion: conv.focus.contextVersion + 1 };

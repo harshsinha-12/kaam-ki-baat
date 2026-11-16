@@ -19,8 +19,8 @@ export function fixNavigator(snapshot: EvidenceSnapshot, findings: CodeFinding[]
   const test = findTest(snapshot, target);
   const fn = target.symbol ? `the ${target.symbol} function` : `line ${target.lineStart}`;
   const steps = [
-    `Open ${target.path} at line ${target.lineStart} (${fn}) — commit ${target.commitSha.slice(0, 7)}.`,
-    test ? `Read the regression test in ${test.path} around line ${test.line}.` : "No nearby test found — add one before changing behaviour.",
+    `Open ${target.path} at line ${target.lineStart} (${fn}), commit ${target.commitSha.slice(0, 7)}.`,
+    test ? `Read the regression test in ${test.path} around line ${test.line}.` : "No nearby test found. Add one before changing behaviour.",
     test ? `Run: npm test -- ${test.path}` : "Run: npm test",
   ];
   const certainty = target.match === "confirmed" ? "This file is part of the PR." : "This is a likely match, not confirmed by the PR.";

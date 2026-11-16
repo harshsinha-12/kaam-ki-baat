@@ -15,7 +15,7 @@ export function evidenceVerifier(snapshot: EvidenceSnapshot, task: Task, lastSav
   const r = reconcileTask(task, snapshot.pullRequests, snapshot.checks);
   const s: string[] = [];
   if (r.pr === "none") s.push("There's no pull request linked to this yet.");
-  if (r.pr === "open") s.push(`PR #${r.prNumber} exists but it's still open — not merged.`);
+  if (r.pr === "open") s.push(`PR #${r.prNumber} exists but it's still open, not merged.`);
   if (r.pr === "closed_unmerged") s.push(`PR #${r.prNumber} was closed without merging.`);
   if (r.pr === "merged") s.push(`PR #${r.prNumber} is merged at ${short(r.currentSha)}.`);
 

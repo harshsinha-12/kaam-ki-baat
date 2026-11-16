@@ -25,6 +25,14 @@ Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competiti
 - Branch `claude/ui-redesign`. Files: `app/landing/*`, `app/team/page.tsx`, `app/zones/zones.module.css`, `app/components/{spatial,code-source,webcam}.module.css`, `AgentGlyph.tsx` colours, `app/layout.tsx` fonts, em-dash copy fixes across `app/**`. No `lib/**` behaviour changed.
 - Verification: CI (typecheck, tests, build) and the Vercel preview are the checks; no local `npm ci` was possible in this session (no registry access). Workspace logic, API calls and keyboard focus controls are unchanged; only layout and styles moved.
 
+## Launch pass: hook, numbers, evals and reliability (Claude, 2026-11-16)
+
+- Requested by the user (Charan): add the "look left, look right" hook, show the problem with sourced numbers and animated charts, show evals as charts, keep the page smooth, and do a senior code review for bugs and reliability. Same branch `claude/ui-redesign` (PR #47).
+- Landing: new `Hook` section (eyes follow the pointer, exam vs work lines), `Problem` replaces the old stats with four sourced numbers (Microsoft Work Trend Index 2023: 68% focus, 57% communication, 55% unclear next steps; Stack Overflow 2024: 61% search 30+ min/day) and CSS-only charts, new `#evals` section (code-search eval from `docs/codegraph/EVAL.md`, test counts from GitHub Actions on 15 Nov: 148 to 223, all passing, and the seven recorded Bolna attempts).
+- Fixed: duplicate `.big` CSS rule made the large CTA buttons render in 84px serif type. Idle `VoiceWave` loops now stop when flat or off screen; the doubt-loop timers run only while visible.
+- Core: event log tolerates a torn final line from an interrupted append and removes it before the next write (`parseLog`, `dropTornTail`); overlapping Bolna tool calls wait up to ~3 s for the turn lock instead of failing with 409; `get_changes` validates `since`; leader name comes from the snapshot instead of a hard-coded "Charan"; spoken replies no longer contain em dashes.
+- Tests: `tests/event-store-torn.test.ts`, `tests/runtime-concurrency.test.ts`. Local run without dependencies: 222 pass, 6 fail only because `next`/local `tsx` packages are not installed here; CI is the authoritative check.
+
 ## 0. Goal of the demo (the vertical slice)
 
 ### E3 — direct evaluation and workspace access — 2026-11-15
