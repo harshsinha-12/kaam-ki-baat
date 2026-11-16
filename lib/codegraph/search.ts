@@ -43,11 +43,42 @@ const CONCEPTS: Record<string, string[]> = {
   done: ["verify", "reconcile", "evidence", "merge"], log: ["event", "store", "append"], disk: ["file", "fsync", "append"], event: ["event", "store"],
   relevant: ["scout", "find", "search"], keyword: ["term", "scout", "search"], token: ["token", "hash", "session"], single: ["once", "token", "issue"],
 };
+// Generic software synonyms: everyday verbs people say and the words code uses for
+// them. Deliberately tiny and not derived from any eval question.
+const GENERIC: string[][] = [
+  ["save", "store", "persist", "write", "record"], ["read", "load", "fetch", "get"], ["remove", "delete", "drop"],
+  ["check", "verify", "validate", "assert"], ["old", "stale", "outdated"], ["allowed", "access", "permission"],
+];
+const GENERIC_MAP = new Map<string, string[]>();
+for (const group of GENERIC) for (const w of group) GENERIC_MAP.set(stem(w), [...new Set([...(GENERIC_MAP.get(stem(w)) ?? []), ...group.filter((x) => x !== w)])]);
+
 export function expand(terms: string[]): { term: string; w: number; from?: string }[] {
   const out = new Map<string, { term: string; w: number; from?: string }>();
   for (const t of terms) out.set(t, { term: t, w: 1 });
   for (const t of terms) for (const c of CONCEPTS[t] ?? CONCEPTS[t + "s"] ?? []) for (const s of tokenize(c)) if (!out.has(s)) out.set(s, { term: s, w: 0.45, from: t });
+  for (const t of terms) for (const c of GENERIC_MAP.get(t) ?? []) for (const s of tokenize(c)) if (!out.has(s)) out.set(s, { term: s, w: 0.35, from: t });
   return [...out.values()];
+}
+
+/**
+ * Pseudo-relevance feedback (RM3-style): the best first-pass matches suggest
+ * extra words the code itself uses for the idea. Rare terms only, low weight.
+ */
+function feedbackTerms(idx: SearchIndex, ranked: [string, number][], have: Set<string>, docs = 2, take = 6): { term: string; w: number; from: string }[] {
+  const byId = new Map(idx.docs.map((d) => [d.id, d]));
+  const top = ranked.slice(0, docs); const max = top[0]?.[1] ?? 0;
+  if (max <= 0) return [];
+  const weight = new Map<string, number>();
+  for (const [id, sc] of top) {
+    const d = byId.get(id); if (!d) continue;
+    const tf = new Map<string, number>();
+    for (const t of d.tokens) tf.set(t, (tf.get(t) ?? 0) + 1);
+    for (const [t, f] of tf) {
+      if (have.has(t) || t.length < 4 || (idx.df[t] ?? 0) > idx.docs.length * 0.05) continue;
+      weight.set(t, (weight.get(t) ?? 0) + (f / d.tokens.length) * (sc / max));
+    }
+  }
+  return [...weight.entries()].sort((a, b) => b[1] - a[1]).slice(0, take).map(([term]) => ({ term, w: 0.1, from: "feedback" }));
 }
 
 /** Build the index from snapshot files at the pinned SHA (run at build time). */
@@ -104,9 +135,17 @@ export function search(idx: SearchIndex, g: Pick<CodeGraph, "edges" | "nodes">, 
       .sort((a, b) => b.score - a.score).slice(0, limit);
   }
   const terms = tokenize(raw);
-  const q = mode === "semantic" ? expand(terms) : terms.map((t) => ({ term: t, w: 1 }));
-  const base = new Map<string, { s: number; matched: string[] }>();
+  let q = mode === "semantic" ? expand(terms) : terms.map((t) => ({ term: t, w: 1 }));
+  let base = new Map<string, { s: number; matched: string[] }>();
   for (const d of idx.docs) { const r = bm25(idx, q, d); if (r.s > 0) base.set(d.id, r); }
+  if (mode === "semantic" && base.size) {
+    const fb = feedbackTerms(idx, [...base.entries()].map(([id, r]) => [id, r.s] as [string, number]).sort((a, b) => b[1] - a[1]), new Set(q.map((x) => x.term)));
+    if (fb.length) {
+      q = [...q, ...fb];
+      base = new Map();
+      for (const d of idx.docs) { const r = bm25(idx, q, d); if (r.s > 0) base.set(d.id, r); }
+    }
+  }
   const scored = new Map<string, { s: number; why: string[] }>();
   for (const [id, r] of base) {
     const via = q.filter((x) => r.matched.includes(x.term) && (x as { from?: string }).from).map((x) => `${(x as { from?: string }).from}→${x.term}`);

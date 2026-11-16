@@ -75,15 +75,42 @@ export function askTeamMemory(snapshot: EvidenceSnapshot, events: StoredEvent[],
   return { ...answerTeamMemory(snapshot, events, scope, question, context), ...context };
 }
 
+// Everyday words people use for the things meetings decide. Small and inspectable;
+// each entry maps a spoken word to words a decision or passage would contain.
+const MEMORY_WORDS: Record<string, string[]> = {
+  video: ["film", "record"], film: ["video", "record"], recording: ["film", "record"],
+  stop: ["freeze"], merging: ["freeze", "merge"], cutoff: ["freeze"], helper: ["agent"], repository: ["code", "graph", "repo"],
+  side: ["left", "right"], swap: ["move"],
+};
+const stemW = (w: string) => (w.length > 4 ? w.replace(/(ings|ing|ies|es|ed|s)$/, "") : w);
+const near = (t: string, h: string) => h === t || (t.length > 4 && h.startsWith(t.slice(0, 5)));
+
+/**
+ * Score decisions by the words they share with the question. Rare words count
+ * more (inverse document frequency over the visible decisions) and everyday
+ * synonyms count at a discount, so a reworded question can still find its
+ * decision while a question about something never discussed scores too low.
+ */
+function scoreDecisions(question: string, decisions: Decision[]) {
+  const q = terms(question).map(stemW);
+  const expanded = new Map<string, number>(q.map((t) => [t, 1]));
+  for (const t of terms(question)) for (const s of MEMORY_WORDS[t] ?? []) if (!expanded.has(stemW(s))) expanded.set(stemW(s), 0.6);
+  const docs = decisions.map((d) => ({ d, hay: terms(`${d.topic} ${d.statement} ${d.conditions ?? ""} ${d.sources.map((s) => s.label).join(" ")}`).map(stemW) }));
+  const df = (t: string) => docs.filter((x) => x.hay.some((h) => near(t, h))).length;
+  const N = Math.max(1, docs.length);
+  return docs.map(({ d, hay }) => {
+    let score = 0, matched = 0, viaSynonym = 0;
+    for (const [t, w] of expanded) if (hay.some((h) => near(t, h))) { score += w * Math.log(1 + N / Math.max(1, df(t))); if (w === 1) matched++; else viaSynonym++; }
+    return { d, score, matched, viaSynonym, qLen: q.length };
+  });
+}
+
 function answerTeamMemory(snapshot: EvidenceSnapshot, events: StoredEvent[], actor: Actor, question: string, context: ReturnType<typeof meetingContext>): MemoryAnswer & { provisional: LiveUtterance[]; question: string } {
   const q = terms(question);
   const decisions = visibleDecisions(snapshot, events, actor);
-  const scored = decisions
-    .map((d) => {
-      const hay = terms(`${d.topic} ${d.statement} ${d.conditions ?? ""} ${d.sources.map((s) => s.label).join(" ")}`);
-      return { d, score: q.filter((t) => hay.some((h) => h === t || (t.length > 4 && h.startsWith(t.slice(0, 5))))).length };
-    })
-    .filter((x) => x.score >= Math.min(2, Math.max(1, q.length)))
+  // Accept a decision when two question words match, or one rare word plus a synonym.
+  const scored = scoreDecisions(question, decisions)
+    .filter((x) => x.matched >= Math.min(2, Math.max(1, x.qLen)) || (x.matched >= 1 && x.viaSynonym >= 1 && x.score >= 1.6))
     .sort((a, b) => b.score - a.score || stateRank(b.d) - stateRank(a.d));
 
   const myOpen = [...tickets(events).values()].find(

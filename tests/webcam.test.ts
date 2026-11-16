@@ -207,9 +207,9 @@ describe("webcam controller lifecycle (mock media, never physical verification)"
     h.hold(1700, 1900, 40);
     h.frame(2000, null);
     h.frame(3000, 40);
-    h.hold(3100, 3400, 40);
+    h.hold(3100, 3200, 40);
     assert.deepEqual(h.selections, ["leader_desk"], "resume needs a new full dwell");
-    h.frame(3500, 40);
+    h.frame(3300, 40);
     assert.deepEqual(h.selections, ["leader_desk", "team_memory"]);
     h.controller.stop();
   });
@@ -236,9 +236,9 @@ describe("webcam controller lifecycle (mock media, never physical verification)"
     assert.deepEqual(h.selections, ["leader_desk"]);
     h.controller.recenter();
     assert.equal(h.controller.getSnapshot().selectedZone, null);
-    h.hold(800, 1100, 0);
+    h.hold(800, 900, 0);
     assert.deepEqual(h.selections, ["leader_desk"]);
-    h.frame(1200, 0);
+    h.frame(1000, 0);
     assert.deepEqual(h.selections, ["leader_desk", "leader_desk"]);
     h.controller.stop();
   });

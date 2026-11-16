@@ -138,7 +138,7 @@ export class WebcamController {
     // Start a fresh selector so center also requires a fresh dwell and can emit
     // after recalibration even if it was selected before tracking stopped.
     this.selector = calibrate(initialSelector(), this.latestYaw, at);
-    this.publish("tracking", "Calibrated. Turn left or right and hold briefly to select a zone.");
+    this.publish("tracking", "Calibrated. Glance left or right to pick an agent; it stays picked when you look back.");
     return true;
   }
 
