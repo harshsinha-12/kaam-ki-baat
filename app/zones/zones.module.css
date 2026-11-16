@@ -3,13 +3,14 @@
    mark which agent is active. */
 
 .page {
-  --bg: #000; --s1: #0a0a0a; --s2: #111; --s3: #171717; --chip: #1f1f1f; --chipHover: #2a2a2a;
+  --bg: #050506; --s1: #0c0d10; --s2: #121419; --s3: #191c22; --chip: #1d2027; --chipHover: #272b34;
   --line: rgba(255,255,255,.08); --line2: rgba(255,255,255,.14);
-  --ink: #fafafa; --text: #d4d4d4; --mute: #8a8a8a; --dim: #5a5a5a;
-  --left: #8db8e8; --center: #e2bf72; --right: #e39478; --ok: #7fcf9b; --warn: #e2bf72; --bad: #e08a7c;
+  --ink: #f6f7f9; --text: #c9ccd3; --mute: #8d929d; --dim: #5d626d;
+  --left: #7ab8ff; --center: #ffc84a; --right: #ff8c6b; --ok: #5be49b; --warn: #ffc84a; --bad: #ff6b6b;
   --out: cubic-bezier(.16,1,.3,1);
   --sans: var(--font-sans, "Geist"), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --serif: var(--font-serif, "Instrument Serif"), Georgia, serif;
+  --serif: var(--font-display, "Bricolage Grotesque"), var(--font-sans, "Geist"), system-ui, sans-serif;
+  --display: var(--font-display, "Bricolage Grotesque"), var(--font-sans, "Geist"), system-ui, sans-serif;
   --mono: var(--font-mono, "Geist Mono"), ui-monospace, Menlo, monospace;
   min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5;
   padding: 0 clamp(16px, 3vw, 36px) 32px; color-scheme: dark; -webkit-font-smoothing: antialiased;
@@ -51,7 +52,7 @@ select.input { appearance: none; padding-right: 32px; background-image: linear-g
 /* ---------- header ---------- */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 64px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .title { display: inline-flex; align-items: center; gap: 10px; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); text-decoration: none; letter-spacing: -.01em; }
-.mark { width: 22px; height: 22px; border-radius: 7px; background: var(--center); box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+.mark { display: inline-flex; }
 .workspaceName { font-weight: 400; color: var(--mute); padding-left: 10px; border-left: 1px solid var(--line2); }
 .topRight { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .topRight .meta { display: inline-flex; align-items: center; font-family: var(--mono); font-size: 12px; }
@@ -59,7 +60,7 @@ select.input { appearance: none; padding-right: 32px; background-image: linear-g
 .connection span { font-size: 9px; }
 
 .welcome { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding: 36px 0 24px; }
-.welcome h1, .welcome h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(36px, 3.6vw, 52px); line-height: 1.02; color: var(--ink); letter-spacing: -.01em; }
+.welcome h1, .welcome h2 { margin: 0; font-family: var(--display); font-weight: 650; letter-spacing: -.03em; font-size: clamp(36px, 3.6vw, 52px); line-height: 1.02; color: var(--ink); letter-spacing: -.01em; }
 .welcome p { margin: 10px 0 0; font-size: 15px; color: var(--mute); max-width: 60ch; }
 
 /* ---------- flow rail ---------- */
@@ -130,7 +131,7 @@ select.input { appearance: none; padding-right: 32px; background-image: linear-g
 
 /* ---------- agent switcher ---------- */
 .workspaceHeading { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
-.workspaceHeading h2 { margin: 4px 0 0; font-family: var(--serif); font-weight: 400; font-size: 30px; line-height: 1.1; color: var(--ink); }
+.workspaceHeading h2 { margin: 4px 0 0; font-family: var(--display); font-weight: 650; letter-spacing: -.03em; font-size: 30px; line-height: 1.1; color: var(--ink); }
 .zones { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 16px; background: var(--s2); border: 1px solid var(--line); }
 .zoneIndicator { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 16px) / 3); border-radius: 12px; background: #222; box-shadow: inset 0 0 0 1px var(--line2);
   transform: translateX(calc(var(--idx, 0) * (100% + 4px))); transition: transform .5s var(--out); }
@@ -158,7 +159,7 @@ select.input { appearance: none; padding-right: 32px; background-image: linear-g
 .cardHeading { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
 .zoneNumber { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text); }
 .cardTag { font-size: 12px; color: var(--mute); padding: 4px 9px; border-radius: 8px; background: var(--chip); }
-.h { margin: 0 0 4px; font-family: var(--serif); font-weight: 400; font-size: 30px; line-height: 1.1; color: var(--ink); }
+.h { margin: 0 0 4px; font-family: var(--display); font-weight: 650; letter-spacing: -.03em; font-size: 30px; line-height: 1.1; color: var(--ink); }
 .cardDescription { margin: 0 0 18px; font-size: 14px; color: var(--mute); }
 .list { display: grid; gap: 8px; margin-top: 14px; }
 .list > .label { margin-bottom: -2px; }
@@ -171,7 +172,7 @@ select.input { appearance: none; padding-right: 32px; background-image: linear-g
 .src a { color: var(--text); }
 .steps { margin: 12px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; color: var(--text); line-height: 1.55; }
 .leaderHint { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
-.leaderHint h2 { margin: 6px 0; font-family: var(--serif); font-weight: 400; font-size: 26px; line-height: 1.15; color: var(--ink); }
+.leaderHint h2 { margin: 6px 0; font-family: var(--display); font-weight: 650; letter-spacing: -.03em; font-size: 26px; line-height: 1.15; color: var(--ink); }
 .leaderHint p { margin: 0; color: var(--mute); max-width: 62ch; }
 @media (max-width: 760px) { .leaderHint { flex-direction: column; align-items: flex-start; } .card { padding: 16px; } }
 

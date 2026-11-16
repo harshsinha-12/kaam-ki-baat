@@ -13,7 +13,7 @@ export default function OpenGraphImage() {
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", padding: "48px 56px", background: "#0b0b0c", color: "#f2efe6", fontFamily: "sans-serif", position: "relative" }}>
         <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(ellipse at 85% 45%, #282014 0%, #0b0b0c 65%)" }} />
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, borderRadius: 12, background: "#f2efe6", color: "#0b0b0c", fontSize: 26, fontWeight: 700 }}>K</div>
+          <svg width="48" height="48" viewBox="0 0 64 64"><path d="M26.38,6.75 Q32.00,3.50 37.62,6.75 L51.93,15.00 Q57.55,18.25 57.55,24.74 L57.55,41.26 Q57.55,47.75 51.93,50.99 L37.62,59.25 Q32.00,62.50 26.38,59.26 L12.07,51.00 Q6.45,47.75 6.45,41.26 L6.45,24.74 Q6.45,18.25 12.07,15.01 Z" fill="#ffc84a" /><ellipse cx="24" cy="33.5" rx="4.4" ry="6" fill="#17130b" /><ellipse cx="40" cy="33.5" rx="4.4" ry="6" fill="#17130b" /><circle cx="25.5" cy="31" r="1.5" fill="#fff" /><circle cx="41.5" cy="31" r="1.5" fill="#fff" /></svg>
           <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: -1 }}>Kaam Ki Baat</div>
         </div>
 

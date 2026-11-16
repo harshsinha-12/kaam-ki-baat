@@ -1,12 +1,12 @@
 // Agent mascot (after the Air Agents app): a soft, rounded hexagon with glossy
 // eyes that blink, look toward where you are, and float a little when active.
 // One colour per zone, used everywhere the zone appears (docs/design/colors.md).
-export const ZONE_COLOR = { team_memory: "#9cc4ee", leader_desk: "#ecc87a", code_navigator: "#eba08a" } as const;
-const ZONE_DEEP = { team_memory: "#4f86c2", leader_desk: "#b98a2e", code_navigator: "#b9614b" } as const;
+export const ZONE_COLOR = { team_memory: "#7ab8ff", leader_desk: "#ffc84a", code_navigator: "#ff8c6b" } as const;
+const ZONE_DEEP = { team_memory: "#2f6fc0", leader_desk: "#c98a12", code_navigator: "#c5512f" } as const;
 export type GlyphZone = keyof typeof ZONE_COLOR;
 
 // Hexagon with rounded corners: each corner is a quadratic curve through the vertex.
-function roundedHex(cx: number, cy: number, r: number, k = 0.22): string {
+export function roundedHex(cx: number, cy: number, r: number, k = 0.22): string {
   const v = Array.from({ length: 6 }, (_, i) => { const a = (Math.PI / 3) * i - Math.PI / 2; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; });
   const lerp = (a: number[], b: number[], t: number) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
   let d = "";
@@ -17,7 +17,7 @@ function roundedHex(cx: number, cy: number, r: number, k = 0.22): string {
   });
   return d + "Z";
 }
-const HEX = roundedHex(32, 33, 27);
+export const HEX = roundedHex(32, 33, 27);
 
 export function AgentGlyph({ zone, size = 40, active = false, look = 0, reduced = true }: { zone: GlyphZone; size?: number; active?: boolean; look?: -1 | 0 | 1; reduced?: boolean }) {
   const c = ZONE_COLOR[zone], deep = ZONE_DEEP[zone], id = `ag-${zone}`;

@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 type GNode = { id: string; kind: string; label: string; path: string; community?: number; degree?: number };
 type Graph = { nodes: GNode[]; edges: { from: string; to: string }[]; sha: string; repository: string };
 
-const C = { ink: "#f2efe6", mute: "#8e93b0", left: "#7cc4ff", center: "#f5c451", right: "#ff8a65", ok: "#6fdc8c", wispr: "#b48cff" };
+const C = { ink: "#f6f7f9", mute: "#8d929d", left: "#7ab8ff", center: "#ffc84a", right: "#ff8c6b", ok: "#5be49b", wispr: "#b48cff" };
 
 // Key nodes, positioned in a 100x100 space (x, y).
 const KEY = [
@@ -177,20 +177,20 @@ export function DemoGraph({ graph }: { graph: Graph }) {
     { k: "Test → branch → PR", ids: ["test", "pr"], c: C.ok },
   ];
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 0, borderRadius: 28, overflow: "hidden", marginTop: 40,
-      background: "#000", border: "1px solid #1d1d1b" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: 0, borderRadius: 22, overflow: "hidden", marginTop: 0,
+      background: "#0c0d10", boxShadow: "inset 0 0 0 1px rgba(255,255,255,.07)" }}>
       <div style={{ padding: "36px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
-        <div style={{ color: "#8a8a8a", fontSize: 14, fontWeight: 500 }}>Live demo graph</div>
-        <div style={{ fontFamily: "var(--serif)", fontSize: "clamp(30px, 3.4vw, 46px)", lineHeight: 1.05, color: C.ink }}>Every answer walks a path you can see.</div>
-        <p style={{ color: "#aaa69a", lineHeight: 1.6, fontSize: 15.5, margin: 0 }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#8d929d", fontSize: 13, fontWeight: 550 }}><span style={{ width: 7, height: 7, borderRadius: 7, background: C.ok }} />Demo path, drawn on this repository’s real code graph</div>
+        <div style={{ fontFamily: "var(--display)", fontWeight: 650, letterSpacing: "-.035em", fontSize: "clamp(30px, 3.3vw, 46px)", lineHeight: 1.02, color: C.ink }}>Every answer walks a path you can see.</div>
+        <p style={{ color: "#8d929d", lineHeight: 1.6, fontSize: 15.5, margin: 0 }}>
           One question, traced end to end: from voice, to the meeting line that decided it, to the exact function in this repo, to the branch that fixes it.
         </p>
         <ol style={{ listStyle: "none", padding: 0, margin: "6px 0 0", display: "flex", flexDirection: "column", gap: 8 }}>
           {steps.map((s, i) => {
             const on = s.ids.includes(current) || (i === steps.length - 1 && step === PATH.length - 1);
             return (
-              <li key={s.k} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: on ? C.ink : "#6b6860", transition: "color .4s" }}>
-                <span style={{ width: 9, height: 9, borderRadius: 9, background: on ? s.c : "#2a2925", boxShadow: on ? `0 0 12px ${s.c}` : "none", transition: "all .4s" }} />{s.k}
+              <li key={s.k} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: on ? C.ink : "#5d626d", transition: "color .4s" }}>
+                <span style={{ width: 9, height: 9, borderRadius: 9, background: on ? s.c : "#23262d", boxShadow: on ? `0 0 12px ${s.c}` : "none", transition: "all .4s" }} />{s.k}
               </li>
             );
           })}
@@ -198,7 +198,7 @@ export function DemoGraph({ graph }: { graph: Graph }) {
         <div aria-live="polite" style={{ marginTop: "auto", minHeight: 44, fontFamily: "var(--mono)", fontSize: 12.5, lineHeight: 1.5, color: sideOf(current) === "left" ? C.left : sideOf(current) === "right" ? C.right : C.center }}>
           {CAPTIONS[current]}
         </div>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "#5a5852" }}>background: {graph.nodes.length} real nodes from {graph.repository} @ {graph.sha.slice(0, 7)}</div>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "#5d626d" }}>background: {graph.nodes.length} real nodes from {graph.repository} @ {graph.sha.slice(0, 7)}</div>
       </div>
       <canvas ref={canvas} style={{ width: "100%", height: 560, display: "block" }} aria-label="Animated path of a question through Team Memory, the Wispr MCP, the code graph and a pull request" />
     </div>

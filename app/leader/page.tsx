@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { b64u, fromB64u, zone } from "../zones/client";
 import s from "../zones/zones.module.css";
+import { BrandMark } from "../components/BrandMark";
 
 // CENTER · Leader Desk. Opens only for the server-verified leader after a
 // credential-bound passkey check (Touch ID / Face ID / Windows Hello). The first
@@ -76,7 +77,7 @@ export default function Leader() {
   return (
     <main className={s.page}>
       <div className={s.top}>
-        <h1 className={s.title}>Leader Desk · {me?.participant?.name ?? "…"}</h1>
+        <h1 className={s.title}><a href="/" aria-label="Kaam Ki Baat home" style={{ display: "inline-flex" }}><BrandMark size={26} /></a>Leader Desk · {me?.participant?.name ?? "…"}</h1>
         <span className={s.badge} style={{ borderColor: me?.stepUpFresh ? "var(--ok)" : "var(--center)" }}>{me?.stepUpFresh ? "session unlocked" : "locked"}</span>
       </div>
       {!me?.stepUpFresh && (

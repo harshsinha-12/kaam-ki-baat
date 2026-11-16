@@ -4,7 +4,7 @@ import { AudioWaveform } from "./AudioWaveform";
 import type { BolnaWebCall } from "@bolna/web-call";
 import type { ViewGraph } from "./CodeGraphView";
 import { sessionToken } from "../zones/client";
-import s from "../zones/zones.module.css";
+import w from "../team/workspace.module.css";
 export type ConnectedProject = { repository: string; sha: string; indexedFiles: number; label: "FIXTURE" | "LIVE"; fetchedAt?: string; graph: ViewGraph };
 export function ProjectConnection({ repository, selectedZone, onConnected }: { repository: string; selectedZone: "team_memory" | "leader_desk" | "code_navigator"; onConnected: (project: ConnectedProject) => void }) {
   const [url, setUrl] = useState(`https://github.com/${repository}`);
@@ -46,32 +46,45 @@ export function ProjectConnection({ repository, selectedZone, onConnected }: { r
   const active = !["idle", "ended"].includes(state);
   const voiceStatus = state === "active" ? "Voice active · speak now" : state === "connecting" ? "Connecting voice…" : state === "ringing" ? "Calling the voice guide…" : "Microphone off · voice chat not started";
   const zoneLabel = selectedZone === "team_memory" ? "Team Memory" : selectedZone === "code_navigator" ? "Code Navigator" : "Leader guide";
-  return <><section ref={panel} className={s.repoPanel} aria-label="Project and voice connection">
-    <div className={s.repoHeading}>
-      <div className={s.repoTitle}><span className={s.repoIcon} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 3h12a2 2 0 0 1 2 2v16H7a3 3 0 0 1-3-3V5a2 2 0 0 1 2-2Z"/><path d="M4 17a3 3 0 0 1 3-3h12M8 7h7M8 10h4"/></svg></span><div><h2>Project connection</h2><p>Your code and documentation, ready for the conversation.</p></div></div>
-      <span className={s.badge}>{project ? `${project.label ?? "UNKNOWN"} · ${project.indexedFiles} files · ${project.sha.slice(0,7)}` : "Select your approved repository"}</span>
+  const REPO_ICON = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M6 3v12M18 9v12M6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM6 15c0-4 12-2 12-6" /></svg>;
+  const MIC_ICON = <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 10.5a6.5 6.5 0 0 0 13 0M12 17v4M8.5 21h7" /></svg>;
+  return <><section ref={panel} className={w.panel} aria-label="Project and voice connection">
+    <div className={w.panelHead}>
+      <span className={w.panelIcon} aria-hidden="true">{REPO_ICON}</span>
+      <div><h2>Project connection</h2><p>{project ? "Repository indexed and pinned." : "Your code, ready for the conversation."}</p></div>
     </div>
-    <form className={s.row} onSubmit={e => { e.preventDefault(); void connect(); }}><input className={s.input} type="url" aria-label="GitHub repository URL" value={url} onChange={e => { setUrl(e.target.value); setProject(null); }} placeholder="https://github.com/owner/repository" required disabled={active} /><button className={s.btn} disabled={loading || active}>{loading ? "Connecting…" : project ? "Reconnect" : "Connect repository"}<span aria-hidden="true"> ↗</span></button></form>
-    <div className={s.projectActions}>
-      <div className={s.voiceSummary}><span className={s.micIcon} data-active={state === "active"} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/></svg></span><div><strong>Voice guide</strong><span className={s.voiceStatus} data-active={state === "active"} role="status">{voiceStatus}</span></div></div>
-      <AudioWaveform samples={levels} active={state === "active"} />
-      <div className={s.voiceContext}><span className={s.label}>Current context</span><strong aria-live="polite">{zoneLabel}</strong></div>
-      <div className={s.voiceActions}>
-        <label><input type="checkbox" checked={consent} onChange={e => { setConsent(e.target.checked); if (!e.target.checked) void call.current?.stop(); }} /> I consent to this voice call and recording</label>
-        <button className={`${s.btn} ${active ? s.endCall : s.primary}`} disabled={!active && (!consent || loading)} onClick={() => active ? void call.current?.stop() : void start()}>{active ? "End call" : "Start voice chat"}<span aria-hidden="true">{active ? " ◼" : " ↗"}</span></button>
+    {project && <div className={w.repoCard}>
+      <span className={w.snapLabel}>{project.label ?? "UNKNOWN"}</span>
+      <span className={w.mono}>{project.repository}</span>
+      <span className={w.repoFacts}><span><b>{project.indexedFiles}</b> files</span><span className={w.sha}>{project.sha.slice(0, 7)}</span></span>
+    </div>}
+    <form className={w.ask} onSubmit={e => { e.preventDefault(); void connect(); }}>
+      <input className={w.input} type="url" aria-label="GitHub repository URL" value={url} onChange={e => { setUrl(e.target.value); setProject(null); }} placeholder="https://github.com/owner/repository" required disabled={active} />
+      <button className={w.btn} disabled={loading || active}>{loading ? "Connecting…" : project ? "Reconnect" : "Connect"}</button>
+    </form>
+    {project && <button className={w.link} onClick={() => { onConnected(project); document.getElementById("code-navigator")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Open code graph</button>}
+    {project?.label === "FIXTURE" && <p className={w.note} data-tone="warn" role="status">Sample snapshot only. It does not prove a real Wispr import. Use an authorized LIVE snapshot for real-team answers.</p>}
+
+    <div className={w.voice} data-active={state === "active"}>
+      <div className={w.voiceHead}>
+        <span className={w.panelIcon} data-active={state === "active"} aria-hidden="true">{MIC_ICON}</span>
+        <div><strong>Voice guide</strong><span className={w.voiceStatus} data-active={state === "active"} role="status">{voiceStatus}</span></div>
+        <span className={w.voiceZone}>{zoneLabel}</span>
       </div>
+      <AudioWaveform samples={levels} active={state === "active"} />
+      <label className={w.consent}><input type="checkbox" checked={consent} onChange={e => { setConsent(e.target.checked); if (!e.target.checked) void call.current?.stop(); }} /> I consent to this voice call and recording</label>
+      <button className={`${w.btn} ${w.full} ${active ? w.danger : w.primary}`} disabled={!active && (!consent || loading)} onClick={() => active ? void call.current?.stop() : void start()}>{active ? "End call" : "Start voice chat"}</button>
     </div>
-    {project && <div className={s.projectFooter}><span>Repository connected · {project.repository}</span><button className={s.textButton} onClick={() => { onConnected(project); document.getElementById("code-navigator")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Open code graph <span aria-hidden="true">↗</span></button></div>}
-    {project?.label === "FIXTURE" && <p className={s.bad} role="status">Sample snapshot only. Code and meeting context here do not prove a real Wispr MCP import. Use an authorized LIVE snapshot for real-team answers.</p>}
-    <audio ref={audio} autoPlay />{error && <p className={s.bad} role="alert">{error}</p>}
+    <audio ref={audio} autoPlay />{error && <p className={w.error} role="alert">{error}</p>}
   </section>
-  {showDock && <aside className={s.voiceDock} aria-label="Voice chat controls">
-    <div className={s.dockHeader}><strong>{zoneLabel}</strong><span className={s.voiceStatus} data-active={state === "active"} role="status">{voiceStatus}</span></div>
+  {showDock && active && <aside className={w.dock} aria-label="Voice chat controls">
+    <div className={w.voiceHead}>
+      <span className={w.panelIcon} data-active={state === "active"} aria-hidden="true">{MIC_ICON}</span>
+      <div><strong>{zoneLabel}</strong><span className={w.voiceStatus} data-active={state === "active"} role="status">{voiceStatus}</span></div>
+    </div>
     <AudioWaveform samples={levels} active={state === "active"} />
-    {!active && <label><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> I consent to this voice call and recording</label>}
-    <button className={`${s.btn} ${s.primary}`} disabled={!consent && !active} onClick={() => active ? void call.current?.stop() : void start()}>{active ? "End voice chat" : "Start voice chat · enable microphone"}</button>
-    {error && <p className={s.bad} role="alert">{error}</p>}
-    <small>Camera tracking selects context. Start voice to hear and answer questions.</small>
+    <button className={`${w.btn} ${w.full} ${w.danger}`} onClick={() => void call.current?.stop()}>End voice chat</button>
+    {error && <p className={w.error} role="alert">{error}</p>}
   </aside>}
   </>;
 }
