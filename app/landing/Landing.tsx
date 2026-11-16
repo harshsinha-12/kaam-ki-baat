@@ -1,8 +1,9 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import s from "./landing.module.css";
 import graphData from "../../data/demo/codegraph.json";
 import { AgentGlyph } from "../components/AgentGlyph";
+import { BrandMark } from "../components/BrandMark";
 import { VoiceWave } from "../components/VoiceWave";
 import { DemoGraph } from "../components/DemoGraph";
 import { arcLength, catmullRomToBezier, damp, toSvgPath, type V2 } from "../../lib/motion/curves";
@@ -19,7 +20,7 @@ const REPO = "https://github.com/harshsinha-12/kaam-ki-baat";
 const ReducedMotion = createContext(true);
 
 // Muted accents. Colour marks which agent is speaking; it never decorates.
-const ZONE_HEX: Record<Zone, string> = { team_memory: "#8db8e8", leader_desk: "#e2bf72", code_navigator: "#e39478" };
+const ZONE_HEX: Record<Zone, string> = { team_memory: "#7ab8ff", leader_desk: "#ffc84a", code_navigator: "#ff8c6b" };
 
 function useMotionPreference() {
   const [reduced, setReduced] = useState(true);
@@ -98,58 +99,20 @@ function useCountUp(target: number, run: boolean, ms = 1400) {
 const typingTarget = (el: EventTarget | null) => !!(el as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable=true]");
 
 /* ------------------------------------------------------- the listener */
-// You, seen from the front, wearing AirPods. The head turns toward the agent
-// you picked and the AirPods pick up that agent's colour.
-const TURN: Record<Zone, number> = { team_memory: -26, leader_desk: 0, code_navigator: 26 };
+// You, seen from above: a puck with a heading needle that turns toward the
+// agent you picked, the way your head would with AirPods in.
+const TURN: Record<Zone, number> = { team_memory: -52, leader_desk: 0, code_navigator: 52 };
 function Listener({ zone, speaking }: { zone: Zone; speaking: boolean }) {
   const reduced = useContext(ReducedMotion);
-  const color = ZONE_HEX[zone];
-  const look = zone === "team_memory" ? -1 : zone === "code_navigator" ? 1 : 0;
-  const anim = !reduced;
   return (
-    <div className={s.listener} aria-hidden>
-      <div className={s.listenerHead} style={{ transform: `perspective(520px) rotateY(${TURN[zone]}deg) rotateX(${zone === "leader_desk" ? -6 : 0}deg)` }}>
-        <svg viewBox="0 0 140 150" width="100%" height="100%">
-          <defs>
-            <radialGradient id="kkbSkin" cx="42%" cy="30%" r="78%"><stop offset="0" stopColor="#e2b089" /><stop offset=".65" stopColor="#c48a63" /><stop offset="1" stopColor="#9a6545" /></radialGradient>
-            <linearGradient id="kkbHair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2e221c" /><stop offset="1" stopColor="#16110e" /></linearGradient>
-            <linearGradient id="kkbTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2a2a2a" /><stop offset="1" stopColor="#141414" /></linearGradient>
-          </defs>
-          <g>
-            {anim && <animateTransform attributeName="transform" type="translate" values="0 0;0 -1.2;0 0" dur="4.2s" repeatCount="indefinite" />}
-            <path d="M12 150 C16 121 41 108 70 108 C99 108 124 121 128 150 Z" fill="url(#kkbTop)" />
-            <path d="M52 110 C58 123 82 123 88 110" fill="none" stroke="#3a3a3a" strokeWidth="2" />
-            <path d="M63 118 v13 M77 118 v13" stroke="#bdbdbd" strokeWidth="1.8" strokeLinecap="round" />
-            <rect x="58" y="88" width="24" height="24" rx="10" fill="#b37b55" />
-            <ellipse cx="70" cy="60" rx="33" ry="38" fill="url(#kkbSkin)" />
-            <path d="M36 58 C34 27 55 15 72 16 C93 17 107 32 104 60 C100 45 90 37 78 35 C63 33 46 40 36 58 Z" fill="url(#kkbHair)" />
-            <g style={{ transform: `translateX(${look * 6}px)`, transition: reduced ? "none" : "transform .8s cubic-bezier(.16,1,.3,1)" }}>
-              <path d="M51 51 q6 -3.4 11 0 M78 51 q6 -3.4 11 0" stroke="#2e221c" strokeWidth="2.2" fill="none" strokeLinecap="round" />
-              {[57, 83].map((x) => (
-                <g key={x}>
-                  <ellipse cx={x} cy="61" rx="4.4" ry="4.6" fill="#fbf8f3" />
-                  <circle cx={x + look * 1.4} cy="61.4" r="2.8" fill="#2a1d17" />
-                  <circle cx={x + look * 1.4 + 0.9} cy="60.3" r=".9" fill="#fff" />
-                  <rect x={x - 5} y="55" width="10" height="0" fill="#c48a63">
-                    {anim && <animate attributeName="height" values="0;0;12;0" keyTimes="0;.94;.97;1" dur="4.6s" repeatCount="indefinite" />}
-                  </rect>
-                </g>
-              ))}
-              <path d="M70 64 q-2.4 7 1.4 8.4" stroke="#996244" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-              <ellipse cx="71" cy="82" rx="6" ry="2" fill="#7a3f30">
-                {anim && speaking && <animate attributeName="ry" values="1.5;3.4;1.2;3;1.5" dur=".7s" repeatCount="indefinite" />}
-              </ellipse>
-            </g>
-            {[[36, 64], [104, 64]].map(([x, y]) => (
-              <g key={x}>
-                <circle cx={x} cy={y} r="8.5" fill={color} opacity=".18" style={{ transition: "fill .5s" }} />
-                <rect x={x - 3.6} y={y - 6} width="7.2" height="11" rx="3.6" fill="#f7f7f5" />
-                <rect x={x - 1.4} y={y + 3} width="2.8" height="9" rx="1.4" fill="#f7f7f5" />
-              </g>
-            ))}
-          </g>
-        </svg>
-      </div>
+    <div className={s.listener} style={{ "--zc": ZONE_HEX[zone], "--turn": `${TURN[zone]}deg` } as CSSProperties} aria-hidden>
+      <span className={s.listenerHalo} />
+      <span className={s.listenerNeedle} />
+      <span className={s.listenerPuck}>
+        <AirPodsIcon />
+        <span className={s.listenerYou}>You</span>
+      </span>
+      <span className={s.listenerWave} data-on={speaking && !reduced}>{[0, 1, 2, 3, 4].map((i) => <i key={i} style={{ "--i": i } as CSSProperties} />)}</span>
     </div>
   );
 }
@@ -275,47 +238,6 @@ function HeroConsole() {
   return <Console zone={zone} autoplay={auto} keyboard onZone={pick} />;
 }
 
-/* ------------------------------------------------------------- hook */
-// "When we're stuck, we look left and right." The eyes follow the pointer
-// across the section and glance on their own when the pointer is away.
-const HOOK_LINES = ["When we’re stuck, we look left, and right.", "In an exam, you can’t.", "At work, now you can."];
-function Hook() {
-  const reduced = useContext(ReducedMotion);
-  const [ref, inView] = useInView<HTMLElement>(0.35, false);
-  const eyes = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState(0);
-  const pointer = useRef(false);
-  useEffect(() => {
-    if (!inView || reduced) return;
-    const id = setInterval(() => setStep((x) => (x + 1) % 4), 2200);
-    return () => clearInterval(id);
-  }, [inView, reduced]);
-  useEffect(() => {
-    if (pointer.current || !eyes.current) return;
-    eyes.current.style.setProperty("--look", String(reduced ? 0 : [-1, 1, 0, 0][step]));
-  }, [step, reduced]);
-  const onMove = (e: ReactPointerEvent<HTMLElement>) => {
-    if (reduced || !eyes.current) return;
-    pointer.current = true;
-    const r = e.currentTarget.getBoundingClientRect();
-    eyes.current.style.setProperty("--look", (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3));
-  };
-  const line = reduced ? 2 : Math.min(step, 2);
-  return (
-    <section ref={ref} className={s.hook} onPointerMove={onMove} onPointerLeave={() => { pointer.current = false; }} aria-label="When we are stuck we look left and right. At work, now you can.">
-      <div ref={eyes} className={s.eyes} aria-hidden>
-        {[0, 1].map((i) => <span key={i} className={s.eye}><i className={s.iris} /></span>)}
-      </div>
-      <div className={s.hookLines} aria-hidden>
-        {HOOK_LINES.map((t, i) => <p key={t} className={s.hookLine} data-on={i === line}>{i === 1 ? <>In an exam, <span className={s.strike}>you can’t.</span></> : i === 2 ? <>At work, <em>now you can.</em></> : t}</p>)}
-      </div>
-      <div className={s.hookAgents}>
-        {ZONES.map((z) => <span key={z} data-zone={z}><AgentGlyph zone={z} size={30} active reduced />{SCRIPT[z].label}<small>{SCRIPT[z].side}</small></span>)}
-      </div>
-    </section>
-  );
-}
-
 /* ------------------------------------------------------------- problem */
 function Person({ on }: { on: boolean }) {
   return <svg viewBox="0 0 24 24" className={s.person} data-on={on} aria-hidden><circle cx="12" cy="7" r="4.2" /><path d="M3.5 22c0-5 3.8-8.2 8.5-8.2s8.5 3.2 8.5 8.2z" /></svg>;
@@ -394,7 +316,7 @@ function Evals() {
       </article>
       <article className={s.eCard}>
         <header><h3>Tests on every push</h3><span>GitHub Actions, 15 Nov · 0 failures</span></header>
-        <svg className={s.line} viewBox={`-10 -20 ${W + 20} ${H + 40}`} preserveAspectRatio="none" aria-label={`Passing tests rose from ${TEST_HISTORY[0][1]} to ${last[1]}`}>
+        <svg className={s.trendSvg} viewBox={`-10 -20 ${W + 20} ${H + 40}`} preserveAspectRatio="none" aria-label={`Passing tests rose from ${TEST_HISTORY[0][1]} to ${last[1]}`}>
           {[150, 175, 200, 225].map((g) => <line key={g} x1="0" x2={W} y1={H - ((g - lo) / (hi - lo)) * H} y2={H - ((g - lo) / (hi - lo)) * H} className={s.grid} />)}
           <polyline points={pts} pathLength={1} className={s.trend} />
         </svg>
@@ -431,8 +353,7 @@ function DoubtLoop() {
   return (
     <div ref={ref} className={s.loopGrid}>
       <div>
-        <Reveal><div className={s.eyebrow}>The doubt loop</div></Reveal>
-        <Reveal i={1}><h2 className={s.h2}>Every team runs it. <em>Nobody</em> owns it.</h2></Reveal>
+        <Reveal><h3 className={s.h3}>Every team runs the doubt loop. Nobody owns it.</h3></Reveal>
         <Reveal i={2}><p className={s.lede}>The decision was spoken, then never written down properly. The code changed, but nobody checked which commit. The one person who knows is busy. So people guess, and guesses ship.</p></Reveal>
         <Reveal i={3}><div className={s.timer}><span className={s.timerDot} />Someone has been waiting <b>{Math.floor(sec / 60)}:{String(sec % 60).padStart(2, "0")}</b> for an answer.</div></Reveal>
       </div>
@@ -503,25 +424,18 @@ function Hears() {
   const [ref, inView] = useInView<HTMLDivElement>(0.3);
   const [i, setI] = useState(0);
   const [manual, setManual] = useState(false);
-  useEffect(() => { if (reduced || !inView || manual) return; const id = setInterval(() => setI((x) => (x + 1) % HEARS.length), 2800); return () => clearInterval(id); }, [inView, manual, reduced]);
+  useEffect(() => { if (reduced || !inView || manual) return; const id = setInterval(() => setI((x) => (x + 1) % HEARS.length), 3200); return () => clearInterval(id); }, [inView, manual, reduced]);
   return (
-    <div ref={ref} className={s.hears}>
-      <div className={s.hTabs} role="tablist">
-        {HEARS.map((h, k) => (
-          <button key={h.k} type="button" role="tab" aria-selected={k === i} className={s.hTab} onClick={() => { setManual(true); setI(k); }}>
-            <span className={s.hNum}>0{k + 1}</span>{h.k}
-          </button>
-        ))}
-      </div>
-      <div className={s.hGrid}>
-        {HEARS.map((h, k) => (
-          <button key={h.k} type="button" className={`${s.hCol} ${k === i ? s.hOn : ""}`} onClick={() => { setManual(true); setI(k); }}>
-            <HearsUI ui={h.ui} on={k === i} />
-            <div className={s.hTitle}>{h.t}</div>
-            <div className={s.hBody}>{h.b}</div>
-          </button>
-        ))}
-      </div>
+    <div ref={ref} className={s.hears} style={{ "--step": i } as CSSProperties}>
+      <div className={s.hRail} aria-hidden><i /></div>
+      {HEARS.map((h, k) => (
+        <button key={h.k} type="button" className={s.hCol} data-on={k === i} data-done={k < i} aria-pressed={k === i} onClick={() => { setManual(true); setI(k); }}>
+          <span className={s.hHead}><span className={s.hNum}>{k + 1}</span><span className={s.hKey}>{h.k}</span></span>
+          <HearsUI ui={h.ui} on={k === i} />
+          <span className={s.hTitle}>{h.t}</span>
+          <span className={s.hBody}>{h.b}</span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -600,8 +514,7 @@ function LeadDesk() {
   return (
     <div ref={ref} className={s.lead}>
       <div className={s.leadCopy}>
-        <Reveal><div className={s.eyebrow}>For the lead</div></Reveal>
-        <Reveal i={1}><h2 className={s.h2}>One desk to check that the whole team <em>got it</em>.</h2></Reveal>
+        <Reveal><h2 className={s.h2}>One desk to check that the whole team got it.</h2></Reveal>
         <Reveal i={2}><p className={s.lede}>Ask the Leader Desk once. It calls each teammate through Bolna to confirm they understood, and walks the code graph to show what actually changed in the repository since the meeting.</p></Reveal>
         <Reveal i={3}><ul className={s.leadPoints}>
           <li><b>Calls, not reminders.</b> Each teammate hears the decision and confirms it in their own words.</li>
@@ -625,7 +538,7 @@ function LeadDesk() {
                 <span className={s.avatar}>{m.init}</span>
                 <span className={s.memberName}>{m.who}</span>
                 <span className={s.memberResult}>{done ? m.result : calling ? "Calling…" : "Waiting"}</span>
-                <span className={s.memberState}>{done ? (m.ok ? "Confirmed" : "Follow-up") : calling ? <span className={s.ring} /> : ""}</span>
+                <span className={s.memberState}>{done ? (m.ok ? "Confirmed" : "Follow-up") : calling ? <span className={s.spinner} /> : ""}</span>
               </div>
             );
           })}
@@ -724,7 +637,7 @@ function Escalation() {
         <button key={p.t} type="button" className={`${s.pStep} ${i <= step ? s.pOn : ""}`} onClick={() => { setManual(true); setStep(i); }}>
           <span className={s.pBadge} data-badge>{i + 1}</span>
           <span className={s.pTitle}>{p.t}</span>
-          <span className={s.pText}>{p.d}</span>
+          <span className={s.pDesc}>{p.d}</span>
           <span className={s.pSay}>{p.say}</span>
         </button>
       ))}
@@ -733,27 +646,31 @@ function Escalation() {
 }
 
 /* ------------------------------------------------------------- guards */
-const GUARDS: { front: ReactNode; back: ReactNode }[] = [
-  { front: <><div className={s.gTitle}>“Is it merged?”</div><div className={s.strike}>Yes, the PR is done.</div></>, back: <><div className={s.gTitle}>PR #2 is open, not merged.</div><p className={s.gText}>An open PR is never reported as shipped.</p></> },
-  { front: <><div className={s.gTitle}>“Did CI pass?”</div><div className={s.strike}>Yes, all green.</div></>, back: <><div className={s.gTitle}>Green on a1b2c3d, an older commit.</div><p className={s.gText}>A pass on an older commit does not verify the current one.</p></> },
-  { front: <><div className={s.gTitle}>“Am I the owner?”</div><div className={s.strike}>Yes, you were assigned.</div></>, back: <><div className={s.gTitle}>Only proposed so far.</div><p className={s.gText}>Mentioned, assigned and accepted are different. It offers to ask the lead.</p></> },
-  { front: <><div className={s.gTitle}>“Mark it done.”</div><div><span className={s.strike}>Saved!</span> <span className={s.gNote}>(it timed out)</span></div></>, back: <><div className={s.gTitle}>Saved only after read-back.</div><p className={s.gText}>A timeout is a failure, and it says so out loud.</p></> },
-  { front: <><div className={s.gTitle}>“I turned to the leader zone.”</div><div className={s.strike}>Welcome, leader.</div></>, back: <><div className={s.gTitle}>A head turn only selects.</div><p className={s.gText}>Identity is a server-side role plus a passkey. Movement never unlocks anything.</p></> },
-  { front: <><div className={s.gTitle}>Cut off mid-sentence.</div><div className={s.strike}>Fact lost.</div></>, back: <><div className={s.gTitle}>“Also, before I forget…”</div><p className={s.gText}>Unsaid critical facts come back after the interruption.</p></> },
+const GUARDS: { q: string; bad: string; badNote?: string; good: string; why: string }[] = [
+  { q: "Is it merged?", bad: "Yes, the PR is done.", good: "PR #2 is open, not merged.", why: "An open PR is never reported as shipped." },
+  { q: "Did CI pass?", bad: "Yes, all green.", good: "Green on a1b2c3d, an older commit.", why: "A pass on an older commit does not verify the current one." },
+  { q: "Am I the owner?", bad: "Yes, you were assigned.", good: "Only proposed so far. Should I ask Charan?", why: "Mentioned, assigned and accepted are kept apart." },
+  { q: "Mark it done.", bad: "Saved!", badNote: "it had timed out", good: "Saved and read back, version 3.", why: "A timeout is a failure, and it says so out loud." },
+  { q: "I turned to the leader desk.", bad: "Welcome, leader.", good: "Selected. Confirm with your passkey.", why: "A head turn only selects. Identity is a server role plus a passkey." },
+  { q: "(cut off mid-sentence)", bad: "The fact is lost.", good: "Also, before I forget: freeze needs green CI.", why: "Unsaid critical facts come back after an interruption." },
 ];
 
 function Guards() {
-  const [flip, setFlip] = useState<Set<number>>(new Set());
+  const [ref, inView] = useInView<HTMLDivElement>(0.2);
+  const reduced = useContext(ReducedMotion);
   return (
-    <div className={s.guards}>
+    <div ref={ref} className={s.guards} data-run={inView || reduced} role="table" aria-label="What a typical chatbot says compared with Kaam Ki Baat">
+      <div className={s.gRow} data-head role="row">
+        <span role="columnheader">You ask</span>
+        <span role="columnheader">A typical chatbot</span>
+        <span role="columnheader"><BrandMark size={16} blink={false} />Kaam Ki Baat</span>
+      </div>
       {GUARDS.map((g, i) => (
-        <button key={i} type="button" className={`${s.guard} ${flip.has(i) ? s.flipped : ""}`} aria-pressed={flip.has(i)}
-          onClick={() => setFlip((f) => { const n = new Set(f); if (n.has(i)) n.delete(i); else n.add(i); return n; })}>
-          <span className={s.guardInner}>
-            <span className={s.face}>{g.front}<span className={s.flipHint}>What a chatbot says. Tap to see ours</span></span>
-            <span className={`${s.face} ${s.back}`}>{g.back}<span className={s.flipHint}>What Kaam Ki Baat says</span></span>
-          </span>
-        </button>
+        <div key={g.q} className={s.gRow} role="row" style={{ "--i": i } as CSSProperties}>
+          <span role="cell" className={s.gQ}>{g.q}</span>
+          <span role="cell" className={s.gBad}><span className={s.xMark} aria-hidden>✕</span><span><s>{g.bad}</s>{g.badNote && <small> ({g.badNote})</small>}</span></span>
+          <span role="cell" className={s.gGood}><span className={s.okMark} aria-hidden>✓</span><span><b>{g.good}</b><small>{g.why}</small></span></span>
+        </div>
       ))}
     </div>
   );
@@ -833,27 +750,15 @@ function Architecture() {
   );
 }
 
-function BrandMark({ size = 24 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden>
-      <rect width="64" height="64" rx="16" fill="#e2bf72" />
-      <ellipse cx="25" cy="31" rx="3.6" ry="5" fill="#141414" /><ellipse cx="39" cy="31" rx="3.6" ry="5" fill="#141414" />
-      <path d="M25 42 q7 4.5 14 0" stroke="#141414" strokeWidth="3" fill="none" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 /* ------------------------------------------------------------- nav */
 const NAV = [
   { id: "demo", label: "Demo" },
-  { id: "problem", label: "Problem" },
-  { id: "hears", label: "Hearing" },
+  { id: "problem", label: "Why" },
+  { id: "hears", label: "How it hears" },
   { id: "agents", label: "Agents" },
   { id: "leads", label: "For leads" },
-  { id: "escalation", label: "Escalation" },
   { id: "guards", label: "Guards" },
   { id: "evals", label: "Evals" },
-  { id: "how", label: "Architecture" },
 ];
 
 function Nav() {
@@ -885,17 +790,55 @@ function Nav() {
   }, [active]);
   return (
     <nav className={s.nav} data-scrolled={scrolled}>
-      <a href="#top" className={s.brand}><BrandMark />Kaam Ki Baat</a>
-      <div ref={bar} className={s.navBar}>
-        <span className={s.navPill} data-on={!!pill} style={pill ? { transform: `translateX(${pill.x}px)`, width: pill.w } : undefined} aria-hidden />
-        {NAV.map((n) => <a key={n.id} href={`#${n.id}`} data-id={n.id} aria-current={active === n.id ? "true" : undefined}>{n.label}</a>)}
-      </div>
-      <div className={s.navCta}>
-        <a href="/evals" className={`${s.btn} ${s.ghost}`}>Call evals</a>
-        <a href="/team" className={`${s.btn} ${s.primary}`}>Open workspace</a>
+      <div className={s.navInner}>
+        <a href="#top" className={s.brand}><BrandMark size={30} track /><span>Kaam Ki Baat<small lang="hi">काम की बात</small></span></a>
+        <div ref={bar} className={s.navBar}>
+          <span className={s.navPill} data-on={!!pill} style={pill ? { transform: `translateX(${pill.x}px)`, width: pill.w } : undefined} aria-hidden />
+          {NAV.map((n) => <a key={n.id} href={`#${n.id}`} data-id={n.id} aria-current={active === n.id ? "true" : undefined}>{n.label}</a>)}
+        </div>
+        <div className={s.navCta}>
+          <a href={REPO} target="_blank" rel="noreferrer" className={`${s.btn} ${s.ghost} ${s.icon}`} aria-label="Source on GitHub"><GitHubIcon /></a>
+          <a href="/team" className={`${s.btn} ${s.primary}`}>Open workspace</a>
+        </div>
       </div>
     </nav>
   );
+}
+
+function GitHubIcon({ size = 18 }: { size?: number }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z" /></svg>;
+}
+
+function SectionHead({ title, lede, children }: { title: ReactNode; lede?: ReactNode; children?: ReactNode }) {
+  return (
+    <div className={s.head}>
+      <Reveal><h2 className={s.h2}>{title}</h2></Reveal>
+      {(lede || children) && <Reveal i={1} className={s.headSide}>{lede && <p className={s.lede}>{lede}</p>}{children}</Reveal>}
+    </div>
+  );
+}
+
+/* Works-with band: the real inputs and providers, not decoration. */
+function Integrations() {
+  return (
+    <div className={s.band} aria-label="Works with">
+      <span className={s.bandLabel}>Runs on</span>
+      <span className={s.logoTile} data-kind="img"><img src="/brand/wispr-flow.png" alt="Wispr Flow" height={22} /></span>
+      <span className={s.logoTile} data-kind="img"><img src="/brand/bolna.png" alt="Bolna" height={30} /></span>
+      <span className={s.logoTile}><GitHubIcon size={18} />GitHub</span>
+      <span className={s.bandSep} aria-hidden />
+      <span className={s.bandLabel}>Pick an agent with</span>
+      <span className={s.logoTile}><AirPodsIcon />AirPods head turn</span>
+      <span className={s.logoTile}><WebcamIcon />Webcam</span>
+      <span className={s.logoTile}><kbd className={s.kbd}>←</kbd><kbd className={s.kbd}>↑</kbd><kbd className={s.kbd}>→</kbd>Keys</span>
+    </div>
+  );
+}
+function AirPodsIcon() {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M7 3.5a3 3 0 0 0-3 3v1a3 3 0 0 0 3 3h.5v9a1.5 1.5 0 0 0 3 0V6.5a3 3 0 0 0-3-3Z" /><path d="M17 3.5a3 3 0 0 1 3 3v1a3 3 0 0 1-3 3h-.5v9a1.5 1.5 0 0 1-3 0V6.5a3 3 0 0 1 3-3Z" /></svg>;
+}
+function WebcamIcon() {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><circle cx="12" cy="10" r="7" /><circle cx="12" cy="10" r="2.6" /><path d="M8 21h8M12 17v4" /></svg>;
 }
 
 /* ------------------------------------------------------------------ page */
@@ -909,94 +852,84 @@ export default function Landing() {
       <main id="main">
         <header id="top" className={s.hero}>
           <div className={s.heroCopy}>
-            <span className={s.badge}><span className={s.dotLive} />Built at Build Out Loud · Wispr Flow × Bolna</span>
+            <span className={s.badge}><span className={s.dotLive} />Built at Build Out Loud, Bengaluru</span>
             <h1 className={s.h1}>
               <span className={s.line}><span>Meeting mein bola.</span></span>
-              <span className={s.line}><span><em>Repo mein bana?</em></span></span>
+              <span className={s.line}><span>Repo mein bana?</span></span>
             </h1>
-            <p className={s.heroSub}>A voice teammate for engineering teams. Look left to ask what the team decided, face front to ask the lead, look right to land on the exact line of code. Every answer has a source.</p>
+            <p className={s.heroSub}>A voice teammate for engineering teams. It remembers what was decided, asks the lead when it isn’t sure, and opens the exact line of code. Every answer comes with its source.</p>
             <div className={s.ctaRow}>
               <a href="/team" className={`${s.btn} ${s.primary} ${s.big}`}>Open workspace</a>
-              <a href="#demo" className={`${s.btn} ${s.big}`}>Watch it work</a>
+              <a href="#demo" className={`${s.btn} ${s.big}`}>See a question travel</a>
             </div>
-            <div className={s.inputs}>
-              <span>Works with</span>
-              <span className={s.inputChip}>AirPods head motion</span>
-              <span className={s.inputChip}>Webcam</span>
-              <span className={s.inputChip}>Keyboard <kbd className={s.kbd}>←</kbd><kbd className={s.kbd}>→</kbd></span>
-            </div>
+            <ol className={s.heroAgents} aria-label="The three agents">
+              {ZONES.map((z) => (
+                <li key={z} style={{ "--c": ZONE_HEX[z] } as CSSProperties}>
+                  <AgentGlyph zone={z} size={30} reduced />
+                  <span><b>{SCRIPT[z].label}</b><small>{SCRIPT[z].role}</small></span>
+                  <kbd className={s.kbd}>{SCRIPT[z].key}</kbd>
+                </li>
+              ))}
+            </ol>
           </div>
           <div className={s.heroStage}><HeroConsole /></div>
         </header>
 
-        <Hook />
+        <Integrations />
 
         <section id="demo" className={s.section}>
           <DemoGraph graph={graphData as never} />
         </section>
 
         <section id="problem" className={s.section}>
-          <Reveal><div className={s.eyebrow}>The cost of “wait, what did we decide?”</div></Reveal>
-          <Reveal i={1}><h2 className={s.h2}>Meetings end. <em>Doubt</em> doesn&apos;t.</h2></Reveal>
+          <SectionHead title="Meetings end. Doubt doesn’t." lede="A decision gets spoken, never written down properly, and an hour later three people remember three different versions. These are the numbers behind that feeling." />
           <Problem />
+          <DoubtLoop />
         </section>
 
-        <section className={s.section}><DoubtLoop /></section>
-
         <section id="hears" className={s.section}>
-          <Reveal><div className={s.eyebrow}>From speech to a checked answer</div></Reveal>
-          <Reveal i={1}><h2 className={s.h2}>Wispr hears it. <em>The evidence</em> decides it.</h2></Reveal>
+          <SectionHead title="Wispr hears it. The evidence decides it." lede="Half-sentences and Hinglish are fine. What you say is cleaned up, matched to a decision or a function, checked against fixed rules, and only then answered." />
           <Hears />
         </section>
 
         <section id="agents" className={s.section}>
-          <Reveal><div className={s.eyebrow}>Three agents, one voice</div></Reveal>
-          <Reveal i={1}><h2 className={s.h2}>Where you look decides <em>who</em> answers.</h2></Reveal>
-          <Reveal i={2}><p className={s.lede}>Pick an agent with AirPods head motion, your webcam, or the arrow keys. Turn left, face front or turn right. You still choose when to talk.</p></Reveal>
+          <SectionHead title="Where you look decides who answers." lede="Turn left, face front or turn right with AirPods, a webcam or the arrow keys. A turn only picks the agent. You still choose when to talk." />
           <AgentsDive />
         </section>
 
         <section id="leads" className={s.section}><LeadDesk /></section>
 
         <section id="escalation" className={s.section}>
-          <Reveal><div className={s.eyebrow}>The defining loop</div></Reveal>
-          <Reveal i={1}><h2 className={s.h2}>From <em>“not sure”</em> to a sourced answer.</h2></Reveal>
-          <Reveal i={2}><p className={s.lede}>Unknowns turn into questions for the lead instead of guesses. The answer comes back with its source, even if you hung up in the meantime.</p></Reveal>
+          <SectionHead title="From “not sure” to a sourced answer." lede="Unknowns become a question for the lead instead of a guess. The answer comes back with its source, even if you hung up in the meantime." />
           <Escalation />
         </section>
 
         <section id="guards" className={s.section}>
-          <Reveal><div className={s.eyebrow}>What it refuses to fake</div></Reveal>
-          <Reveal i={1}><h2 className={s.h2}>Confident is easy. <em>Correct</em> is the product.</h2></Reveal>
+          <SectionHead title="Confident is easy. Correct is the product." lede="Six questions where a general chatbot sounds helpful and is wrong. Each refusal below is a rule in the code, with a test." />
           <Guards />
         </section>
 
         <section className={s.section}>
-          <Reveal><div className={s.eyebrow}>Look right</div></Reveal>
-          <Reveal i={1}><h2 className={s.h2}>The answer to “kahan hai?” is a <em>line number</em>.</h2></Reveal>
+          <SectionHead title="“Kahan hai?” gets a line number." lede="Code Navigator walks the repository graph to a file, a function and the nearest test, pinned to one commit." />
           <CodeNav />
         </section>
 
         <section id="evals" className={s.section}>
-          <Reveal><div className={s.eyebrow}>Evals</div></Reveal>
-          <Reveal i={1}><h2 className={s.h2}>Measured, <em>not guessed</em>.</h2></Reveal>
-          <Reveal i={2}><p className={s.lede}>Numbers from our own repository and our own calls. Written by the team that built it, so read them as a regression guard, not a public benchmark.</p></Reveal>
+          <SectionHead title="Measured, not guessed." lede="Numbers from our own repository and our own calls. Read them as a regression guard, not a public benchmark." />
           <Evals />
         </section>
 
         <section id="how" className={s.section}>
-          <Reveal><div className={s.eyebrow}>How it works</div></Reveal>
-          <Reveal i={1}><h2 className={s.h2}>Sources in. <em>Evidence</em> out.</h2></Reveal>
-          <Reveal i={2}><p className={s.lede}>Wispr supplies reviewed passages from one approved meeting. GitHub supplies commit-pinned code. Head motion selects an agent and a click or key press activates it. Fixed rules decide status; the language model only explains.</p></Reveal>
+          <SectionHead title="Sources in. Evidence out." lede="Wispr supplies reviewed passages from one approved meeting, GitHub supplies commit-pinned code. Fixed rules decide status; the language model only explains." />
           <Architecture />
           <div className={s.statusGrid}>
-            <div className={s.statusCol}><h3>Works now</h3><ul>
+            <div className={s.statusCol}><h3><span className={s.dotOk} />Works now</h3><ul>
               <li>Evidence engine, three agents, leader escalation with read-back</li>
               <li>Live GitHub reads: PRs, changed files, check runs</li>
               <li>Bolna runtime tools over HTTPS, tested with fixtures</li>
               <li>AirPods motion companion and webcam controls with calibration</li>
             </ul></div>
-            <div className={s.statusCol}><h3>Next</h3><ul>
+            <div className={s.statusCol}><h3><span className={s.dotWait} />Next</h3><ul>
               <li>Verify the voice path in a real call</li>
               <li>Three consented phone calls longer than 45 seconds</li>
               <li>Passkey checks on real devices</li>
@@ -1005,8 +938,10 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className={`${s.section} ${s.final}`}>
-          <h2 className={s.finalH}>Stop guessing what the team <em>meant</em>.</h2>
+        <section className={s.final}>
+          <BrandMark size={84} track />
+          <h2 className={s.finalH}>Stop guessing what the team meant.</h2>
+          <p className={s.lede}>Open the workspace, connect a repository and ask your first question.</p>
           <div className={s.ctaRow} style={{ justifyContent: "center" }}>
             <a href="/team" className={`${s.btn} ${s.primary} ${s.big}`}>Open workspace</a>
             <a href={`${REPO}/blob/main/docs/architecture.md`} className={`${s.btn} ${s.big}`} target="_blank" rel="noreferrer">Read the architecture</a>
@@ -1015,9 +950,9 @@ export default function Landing() {
       </main>
 
       <footer className={s.footer}>
-        <span className={s.footBrand}><BrandMark size={18} />Kaam Ki Baat</span>
+        <span className={s.footBrand}><BrandMark size={20} blink={false} />Kaam Ki Baat</span>
         <span>Built in three hours at Build Out Loud with Wispr Flow, Bolna and GitHub. Demo conversations are fictional.</span>
-        <a href={REPO} target="_blank" rel="noreferrer">GitHub ↗</a>
+        <span className={s.footLinks}><a href="/evals">Call evals</a><a href={REPO} target="_blank" rel="noreferrer">GitHub</a></span>
       </footer>
     </div></ReducedMotion.Provider>
   );

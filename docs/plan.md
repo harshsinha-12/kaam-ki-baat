@@ -19,6 +19,14 @@ Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competiti
 - Removed only the lower `GraphSection` presentation, its unused imports/styles, and dead `#graph` nav anchor; retained `DemoGraph` at `#demo`, `CodeNav`, `/graph`, and the authenticated code-graph APIs.
 - Added `tests/landing-single-graph.test.ts` to prevent the duplicated landing section from returning. CI/build and deployed-render verification must be checked after the PR.
 
+## Design overhaul: logo, landing and workspace (Claude, 2026-11-16 evening)
+
+- Requested by the user (Charan): the live landing page and `/team` workspace still read as generic; replace the plain yellow tile with the real eyed agent logo, remove the big "look left, look right" eyes, replace the text-only flow chain with a real icon story, fill the empty project-connection panel, fix buttons and use space properly. Branch `claude/design-overhaul`.
+- Logo: `app/components/BrandMark.tsx` (amber rounded hexagon with two blinking eyes, pupils can follow the pointer), used in nav, workspace, Leader Desk, footer, favicon (`app/icon.svg`) and the share image.
+- Landing: Bricolage Grotesque headlines (no serif italics), new palette tokens, hero with agent list and an integrations band (Wispr Flow, Bolna, GitHub logos in `public/brand/`), `Hook` eyes removed, cartoon listener replaced by a heading puck, two-column section heads, tighter section rhythm, Hearing as four connected stages, Guards as a chatbot vs Kaam Ki Baat table.
+- Workspace: three-column spatial layout (Team Memory left, project + voice + Leader Desk centre, Code Navigator right), `FlowRail` rewritten as an icon journey with a fork to the lead or the code, offline banner with retry, a setup checklist instead of an empty panel, suggested questions, illustrated empty states. `ProjectConnection` restyled; the floating voice dock now appears only during an active call. API calls, focus logic and `flow-state.ts` unchanged.
+- Verification: no registry access, so no `npm ci`; pages were bundled locally with esbuild against mocked APIs and screenshotted at 1440 and 390 px (offline and connected states). `tests/landing-single-graph.test.ts` and `tests/workspace-flow.test.ts` pass when bundled. CI (typecheck, tests, build) and the Vercel preview are the authoritative checks.
+
 ## UI redesign: landing, nav and workspace (Claude, 2026-11-16)
 
 - Requested by the user (Charan): rebuild the landing page and `/team` workspace for a calmer, human design system modelled on cardboard.ai (true black, Instrument Serif headlines, Geist UI type, solid 12px buttons, colour only for the active agent), remove em dashes from UI copy, add a scrollspy toggle nav, arrow-key agent switching, a "For leads" section (Bolna team check + code graph walk), and an aligned sidebar workspace. The user explicitly authorized merging this PR so it goes live.
