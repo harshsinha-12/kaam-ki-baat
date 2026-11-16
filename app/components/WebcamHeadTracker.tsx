@@ -86,7 +86,7 @@ export function WebcamHeadTracker({ onSelect, onStatusChange, disabled = false, 
         {snapshot.yawDeg !== null && <span className={styles.poseMarker} style={{ left: `${markerPosition}%` }} />}
       </div>
       <div className={styles.readout}><span aria-live="polite">{snapshot.selectedZone ? `Selected: ${ZONE_LABELS[snapshot.selectedZone]}` : "Calibrate, then hold a turn briefly."}</span>
-        <span className={styles.angle} aria-label="Head turn in degrees">{snapshot.yawDeg === null ? "—" : `${Math.round(snapshot.yawDeg)}°`}</span>
+        <span className={styles.angle} aria-label="Head turn in degrees">{snapshot.yawDeg === null ? "n/a" : `${Math.round(snapshot.yawDeg)}°`}</span>
       </div>
     </div>
     <div className={styles.controls}>

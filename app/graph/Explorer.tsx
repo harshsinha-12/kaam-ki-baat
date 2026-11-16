@@ -152,7 +152,7 @@ export function Explorer({ deployedSha }: { deployedSha?: string } = {}) {
     setHits(h); setSelected(h[0] ? byId.get(h[0].id) ?? null : null);
     highlight.current = new Set(h.slice(0, 1).map((x) => x.id));
     if (h[0]) flyTo([h[0].id], 1.8);
-    setPath([]); setCaption(h[0] ? `Top match: ${h[0].label} — ${h[0].why.join(" · ")}` : "No match at this commit.");
+    setPath([]); setCaption(h[0] ? `Top match: ${h[0].label}: ${h[0].why.join(" · ")}` : "No match at this commit.");
   }, [q, mode, byId, flyTo]);
 
   // The route the Code Navigator takes from a hit: symbol → file → callers → test.
@@ -165,8 +165,8 @@ export function Explorer({ deployedSha }: { deployedSha?: string } = {}) {
     return [
       { id, text: `The question matched ${n.label} (${hit?.why.join(" · ") ?? "selected"}).` },
       ...(file && file !== id ? [{ id: file, text: `It is defined in ${byId.get(file)?.path}, line ${n.line}, at commit ${G.sha.slice(0, 7)}.` }] : []),
-      ...callers.map((c) => ({ id: c, text: `${byId.get(c)?.path} calls it — that's how it's reached.` })),
-      ...tests.map((tt) => ({ id: tt, text: `${byId.get(tt)?.path} tests it — run this to check a fix.` })),
+      ...callers.map((c) => ({ id: c, text: `${byId.get(c)?.path} calls it. That's how it's reached.` })),
+      ...tests.map((tt) => ({ id: tt, text: `${byId.get(tt)?.path} tests it. Run this to check a fix.` })),
     ];
   }, [byId, hits]);
 
@@ -206,7 +206,7 @@ export function Explorer({ deployedSha }: { deployedSha?: string } = {}) {
     highlight.current = new Set(); setSelected(null); setPath([]); setBuilding(true); fit();
     let i = 0;
     const next = () => {
-      if (i >= steps.length) { STAGE = 0; stage.current = 0; setBuilding(false); setCaption(`Done: ${G.nodes.length} nodes, ${G.edges.length} edges, computed from the code — nothing hand-drawn. Now ask it something.`); return; }
+      if (i >= steps.length) { STAGE = 0; stage.current = 0; setBuilding(false); setCaption(`Done: ${G.nodes.length} nodes, ${G.edges.length} edges, computed from the code, nothing hand-drawn. Now ask it something.`); return; }
       STAGE = i + 1; stage.current = STAGE; setCaption(steps[i]); i++;
       tourTimer.current = setTimeout(next, 2600);
     };

@@ -106,7 +106,7 @@ function answerTeamMemory(snapshot: EvidenceSnapshot, events: StoredEvent[], act
         : `I don't have a confirmed answer to that in the approved meeting notes. Want me to ask the leader?${live}`,
     };
   }
-  const who = best.approvedBy ? ` — approved by ${nameOf(snapshot, best.approvedBy)}` : "";
+  const who = best.approvedBy ? `, approved by ${nameOf(snapshot, best.approvedBy)}` : "";
   if (best.state === "approved")
     return { kind: "confirmed", decision: best, question, provisional, sources: best.sources, offerEscalation: false, speak: `Confirmed${who}: ${best.statement}.${live}` };
   if (best.state === "conditional")

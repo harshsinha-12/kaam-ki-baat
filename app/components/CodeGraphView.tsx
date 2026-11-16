@@ -115,7 +115,7 @@ export function CodeGraphView({ graph, highlight = [], height = 460, onPick }: {
       <canvas ref={canvas} style={{ width: "100%", height, display: "block", cursor: hover ? "pointer" : "default" }} aria-label={`Code graph of ${graph.repository} at ${graph.sha.slice(0, 7)}`} />
       {hover && (
         <div style={{ position: "absolute", left: 12, bottom: 12, font: "12px ui-monospace, Menlo, monospace", color: "#d8d4c8", background: "rgba(10,10,9,.85)", border: "1px solid #24231f", borderRadius: 8, padding: "6px 10px" }}>
-          {hover.kind} · {hover.kind === "file" || hover.kind === "test" ? hover.path : `${hover.label} — ${hover.path}:${hover.line}`} · degree {hover.degree}
+          {hover.kind} · {hover.kind === "file" || hover.kind === "test" ? hover.path : `${hover.label} in ${hover.path}:${hover.line}`} · degree {hover.degree}
         </div>
       )}
     </div>

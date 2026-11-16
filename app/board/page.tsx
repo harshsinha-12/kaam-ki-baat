@@ -61,7 +61,7 @@ export default function Home() {
           <div style={{ fontSize: 13, textAlign: "right" }}>
             <span style={{ padding: "8px 14px", fontSize: 18, display: "inline-block", borderRadius: 6, background: board.snapshot.label === "LIVE" ? "#1f6f43" : "#8a5a00", fontWeight: 600 }}>{board.snapshot.label === "LIVE" ? "LIVE evidence" : "FIXTURE · demo data"}</span>{" "}
             {board.snapshot.repository} @ <code>{board.snapshot.pinnedSha.slice(0, 7)}</code>
-            {conv && <div style={{ opacity: 0.7 }}>call {conv.callId} · task {conv.focus.taskId ?? "—"} · context v{conv.focus.contextVersion}</div>}
+            {conv && <div style={{ opacity: 0.7 }}>call {conv.callId} · task {conv.focus.taskId ?? "none"} · context v{conv.focus.contextVersion}</div>}
           </div>
         )}
       </header>

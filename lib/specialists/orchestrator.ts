@@ -87,7 +87,7 @@ export function handleTurn(
     const findings = codeScout(snapshot, task, input.utterance);
     c.findings = findings;
     spoken = findings.length
-      ? `I found ${findings.length} place${findings.length > 1 ? "s" : ""}. The best match is ${findings[0].path}${findings[0].symbol ? `, in ${findings[0].symbol}` : ""} — ${findings[0].match === "confirmed" ? "it's changed in the PR" : "a possible match, not confirmed"}.`
+      ? `I found ${findings.length} place${findings.length > 1 ? "s" : ""}. The best match is ${findings[0].path}${findings[0].symbol ? `, in ${findings[0].symbol}` : ""}: ${findings[0].match === "confirmed" ? "it's changed in the PR" : "a possible match, not confirmed"}.`
       : "I didn't find a match at the pinned commit.";
     c.cards.code_scout = { ...c.cards.code_scout, status: "has_reply", summary: spoken, evidence: findings.map(cardEvidence) };
   } else if (specialist === "fix_navigator") {

@@ -1,17 +1,17 @@
 .tracker {
-  --wc-ink: var(--ink, #f2efe6); --wc-muted: var(--mute, #aaa69b); --wc-line: var(--line, #2b2a26);
-  --wc-blue: var(--left, #7cc4ff); --wc-gold: var(--center, #f5c451); --wc-coral: var(--right, #ff8a65);
+  --wc-ink: var(--ink, #fafafa); --wc-muted: var(--mute, #aaa69b); --wc-line: var(--line, #2b2a26);
+  --wc-blue: var(--left, #8db8e8); --wc-gold: var(--center, #e2bf72); --wc-coral: var(--right, #e39478);
   display: grid; grid-template-columns: minmax(280px, .95fr) minmax(0, 1.3fr);
   grid-template-areas: "preview heading" "preview message" "preview orientation" "preview controls" "preview details";
   gap: 14px 28px; align-items: start; position: relative; min-width: 0;
   padding: 24px; margin-top: 16px; border: 1px solid var(--wc-line); border-radius: 16px;
-  background: var(--card, #121211); color: var(--wc-ink);
+  background: var(--card, #0a0a0a); color: var(--wc-ink);
   font-family: var(--sans, var(--font-sans, ui-sans-serif)), ui-sans-serif, system-ui, sans-serif; font-size: 14px;
 }
 .tracker *, .tracker { box-sizing: border-box; }
 .heading { grid-area: heading; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
 .titleGroup { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.cameraIcon { width: 40px; height: 40px; display: grid; place-items: center; flex: 0 0 auto; border: 1px solid var(--wc-line); border-radius: 12px; color: var(--wc-gold); background: #f5c45108; }
+.cameraIcon { width: 40px; height: 40px; display: grid; place-items: center; flex: 0 0 auto; border: 1px solid var(--wc-line); border-radius: 12px; color: var(--wc-gold); background: #e2bf7208; }
 .cameraIcon svg { width: 22px; height: 22px; }
 .eyebrow { display: block; font: 10px var(--mono, ui-monospace, Menlo, monospace); letter-spacing: .1em; text-transform: uppercase; color: var(--wc-muted); }
 .titleGroup h4 { margin: 5px 0 0; font-size: 19px; font-weight: 550; letter-spacing: -.025em; line-height: 1.3; }
@@ -42,16 +42,16 @@
 .zone[data-selected="true"] { border-color: color-mix(in srgb, var(--zone-color) 40%, transparent); background: color-mix(in srgb, var(--zone-color) 8%, transparent); }
 .zone[data-selected="true"][data-tracking="true"] strong { color: var(--zone-color); }
 .zone[data-selected="true"][data-tracking="false"] { opacity: .6; }
-.poseTrack { position: relative; height: 2px; margin: 16px 5% 12px; background: linear-gradient(90deg, #7cc4ff80, #f5c45170, #ff8a6580); border-radius: 2px; }
+.poseTrack { position: relative; height: 2px; margin: 16px 5% 12px; background: linear-gradient(90deg, #8db8e880, #e2bf7270, #e3947880); border-radius: 2px; }
 .neutralMark { position: absolute; left: 50%; top: -3px; width: 1px; height: 8px; background: #aaa69b80; }
-.poseMarker { position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--wc-ink); box-shadow: 0 0 0 4px #f2efe612; transform: translateX(-50%); transition: left .12s ease-out; }
+.poseMarker { position: absolute; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--wc-ink); box-shadow: 0 0 0 4px #fafafa12; transform: translateX(-50%); transition: left .12s ease-out; }
 .readout { display: flex; justify-content: space-between; gap: 12px; padding-top: 4px; color: var(--wc-muted); font-size: 11px; line-height: 1.5; }
 .angle { font: 11px var(--mono, ui-monospace, Menlo, monospace); font-variant-numeric: tabular-nums; color: var(--wc-ink); white-space: nowrap; }
 .controls { grid-area: controls; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .tracker .controls button { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 42px; padding: 10px 14px; border: 1px solid #3b3c33; border-radius: 9px; background: transparent; color: var(--wc-ink); font: inherit; font-size: 12px; font-weight: 550; cursor: pointer; transition: border-color .2s, background .2s; }
-.tracker .controls button:hover:not(:disabled) { border-color: var(--wc-muted); background: #f2efe609; }
-.tracker .controls .primary { background: var(--wc-ink); color: #0b0b0c; border-color: var(--wc-ink); }
-.tracker .controls .primary:hover:not(:disabled) { background: #fff; color: #0b0b0c; border-color: #fff; }
+.tracker .controls button:hover:not(:disabled) { border-color: var(--wc-muted); background: #fafafa09; }
+.tracker .controls .primary { background: var(--wc-ink); color: #000; border-color: var(--wc-ink); }
+.tracker .controls .primary:hover:not(:disabled) { background: #fff; color: #000; border-color: #fff; }
 .tracker .controls .stop { color: var(--wc-muted); }
 .tracker .controls button:disabled { opacity: .4; cursor: default; }
 .tracker .controls button:focus-visible, .trackingDetails > summary:focus-visible { outline: 2px solid var(--wc-gold); outline-offset: 3px; }

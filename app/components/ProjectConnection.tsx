@@ -62,7 +62,7 @@ export function ProjectConnection({ repository, selectedZone, onConnected }: { r
       </div>
     </div>
     {project && <div className={s.projectFooter}><span>Repository connected · {project.repository}</span><button className={s.textButton} onClick={() => { onConnected(project); document.getElementById("code-navigator")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Open code graph <span aria-hidden="true">↗</span></button></div>}
-    {project?.label === "FIXTURE" && <p className={s.bad} role="status">Sample snapshot only — code and meeting context here do not prove a real Wispr MCP import. Use an authorized LIVE snapshot for real-team answers.</p>}
+    {project?.label === "FIXTURE" && <p className={s.bad} role="status">Sample snapshot only. Code and meeting context here do not prove a real Wispr MCP import. Use an authorized LIVE snapshot for real-team answers.</p>}
     <audio ref={audio} autoPlay />{error && <p className={s.bad} role="alert">{error}</p>}
   </section>
   {showDock && <aside className={s.voiceDock} aria-label="Voice chat controls">

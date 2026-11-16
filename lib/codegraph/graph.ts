@@ -203,15 +203,15 @@ function sliceBody(content: string, line: number): string {
 export function graphReport(g: CodeGraph): string {
   const byId = new Map(g.nodes.map((n) => [n.id, n]));
   return [
-    `# Code graph — ${g.repository} @ ${g.sha.slice(0, 7)}`,
+    `# Code graph: ${g.repository} @ ${g.sha.slice(0, 7)}`,
     "",
     `${g.nodes.length} nodes · ${g.edges.length} edges · ${g.communities.length} communities`,
     "",
     "## God nodes (most connected)",
-    ...g.godNodes.map((id) => { const n = byId.get(id)!; return `- \`${n.label}\` (${n.kind}, ${n.path}:${n.line}) — degree ${n.degree}`; }),
+    ...g.godNodes.map((id) => { const n = byId.get(id)!; return `- \`${n.label}\` (${n.kind}, ${n.path}:${n.line}), degree ${n.degree}`; }),
     "",
     "## Communities",
-    ...g.communities.sort((a, b) => b.size - a.size).map((c) => `- ${c.label} — ${c.size} nodes`),
+    ...g.communities.sort((a, b) => b.size - a.size).map((c) => `- ${c.label}: ${c.size} nodes`),
     "",
   ].join("\n");
 }

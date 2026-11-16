@@ -153,11 +153,11 @@ export function FocusInputControls({ onConfirmedFocus, compact = false }: { onCo
         <div className={styles.manualZones} aria-label="Select a zone">{(["team_memory", "leader_desk", "code_navigator"] as const).map((zone, i) => <button key={zone} disabled={connection !== "connected" || changing} aria-pressed={currentSelection && focus?.zone === zone} onClick={() => select(zone)}>{["←", "↑", "→"][i]} {ZONE_LABELS[zone]}</button>)}</div>
       </>}
       {provider === "webcam" && <>
-        <p className={styles.provenance}>Permission: {["tracking", "calibrating", "lost"].includes(webcamStatus) ? "camera granted" : webcamStatus === "unavailable" ? "unavailable — see camera status" : "requested when you start camera"} · Calibration: {webcamStatus === "tracking" ? "calibrated" : webcamStatus === "lost" ? "tracking lost; no new selection" : "not confirmed"}</p>
+        <p className={styles.provenance}>Permission: {["tracking", "calibrating", "lost"].includes(webcamStatus) ? "camera granted" : webcamStatus === "unavailable" ? "unavailable, see camera status" : "requested when you start camera"} · Calibration: {webcamStatus === "tracking" ? "calibrated" : webcamStatus === "lost" ? "tracking lost; no new selection" : "not confirmed"}</p>
         <WebcamHeadTracker compact={compact} key={snapshot?.input.epoch} disabled={connection !== "connected" || changing} onStatusChange={setWebcamStatus} onSelect={zone => select(zone, webcamLease)} />
       </>}
       {provider === "airpods" && <div>
-        <p>AirPods: {!airpodsFresh ? "unavailable — no fresh companion heartbeat" : airpods!.state.replaceAll("_", " ")} · Permission: {!airpodsFresh ? "unknown" : ["denied", "permission_required"].includes(airpods!.state) ? airpods!.state.replaceAll("_", " ") : "reported by companion"} · Calibration: {airpodsFresh && airpods?.calibrated ? "calibrated" : "not confirmed"}</p>
+        <p>AirPods: {!airpodsFresh ? "unavailable, no fresh companion heartbeat" : airpods!.state.replaceAll("_", " ")} · Permission: {!airpodsFresh ? "unknown" : ["denied", "permission_required"].includes(airpods!.state) ? airpods!.state.replaceAll("_", " ") : "reported by companion"} · Calibration: {airpodsFresh && airpods?.calibrated ? "calibrated" : "not confirmed"}</p>
         <p>Open the macOS companion with the same device session. Start motion and recenter there. Head turns select only.</p>
       </div>}
       <details className={styles.advancedControls} open={compact ? undefined : true}><summary>Selection &amp; device details</summary>

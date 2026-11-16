@@ -39,6 +39,53 @@ export function eventsLogPath(envValue = process.env.KKB_EVENTS_FILE): string {
   return path.resolve(chosen);
 }
 
+/**
+ * Parses the JSONL log. Only an unterminated final line (a write interrupted by a
+ * crash) is skipped; a malformed line in the middle is real corruption and throws.
+ */
+export function parseLog(raw: string): StoredEvent[] {
+  const lines = raw.split("\n");
+  const out: StoredEvent[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    try {
+      out.push(JSON.parse(line) as StoredEvent);
+    } catch (e) {
+      const unterminatedTail = i === lines.length - 1 && !raw.endsWith("\n");
+      if (unterminatedTail) continue;
+      throw new Error(`Event log is corrupt at line ${i + 1}: ${(e as Error).message}`);
+    }
+  }
+  return out;
+}
+
+/**
+ * A crash during append can leave a final line without its newline. That record
+ * was never acknowledged as saved, so remove it before the next append instead of
+ * gluing a new record onto it.
+ */
+async function dropTornTail(file: string): Promise<void> {
+  let fh;
+  try {
+    fh = await fs.open(file, "r");
+  } catch (e: unknown) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return;
+    throw e;
+  }
+  try {
+    const { size } = await fh.stat();
+    if (size === 0) return;
+    const last = Buffer.alloc(1);
+    await fh.read(last, 0, 1, size - 1);
+    if (last[0] === 0x0a) return;
+  } finally {
+    await fh.close();
+  }
+  const raw = await fs.readFile(file);
+  await fs.truncate(file, raw.lastIndexOf(0x0a) + 1);
+}
+
 export class EventStore implements UpdateRepository {
   private events: StoredEvent[] = [];
   private chain: Promise<unknown> = Promise.resolve();
@@ -48,13 +95,14 @@ export class EventStore implements UpdateRepository {
   private async readEvents(): Promise<StoredEvent[]> {
     if (this.backend) return this.backend.read();
     if (!this.file) return this.events;
+    let raw: string;
     try {
-      const raw = await fs.readFile(this.file, "utf8");
-      return raw.split("\n").filter(Boolean).map((l) => JSON.parse(l) as StoredEvent);
+      raw = await fs.readFile(this.file, "utf8");
     } catch (e: unknown) {
       if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
       return [];
     }
+    return parseLog(raw);
   }
 
   // One runtime writer per process. Serialize the idempotency lookup together
@@ -73,6 +121,7 @@ export class EventStore implements UpdateRepository {
     if (this.backend) { await this.backend.append([event]); return; }
     if (this.file) {
       await fs.mkdir(path.dirname(this.file), { recursive: true });
+      await dropTornTail(this.file);
       const fh = await fs.open(this.file, "a");
       try {
         await fh.writeFile(JSON.stringify(event) + "\n");
