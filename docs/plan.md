@@ -5,6 +5,10 @@ Rules live in [AGENTS.md](../AGENTS.md). Design lives in [architecture.md](archi
 
 Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competition.md)).
 
+## Local Upstash console reference — 2026-11-17
+
+- **Completed, Codex:** saved the user-supplied database console link in ignored root `.env.local` as `UPSTASH_REDIS_CONSOLE_URL`, separately from the credential-free Redis REST origin used by the application. Verified exact persisted value, a single variable entry, unchanged Redis REST configuration and file permissions `0600`. Scope is local reference metadata only; no Vercel or application change. Application tests not run for this metadata-only edit; documentation links and whitespace checked. Branch `codex/upstash-console-reference` contains only this tracked checkpoint; `.env.local` stays ignored.
+
 ## R50 — Redis capacity check and bandwidth fix — 2026-11-17
 
 - **Implemented, Codex; awaiting user review/release:** user initially authorized a personal Redis migration, then chose **keep Upstash and prepare bandwidth fixes** after the capacity check. Branch `codex/redis-bandwidth`, implementation `d1041f9`, [PR #51](https://github.com/harshsinha-12/kaam-ki-baat/pull/51), fetched base `fab6851`; clean checkout before work. Own incremental Redis event reads, focused regressions and storage documentation. No merge, deployment, provider-agent change or call is included.
