@@ -89,3 +89,27 @@
 .compactInput > .manualZones { display: none; }
 @media (max-width: 580px) { .inputChoice small { display: none; } .spaces { grid-template-columns: 1fr; } .footer { flex-wrap: wrap; } }
 @media (prefers-reduced-motion: reduce) { .inputPanel button, .workspace button { transition: none; } }
+
+
+/* Compact focus controls live in a 330px utility column. No forced
+   single-line labels or side-by-side status blocks. */
+.compactInput { min-width: 0; padding: 14px; gap: 12px; overflow-wrap: anywhere; }
+.compactInput .inputTop { display: grid; grid-template-columns: minmax(0, 1fr); gap: 7px; align-items: start; }
+.compactInput .inputTop > div { min-width: 0; }
+.compactInput .connectionBadge { justify-self: start; max-width: 100%; white-space: normal; height: auto; min-height: 25px; line-height: 1.35; padding-block: 4px; }
+.compactInput .inputSelector { grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; gap: 3px; }
+.compactInput .inputChoice { min-width: 0; overflow: hidden; padding: 9px 5px; text-align: center; }
+.compactInput .inputChoice span { display: block; min-width: 0; }
+.compactInput .inputChoice strong { font-size: 12px; line-height: 1.35; white-space: normal; overflow-wrap: anywhere; }
+.compactInput .inputChoice small { display: none; }
+.compactInput .routeIndicator { min-width: 0; padding: 12px; }
+.compactInput .routeIndicator > span:first-child { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
+.compactInput .routeIndicator strong { display: flex; flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; font-size: 13px; line-height: 1.45; }
+.compactInput .routeHint { overflow-wrap: anywhere; }
+.compactInput > .provenance { display: none; }
+.compactInput button { white-space: normal; min-width: 0; line-height: 1.4; }
+.compactInput .activateButton { min-height: 42px; height: auto; padding-block: 9px; }
+.compactInput .advancedControls > summary { overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) {
+  .compactInput button { transition: none; }
+}
