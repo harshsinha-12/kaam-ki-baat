@@ -65,7 +65,9 @@ export function ProjectConnection({ repository, selectedZone, onConnected }: { r
     {project && <button className={w.link} onClick={() => { onConnected(project); document.getElementById("code-navigator")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Open code graph</button>}
     {project?.label === "FIXTURE" && <p className={w.note} data-tone="warn" role="status">Sample snapshot only. It does not prove a real Wispr import. Use an authorized LIVE snapshot for real-team answers.</p>}
 
-    <div className={w.voice} data-active={state === "active"}>
+    <details className={w.voiceDisclosure}>
+      <summary className={w.utilitySummary}><span>{MIC_ICON} Voice guide</span><span>{active ? "Call in progress" : "Optional"} <span className={w.disclosureArrow} aria-hidden>⌄</span></span></summary>
+      <div className={w.voice} data-active={state === "active"}>
       <div className={w.voiceHead}>
         <span className={w.panelIcon} data-active={state === "active"} aria-hidden="true">{MIC_ICON}</span>
         <div><strong>Voice guide</strong><span className={w.voiceStatus} data-active={state === "active"} role="status">{voiceStatus}</span></div>
@@ -74,7 +76,8 @@ export function ProjectConnection({ repository, selectedZone, onConnected }: { r
       <AudioWaveform samples={levels} active={state === "active"} />
       <label className={w.consent}><input type="checkbox" checked={consent} onChange={e => { setConsent(e.target.checked); if (!e.target.checked) void call.current?.stop(); }} /> I consent to this voice call and recording</label>
       <button className={`${w.btn} ${w.full} ${active ? w.danger : w.primary}`} disabled={!active && (!consent || loading)} onClick={() => active ? void call.current?.stop() : void start()}>{active ? "End call" : "Start voice chat"}</button>
-    </div>
+      </div>
+    </details>
     <audio ref={audio} autoPlay />{error && <p className={w.error} role="alert">{error}</p>}
   </section>
   {showDock && active && <aside className={w.dock} aria-label="Voice chat controls">
