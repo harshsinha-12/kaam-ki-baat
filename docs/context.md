@@ -12,6 +12,8 @@ Initial target users are small engineering and hackathon teams, junior engineers
 
 ## Scope
 
+On 2026-11-17 the user requested public repository URL onboarding and selected `https://github.com/pingdotgg/t3code`. The GH1 implementation imports bounded, SHA-pinned public source selections into separate member-only browser workspaces. It does not inherit private meeting/task permissions, modify the original snapshot or provide private GitHub account access. File/graph retrieval and consented voice context route through the saved repository session. See [workspace setup](workspace-setup.md) and [the plan](plan.md) for limits, validation and release status.
+
 On 2026-11-15 the user explicitly requested removal of the call-evaluation token/private-link gate and the workspace personal-link step. `/evals` and `/api/evals` open directly, exposing evaluations, transcripts and captured context to anyone who can reach the app. `/team` automatically issues or reuses a browser device session in the first non-leader member's existing snapshot scope; visitors share that workspace scope without verifying personal identity. Provider credentials remain server-only and redacted; meeting/repository scope, leader verification and explicit voice/recording consent remain enforced.
 
 The handoff's proposed MVP is one specifically authorized meeting, one selected GitHub repository, and three personalized task briefs. A Bolna call provides a short brief, answers evidence-backed follow-ups, and records a confirmed task update in our own store only after verifying persistence.

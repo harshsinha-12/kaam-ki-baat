@@ -1,6 +1,7 @@
 import { restoreConversations } from "../store/conversation";
 import { checkServerKey, resolveCaller } from "../auth/call-session";
 import { getRuntime } from "../runtime-instance";
+import { repositoryRuntimeForCall } from "../project/workspace";
 import { SPACES, type PageState, type Space } from "./contracts";
 
 export function json(body: unknown, status = 200) {
@@ -37,7 +38,7 @@ export async function spatialAuth(req: Request, role: "browser" | "tool", token:
   if (role === "browser" && req.headers.get("origin") && !origins.has(req.headers.get("origin")!)) {
     return { response: json({ ok: false, error: "origin not allowed" }, 403) };
   }
-  const rt = await getRuntime();
+  const rt = await repositoryRuntimeForCall(await getRuntime(), token);
   const auth = await resolveCaller(rt.store, rt.snapshot, token);
   if (!auth.ok) return { response: json({ ok: false, error: auth.reason }, auth.status) };
   await restoreConversations(rt);

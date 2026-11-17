@@ -10,7 +10,13 @@ The session stays in browser memory and, when available, session storage. Existi
 
 A public URL such as `https://github.com/harshsinha-12/kaam-ki-baat` identifies the selected repository. Public PR/files/check API reads work without a token. On 2026-11-15, the actual adapter, with its token explicitly disabled, read merged PR #13, six changed files and two checks for head `d3d0232818a7cd13c3f7db03738a2c8fe1fe7cf5`. This is a live public GitHub read, separate from fixture meeting evidence.
 
-Today setup is operator-driven, not a paste-link import form. Code bytes come from the local clone at an exact commit; PR state and checks come from GitHub REST. The selected local clone must be the same repository as `repository` in the project configuration. Sharing a link is enough to identify a public repo, but does not itself import it or select which files participants may access.
+The public URL field now supports a bounded source import. In `/team`, paste a public repository URL such as `https://github.com/pingdotgg/t3code` and choose **Connect**. The server verifies that GitHub reports it public, resolves the default-branch commit, selects supported text files and checks every downloaded file against its Git blob hash. GitHub account credentials are deliberately excluded from this public-only flow. Source contents are evidence, never instructions, and no repository code, install scripts or hooks run.
+
+An imported repository opens in a separate browser session with a generated member identity, repository access and no meetings, tasks or leader role. The original workspace snapshot and other browser sessions remain unchanged. Repository snapshots are immutable and verified after storage: Redis in hosted environments, ignored private files locally. Only their digest references enter the audit. Workspace reconnects, source/file/graph APIs, focus controls and voice callbacks select this saved snapshot from the server-owned session binding; client/model arguments cannot choose an arbitrary snapshot key. Existing calls keep their originally bound snapshot. Voice remains opt-in with fresh call/recording consent.
+
+Imports list at most eight top-level source folders, excluding hidden/vendor trees before recursion, then select at most 64 files, each at most 64 KiB and 1.5 MB total. The UI shows the indexed file count, commit and selection limits. This is not a complete repository index. GitHub rate limits, incomplete/oversized selected-folder listings, invalid source bytes, storage failures or unsupported/empty repositories produce a recoverable error without switching the current workspace. Non-TypeScript repositories can show file nodes without claiming parsed symbols or relationships. Private repositories still require the separate GH2 connection workflow. This source import does not verify PR state, CI, ownership, meeting decisions or deployment.
+
+For an operator-prepared workspace that includes approved meeting/task evidence, code bytes still come from the matching local clone at an exact commit and PR/check state comes from GitHub REST. Use the following existing setup rather than attaching unrelated meeting permissions to a public import.
 
 For this repository:
 
@@ -19,7 +25,7 @@ For this repository:
 3. Run `node --env-file=.env.local --import tsx scripts/build-snapshot.ts --project data/private/project.json` from this repository. Shell environment variables also work. CLI scripts do not load `.env.local` automatically.
 4. Restart the application with `KKB_SNAPSHOT=data/private/snapshot.json`. Verify repository, SHA, freshness and LIVE/FIXTURE label on the authenticated board. A real GitHub read does not turn a synthetic meeting into LIVE evidence.
 
-An arbitrary new repository still requires its local clone/source selection; automatic URL onboarding is tracked as GH1 in [the plan](plan.md). The public page only bundles a clearly labelled fixture graph. `/team` fetches the selected snapshot graph after server-side repository access checks. Repo access never grants access to another participant's meetings or tasks.
+The public landing page still bundles a clearly labelled static graph. `/team` fetches the current session's graph after server-side repository access checks. Repo access never grants access to another participant's meetings or tasks. GH1 implementation and its verification/release status are tracked in [the plan](plan.md).
 
 ## Repository context in a voice call
 

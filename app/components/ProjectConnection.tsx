@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { AudioWaveform } from "./AudioWaveform";
 import type { BolnaWebCall } from "@bolna/web-call";
 import type { ViewGraph } from "./CodeGraphView";
-import { sessionToken } from "../zones/client";
+import { saveSessionToken, sessionToken } from "../zones/client";
 import w from "../team/workspace.module.css";
-export type ConnectedProject = { repository: string; sha: string; indexedFiles: number; label: "FIXTURE" | "LIVE"; fetchedAt?: string; graph: ViewGraph };
-export function ProjectConnection({ repository, selectedZone, onConnected }: { repository: string; selectedZone: "team_memory" | "leader_desk" | "code_navigator"; onConnected: (project: ConnectedProject) => void }) {
+export type ConnectedProject = { repository: string; sha: string; indexedFiles: number; label: "FIXTURE" | "LIVE"; fetchedAt?: string; selectionNote?: string; graph: ViewGraph };
+export function ProjectConnection({ repository, selectedZone, onConnected, onWorkspaceChanged, initialProject }: { repository: string; selectedZone: "team_memory" | "leader_desk" | "code_navigator"; onConnected: (project: ConnectedProject) => void; onWorkspaceChanged: (project: ConnectedProject) => void; initialProject?: ConnectedProject }) {
   const [url, setUrl] = useState(`https://github.com/${repository}`);
-  const [project, setProject] = useState<ConnectedProject | null>(null);
+  const [project, setProject] = useState<ConnectedProject | null>(initialProject ?? null);
   const [loading, setLoading] = useState(false), [error, setError] = useState("");
   const [consent, setConsent] = useState(false), [state, setState] = useState("idle");
   const [levels, setLevels] = useState<number[]>(() => Array(28).fill(0));
@@ -17,8 +17,15 @@ export function ProjectConnection({ repository, selectedZone, onConnected }: { r
   const audio = useRef<HTMLAudioElement>(null), call = useRef<BolnaWebCall | null>(null), starting = useRef(false);
   const connect = async () => {
     setLoading(true); setError("");
-    try { const r = await fetch("/api/project", { method: "POST", headers: { Authorization: `Session ${sessionToken()}`, "Content-Type": "application/json" }, body: JSON.stringify({ repositoryUrl: url }), signal: AbortSignal.timeout(20000) });
+    try { const r = await fetch("/api/project", { method: "POST", headers: { Authorization: `Session ${sessionToken()}`, "Content-Type": "application/json" }, body: JSON.stringify({ repositoryUrl: url }), signal: AbortSignal.timeout(65000) });
       const data = await r.json(); if (!r.ok) throw new Error(data.error ?? "Repository connection failed");
+      if (typeof data.sessionToken === "string") {
+        if (!/^[A-Za-z0-9_-]{16,256}$/.test(data.sessionToken)) throw new Error("Repository session could not be verified.");
+        saveSessionToken(data.sessionToken);
+        const { sessionToken: _token, ...connected } = data;
+        onWorkspaceChanged(connected);
+        return null; // New workspace mounts with its own graph, permissions and voice consent.
+      }
       setProject(data); onConnected(data); return data;
     } catch (e) { setError(e instanceof Error ? e.message : "Could not connect repository"); }
     finally { setLoading(false); }
@@ -62,6 +69,9 @@ export function ProjectConnection({ repository, selectedZone, onConnected }: { r
       <input className={w.input} type="url" aria-label="GitHub repository URL" value={url} onChange={e => { setUrl(e.target.value); setProject(null); }} placeholder="https://github.com/owner/repository" required disabled={active} />
       <button className={w.btn} disabled={loading || active}>{loading ? "Connecting…" : project ? "Reconnect" : "Connect"}</button>
     </form>
+    <p className={w.note}>Paste a public GitHub repository URL. A new repository opens in a separate code workspace, without the current team's meetings.</p>
+    {loading && <p className={w.note} role="status">Fetching selected source files and building the code graph…</p>}
+    {project?.selectionNote && <p className={w.note}>{project.selectionNote}</p>}
     {project && <button className={w.link} onClick={() => { onConnected(project); document.getElementById("code-navigator")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>Open code graph</button>}
     {project?.label === "FIXTURE" && <p className={w.note} data-tone="warn" role="status">Sample snapshot only. It does not prove a real Wispr import. Use an authorized LIVE snapshot for real-team answers.</p>}
 
