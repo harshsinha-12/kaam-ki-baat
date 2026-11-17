@@ -24,6 +24,12 @@ type GA = { explanation: string[]; match: string; seed: { label: string; path: s
 type Ticket = { id: string; question: string; state: string; answer?: { statement: string; conditions?: string; approvedBy: string; decisionVersion: number } };
 
 export default function Team() {
+  const [workspace, setWorkspace] = useState<{ version: number; project?: ConnectedProject }>({ version: 0 });
+  return <TeamWorkspace key={workspace.version} initialProject={workspace.project} onWorkspaceChanged={project => setWorkspace(previous => ({ version: previous.version + 1, project }))} />;
+}
+
+// Remount all session-bound UI on import, discarding old requests, source views and consent.
+function TeamWorkspace({ initialProject, onWorkspaceChanged }: { initialProject?: ConnectedProject; onWorkspaceChanged(project: ConnectedProject): void }) {
   const [flow, dispatchFlow] = useReducer(flowReducer, initialFlow);
   const flowRequestId = useRef(0);
   const [expanded, setExpanded] = useState(false);
@@ -32,7 +38,7 @@ export default function Team() {
   const [asking, setAsking] = useState(false);
   const [finding, setFinding] = useState(false);
   const [me, setMe] = useState<Me | null>(null);
-  const [focus, setFocus] = useState<"team_memory" | "leader_desk" | "code_navigator">("team_memory");
+  const [focus, setFocus] = useState<"team_memory" | "leader_desk" | "code_navigator">(initialProject ? "code_navigator" : "team_memory");
   const [q, setQ] = useState("What did we agree in the meeting?");
   const [mem, setMem] = useState<Mem | null>(null);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -41,7 +47,7 @@ export default function Team() {
   const escalation = useRef<{ question: string; meetingId: string; id: string; pending: boolean } | null>(null);
   const [sending, setSending] = useState(false);
   const [cq, setCq] = useState("where do we read back before saying saved");
-  const [ga, setGa] = useState<GA | null>(null);
+  const [ga, setGa] = useState<GA | null>(initialProject ? { graph: initialProject.graph, sha: initialProject.sha, repository: initialProject.repository, seed: null, match: "candidate", explanation: [], subgraph: { nodes: [] } } : null);
   const [sourceRequest, setSourceRequest] = useState<CodeSourceRequest | null>(null);
   const [sourceRefresh, setSourceRefresh] = useState(0);
   const openGraphSource = useCallback((node: ViewNode) => setSourceRequest({ path: node.path, line: node.line, id: key() }), []);
@@ -271,7 +277,7 @@ export default function Team() {
           {/* CENTRE: you, the project and the lead */}
           <aside className={w.center} aria-label="Workspace tools">
             <div className={w.sideHeading}><span>Workspace tools</span><small>Connection, calls and controls</small></div>
-            {connected ? <ProjectConnection selectedZone={focus} repository={me!.snapshot?.repository ?? "harshsinha-12/kaam-ki-baat"} onConnected={connectProject} />
+            {connected ? <ProjectConnection selectedZone={focus} repository={me!.snapshot?.repository ?? "harshsinha-12/kaam-ki-baat"} onConnected={connectProject} onWorkspaceChanged={onWorkspaceChanged} initialProject={initialProject} />
               : <section className={w.panel} aria-label="Getting ready">
                   <div className={w.panelHead}><span className={w.panelIcon} aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M6 3v12M18 9v12M6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM6 15c0-4 12-2 12-6" /></svg></span><div><h2>Project connection</h2><p>Three steps before your first answer.</p></div></div>
                   <ol className={w.checklist}>

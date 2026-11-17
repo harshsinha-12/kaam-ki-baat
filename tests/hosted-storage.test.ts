@@ -323,3 +323,27 @@ test("hosted evaluations persist without writing the Mac-only evaluation directo
     assert.equal((await syncDashboard()).calls[0].review,historical.calls[0].review);
   } finally {globalThis.fetch=transport;keys.forEach((key,i)=>saved[i]===undefined?delete process.env[key]:process.env[key]=saved[i]);}
 });
+
+test("public repository publication verifies hosted persistence and leaves the old workspace intact on failure", async () => {
+  const fixture = redisFixture();
+  const keys = ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "KKB_STORAGE_NAMESPACE", "VERCEL"];
+  const saved = keys.map(key => process.env[key]), transport = globalThis.fetch;
+  try {
+    process.env.UPSTASH_REDIS_REST_URL = fixture.config.url; process.env.UPSTASH_REDIS_REST_TOKEN = fixture.config.token;
+    process.env.KKB_STORAGE_NAMESPACE = "test"; process.env.VERCEL = "1"; globalThis.fetch = fixture.transport;
+    const { openRepositoryWorkspace, repositoryRuntimeForDevice } = await import("../lib/project/workspace");
+    const base: Runtime = { snapshot: testSnapshot(), store: fixture.store(), conversations: new Map() };
+    const snapshot = { ...testSnapshot(), label: "LIVE" as const, repository: "public/repo", pinnedSha: "a".repeat(40), fetchedAt: new Date().toISOString(),
+      meetings: [], passages: [], tasks: [], pullRequests: [], checks: [],
+      participants: [{ id: `repo_${"f".repeat(24)}`, name: "Repository visitor", role: "member" as const, repoAccess: true, meetingIds: [], taskIds: [] }] };
+    const opened = await openRepositoryWorkspace(base, snapshot, "hosted-synthetic");
+    assert.equal([...fixture.values.keys()].filter(key => key.startsWith("test:public-repository:")).length, 1);
+    assert.equal((await repositoryRuntimeForDevice(base, opened.token)).snapshot.repository, "public/repo");
+    assert.equal(base.snapshot.repository, "team/repo");
+    const before = (await base.store.all()).length;
+    fixture.fail();
+    await assert.rejects(openRepositoryWorkspace(base, snapshot, "failed-save"), /unavailable/);
+    fixture.recover();
+    assert.equal((await base.store.all()).length, before, "no new session is published before successful source read-back");
+  } finally { globalThis.fetch = transport; keys.forEach((key, i) => saved[i] === undefined ? delete process.env[key] : process.env[key] = saved[i]); }
+});

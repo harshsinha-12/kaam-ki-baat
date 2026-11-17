@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { checkServerKey } from "@/lib/auth/call-session";
 import { getRuntime } from "@/lib/runtime-instance";
 import { runTool, TOOL_NAMES, type ToolName } from "@/lib/tools/runtime";
+import { repositoryRuntimeForCall } from "@/lib/project/workspace";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,6 +17,6 @@ export async function POST(req: Request, ctx: { params: Promise<{ tool: string }
   }
   let body: Record<string, unknown> = {};
   try { body = (await req.json()) as Record<string, unknown>; } catch { /* empty body */ }
-  const res = await runTool(await getRuntime(), tool as ToolName, body);
+  const res = await runTool(await repositoryRuntimeForCall(await getRuntime(), body.call_token ?? body.callToken), tool as ToolName, body);
   return NextResponse.json(res.body, { status: res.status });
 }

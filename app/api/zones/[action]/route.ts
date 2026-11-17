@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getRuntime } from "@/lib/runtime-instance";
 import { runZoneAction, ZONE_ACTIONS, type ZoneAction } from "@/lib/zones/service";
 import { readBody } from "@/lib/spatial/http";
+import { repositoryRuntimeForDevice } from "@/lib/project/workspace";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ async function handle(req: Request, ctx: { params: Promise<{ action: string }> }
     if (!parsed) return NextResponse.json({ ok: false, error: "expected a bounded JSON object" }, { status: 400 });
     body = parsed;
   }
-  const rt = await getRuntime();
+  const rt = await repositoryRuntimeForDevice(await getRuntime(), token);
   const res = await runZoneAction({ store: rt.store, snapshot: rt.snapshot }, action as ZoneAction, token, body);
   return NextResponse.json(res.body, { status: res.status });
 }
