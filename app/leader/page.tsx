@@ -25,7 +25,15 @@ export default function Leader() {
       else setPending([]);
     } catch { setMe(null); setPending([]); setMsg("Cannot connect. Retrying…"); }
   }, []);
-  useEffect(() => { refresh(); const id = setInterval(refresh, 4000); return () => clearInterval(id); }, [refresh]);
+  useEffect(() => {
+    let inFlight = false;
+    const poll = async () => {
+      if (document.hidden || inFlight) return;
+      inFlight = true;
+      try { await refresh(); } finally { inFlight = false; }
+    };
+    void poll(); const id = setInterval(poll, 4000); return () => clearInterval(id);
+  }, [refresh]);
 
   const enrol = async () => {
     setBusy(true); setMsg("");

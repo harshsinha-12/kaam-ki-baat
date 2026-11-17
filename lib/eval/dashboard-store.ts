@@ -7,9 +7,16 @@ import { acquireLease } from "../store/lease";
 import { evaluateCall, obj, hash, type EvaluationDashboard, type Obj } from "./dashboard";
 
 export const dashboardDir = () => path.resolve(process.env.KKB_EVAL_DIR?.trim() || "data/private/call-evals");
+let dashboardReader: { client: RedisClient; transport: typeof fetch } | undefined;
+function hostedDashboardReader(config: NonNullable<ReturnType<typeof redisConfig>>): RedisClient {
+  const previous = dashboardReader?.client.config;
+  if (!previous || previous.url !== config.url || previous.token !== config.token || previous.namespace !== config.namespace || dashboardReader?.transport !== fetch)
+    dashboardReader = { client: new RedisClient(config), transport: fetch };
+  return dashboardReader!.client;
+}
 export async function readDashboard(): Promise<EvaluationDashboard | null> {
   const config = redisConfig();
-  try { const raw = config ? await new RedisClient(config).get(`${config.namespace}:eval:latest`) : await readFile(path.join(dashboardDir(), "latest.json"), "utf8");
+  try { const raw = config ? await hostedDashboardReader(config).getCached(`${config.namespace}:eval:latest`) : await readFile(path.join(dashboardDir(), "latest.json"), "utf8");
     if (!raw) return null;
     const data = JSON.parse(raw);
     if (data.schema !== 1 || !Array.isArray(data.calls)) throw new Error("Invalid evaluation store"); return data;

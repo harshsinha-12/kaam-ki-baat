@@ -66,6 +66,7 @@ export function FocusInputControls({ onConfirmedFocus, compact = false }: { onCo
     controller.current = focus;
     const poll = async () => {
       try {
+        if (document.hidden) return;
         const me = await request("me");
         if (!alive) return;
         setAccess(me.zones as Access);

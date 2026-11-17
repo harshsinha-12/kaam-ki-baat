@@ -2,6 +2,14 @@
 
 Checked on 2026-11-15. MCP registration, authentication, live tool discovery, and application integration are separate checkpoints.
 
+## Redis capacity investigation — 2026-11-17
+
+The user reported the Vercel-billed Upstash runtime suspended after 12 GB of a 10 GB monthly bandwidth allowance, with 18 MB stored. A read-only source request on 2026-11-17 independently returned HTTP 403 with a plan-limit error; the latest source data could not be exported.
+
+The user supplied a personal Redis Cloud destination for evaluation. Authenticated read-only inspection returned Redis 8.6.2, 3,371 existing keys, 16,188,440 bytes reported used memory, `noeviction` and a 30-connection limit. Its authenticated configuration page confirmed a free 30 MB plan, 5 GB/month network and 100 ops/sec, with TLS off, persistence set to none and remote backup off. These account-specific observations are distinct from a generic provider recommendation. No project data was copied there.
+
+After reviewing these limits, the user chose to **keep Upstash and prepare bandwidth fixes** and requested payment guidance. Existing local/Vercel connection settings are retained. The Vercel connector returned a team-access 403 and generated a consent link; no account settings were changed through it. Payment, database reactivation, production traffic reduction and deployment remain unverified. See [runtime setup and payment guidance](vercel-runtime.md) and R50 in [the plan](plan.md).
+
 ## Current live integration — 2026-11-15
 
 **Vercel cutover verified (12:20 UTC):** the canonical production deployment now uses permanent shared Redis for its approved snapshot, sessions/audit and evaluation history. Health, Harsh's personal auth, permitted code listing and operator-authenticated evaluations return200. After explicit user approval, all seven existing Bolna tool URLs and the completion webhook were changed from the Mac tunnel to `https://kaam-ki-baat-xi.vercel.app`; persisted GET confirmed the approved URL-only change. Production browser calling is enabled. A deployed HTTP-only check without fresh recording consent returns400 at the consent gate; no provider call/session was started. This verifies configuration and HTTP routing, not live speech. The evidence snapshot remains pinned to `317a348`, separately from deployed code `d8f5905`. See [deployment/runtime setup](vercel-runtime.md) and the V37 checkpoint in [plan](plan.md).
