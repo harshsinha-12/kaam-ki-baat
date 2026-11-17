@@ -87,10 +87,16 @@ export default function Team() {
   // Answers from the leader arrive here, also after a reconnect.
   useEffect(() => {
     if (!connected) return;
-    const poll = () => zone<{ answered: Ticket[]; pending: Ticket[] }>("deliveries").then((r) => {
-      if (r.status === 200 && r.data.answered) { setInbox({ answered: r.data.answered, pending: r.data.pending }); setError(previous => previous === "Answers could not refresh. Retrying…" ? "" : previous); }
-    }).catch(() => setError("Answers could not refresh. Retrying…"));
-    poll(); const id = setInterval(poll, 3000); return () => clearInterval(id);
+    let alive = true, inFlight = false;
+    const poll = () => {
+      if (!alive || document.hidden || inFlight) return;
+      inFlight = true;
+      void zone<{ answered: Ticket[]; pending: Ticket[] }>("deliveries").then((r) => {
+        if (!alive) return;
+        if (r.status === 200 && r.data.answered) { setInbox({ answered: r.data.answered, pending: r.data.pending }); setError(previous => previous === "Answers could not refresh. Retrying…" ? "" : previous); }
+      }).catch(() => { if (alive) setError("Answers could not refresh. Retrying…"); }).finally(() => { inFlight = false; });
+    };
+    poll(); const id = setInterval(poll, 3000); return () => { alive = false; clearInterval(id); };
   }, [connected]);
 
   const ask = async () => {

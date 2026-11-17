@@ -48,6 +48,7 @@ export function CodeFocus({ request, refreshKey = 0, onFocus }: {
       const sequence = serial.current;
       const previousRevision = revision.current;
       try {
+        if (document.hidden) return;
         const r = await zone<{ focus: CodeSourceFocus | null }>("code_focus");
         if (!alive || sequence !== serial.current || previousRevision !== revision.current) return;
         if (r.status !== 200) {

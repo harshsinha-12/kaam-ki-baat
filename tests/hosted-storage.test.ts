@@ -1,6 +1,7 @@
 import type { Runtime } from "../lib/tools/runtime";
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { EventStore } from "../lib/store/event-store";
 import { RedisClient, RedisEventBackend, redisConfig } from "../lib/store/redis";
 import { loadRuntimeSnapshot, validateHostedSnapshot } from "../lib/evidence/hosted";
@@ -10,6 +11,7 @@ import { testSnapshot } from "./helpers/snapshot";
 function redisFixture() {
   const lists = new Map<string, string[]>(), values = new Map<string, string>();
   let unavailable = false;
+  const readReplies: unknown[] = [];
   const config = { url: "https://redis.example", token: "synthetic-server-token", namespace: "test" };
   const transport: typeof fetch = async (_url, options) => {
     if (unavailable) return new Response("private provider details", {status:503});
@@ -18,7 +20,17 @@ function redisFixture() {
     let result: unknown;
     if (command === "EVAL") {
       const [script, , key, ...argv] = args;
-      if (script.includes("LLEN")) {
+      if (script.includes("redis.sha1hex")) {
+        const value = values.get(key);
+        const digest = value === undefined ? null : createHash("sha1").update(value).digest("hex");
+        result = digest === null ? [] : digest === argv[0] ? [digest] : [digest, value];
+        readReplies.push(result);
+      } else if (script.includes("local offset")) {
+        const list = lists.get(key) ?? [];
+        const offset = Number(argv[0]) > list.length ? 0 : Number(argv[0]);
+        result = [offset, list.slice(offset)];
+        readReplies.push(result);
+      } else if (script.includes("LLEN")) {
         const list = lists.get(key) ?? [];
         if (list.length !== Number(argv[0])) result = 0;
         else { list.push(...argv.slice(1)); lists.set(key, list); result = 1; }
@@ -30,8 +42,132 @@ function redisFixture() {
     else throw new Error("unsupported synthetic command");
     return Response.json({result});
   };
-  return { config, transport, values, fail: () => { unavailable = true; }, store: () => new EventStore(null, new RedisEventBackend(new RedisClient(config,transport))) };
+  return { config, transport, values, lists, readReplies, fail: () => { unavailable = true; }, recover: () => { unavailable = false; }, store: () => new EventStore(null, new RedisEventBackend(new RedisClient(config,transport))) };
 }
+
+test("warm event reads transfer only appended records and return isolated objects", async () => {
+  const fixture = redisFixture();
+  const writer = fixture.store(), reader = fixture.store();
+  const events = Array.from({ length: 100 }, (_, index) => ({ type: "zone" as const, kind: "synthetic", at: "2026-11-17T00:00:00Z", key: String(index), data: { text: "x".repeat(4096) } }));
+  for (const event of events) await writer.append(event);
+  const first = await reader.all();
+  assert.deepEqual(first, events);
+  first[0].at = "caller mutation";
+  for (let i = 0; i < 10; i++) assert.deepEqual(await reader.all(), events);
+  assert.deepEqual(fixture.readReplies.slice(1), Array.from({ length: 10 }, () => [100, []]));
+  const appended = { ...events[0], key: "remote-append" };
+  await writer.append(appended);
+  assert.deepEqual(await reader.all(), [...events, appended]);
+  assert.deepEqual(fixture.readReplies.at(-1), [100, [JSON.stringify(appended)]]);
+  // A cold instance still reconstructs the complete persisted state.
+  assert.deepEqual(await fixture.store().all(), [...events, appended]);
+});
+
+test("warm readers preserve cross-instance guarded writes, idempotency and read-back", async () => {
+  const fixture = redisFixture(), first = fixture.store(), second = fixture.store();
+  await Promise.all([first.all(), second.all()]);
+  const record: Parameters<EventStore["writeOnce"]>[0] = { id: "saved", taskId: "task", actorId: "dev", callId: null, status: "in_progress", idempotencyKey: "once", at: "2026-11-17T00:00:00Z" };
+  const results = await Promise.all([first.writeOnce(record), second.writeOnce(record)]);
+  assert.equal(results.filter(result => !result.replayed).length, 1);
+  assert.deepEqual(await second.read(record.id), record);
+  assert.equal((await first.all()).length, 1);
+});
+
+test("event reads invalidate a truncated log and fail closed through outages", async () => {
+  const fixture = redisFixture(), reader = fixture.store();
+  const event = { type: "zone" as const, kind: "synthetic", at: "2026-11-17T00:00:00Z", key: "one", data: {} };
+  await reader.append(event); await reader.append({ ...event, key: "two" });
+  await reader.all();
+  fixture.lists.set("test:events", [JSON.stringify({ ...event, key: "restored" })]);
+  assert.deepEqual(await reader.all(), [{ ...event, key: "restored" }]);
+  fixture.fail();
+  await assert.rejects(reader.all(), /unavailable/);
+  fixture.recover();
+  assert.deepEqual(await reader.all(), [{ ...event, key: "restored" }]);
+  fixture.lists.set("test:events", []);
+  assert.deepEqual(await reader.all(), []);
+});
+
+test("concurrent event reads serialize their cursors and malformed suffixes never advance them", async () => {
+  const fixture = redisFixture(), reader = new RedisEventBackend(new RedisClient(fixture.config, fixture.transport));
+  const event = { type: "zone" as const, kind: "synthetic", at: "2026-11-17T00:00:00Z", key: "one", data: {} };
+  await reader.append([event]);
+  await Promise.all(Array.from({ length: 8 }, () => reader.read()));
+  assert.equal((fixture.readReplies[0] as unknown[][])[1].length, 1);
+  assert.deepEqual(fixture.readReplies.slice(1), Array.from({ length: 7 }, () => [1, []]));
+  fixture.lists.get("test:events")!.push("malformed-json");
+  await assert.rejects(reader.read(), SyntaxError);
+  await assert.rejects(reader.read(), SyntaxError);
+  fixture.lists.get("test:events")![1] = JSON.stringify({ ...event, key: "two" });
+  assert.deepEqual(await reader.read(), [event, { ...event, key: "two" }]);
+});
+
+test("cached value reads revalidate equal-length edits, deletion, empty values and outages", async () => {
+  const fixture = redisFixture(), client = new RedisClient(fixture.config, fixture.transport);
+  const key = "test:eval:latest", value = "a".repeat(100000);
+  fixture.values.set(key, value);
+  assert.equal(await client.getCached(key), value);
+  await Promise.all(Array.from({ length: 8 }, async () => assert.equal(await client.getCached(key), value)));
+  assert.ok(fixture.readReplies.slice(1).every(reply => (reply as unknown[]).length === 1));
+  assert.ok(JSON.stringify(fixture.readReplies.slice(1)).length < value.length / 100);
+  const changed = "b".repeat(value.length);
+  fixture.values.set(key, changed);
+  assert.equal(await client.getCached(key), changed);
+  fixture.fail();
+  await assert.rejects(client.getCached(key), /unavailable/);
+  fixture.recover();
+  fixture.values.delete(key);
+  assert.equal(await client.getCached(key), null);
+  fixture.values.set(key, "");
+  assert.equal(await client.getCached(key), "");
+  assert.equal(await client.getCached(key), "");
+});
+
+test("cached reads reject malformed and mismatched responses without returning stale values", async () => {
+  let reply: unknown = ["unexpected-digest"];
+  const client = new RedisClient({ url: "https://redis.example", token: "synthetic", namespace: "test" }, async () => Response.json({ result: reply }));
+  await assert.rejects(client.getCached("key"), /Invalid hosted value/);
+  reply = ["a".repeat(40), "original"];
+  assert.equal(await client.getCached("key"), "original");
+  reply = ["b".repeat(40)];
+  await assert.rejects(client.getCached("key"), /Invalid hosted value/);
+  reply = ["a".repeat(40)];
+  assert.equal(await client.getCached("key"), "original");
+  const backend = new RedisEventBackend(client);
+  for (const bad of [null, [], [1, []], [0, [17]], [0, [] , "extra"]]) {
+    reply = bad;
+    await assert.rejects(backend.read(), /Invalid hosted event log/);
+  }
+  reply = [0, []];
+  assert.deepEqual(await backend.read(), []);
+});
+
+test("runtime stores reuse warm readers only within the same credentials, transport and namespace", async () => {
+  const fixture = redisFixture();
+  const keys = ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "KKB_STORAGE_NAMESPACE"];
+  const saved = keys.map(key => process.env[key]), transport = globalThis.fetch;
+  const { runtimeStore } = await import("../lib/store/runtime-store");
+  try {
+    process.env.UPSTASH_REDIS_REST_URL = fixture.config.url;
+    process.env.UPSTASH_REDIS_REST_TOKEN = fixture.config.token;
+    process.env.KKB_STORAGE_NAMESPACE = "test";
+    globalThis.fetch = fixture.transport;
+    const first = runtimeStore();
+    assert.equal(runtimeStore(), first);
+    const event = { type: "zone" as const, kind: "synthetic", at: "2026-11-17T00:00:00Z", key: "one", data: {} };
+    await first.append(event); await first.all(); await runtimeStore().all();
+    assert.deepEqual(fixture.readReplies.at(-1), [1, []]);
+    process.env.KKB_STORAGE_NAMESPACE = "isolated-preview";
+    assert.notEqual(runtimeStore(), first);
+    assert.deepEqual(await runtimeStore().all(), []);
+    const before = runtimeStore();
+    process.env.UPSTASH_REDIS_REST_TOKEN = "another-credential";
+    assert.notEqual(runtimeStore(), before);
+    const beforeTransport = runtimeStore();
+    globalThis.fetch = async (url, options) => fixture.transport(url, options);
+    assert.notEqual(runtimeStore(), beforeTransport);
+  } finally { globalThis.fetch = transport; keys.forEach((key, i) => saved[i] === undefined ? delete process.env[key] : process.env[key] = saved[i]); }
+});
 
 test("separate serverless store instances resolve the same persisted device identity", async () => {
   const fixture=redisFixture(),snapshot=testSnapshot();

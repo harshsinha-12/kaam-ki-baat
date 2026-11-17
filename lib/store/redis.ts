@@ -16,6 +16,7 @@ export function redisConfig(env: Record<string, string | undefined> = process.en
 
 /** REST credentials stay server-side. EVAL routes consistency-sensitive reads to the primary. */
 export class RedisClient {
+  private readonly cached = new Map<string, { digest: string; value: string | null; chain: Promise<void> }>();
   constructor(readonly config: RedisConfig, private readonly transport: typeof fetch = fetch) {}
   async command<T>(args: (string | number)[]): Promise<T> {
     const response = await this.transport(this.config.url, {
@@ -28,8 +29,44 @@ export class RedisClient {
     return body.result as T;
   }
   get(key: string): Promise<string | null> { return this.command(["EVAL", "return redis.call('GET', KEYS[1])", 1, key]); }
+  /** Revalidate on the primary on every read; unchanged large values stay in process. */
+  getCached(key: string): Promise<string | null> {
+    let entry = this.cached.get(key);
+    if (!entry) {
+      entry = { digest: "", value: null, chain: Promise.resolve() };
+      this.cached.set(key, entry);
+    }
+    const cache = entry;
+    const result = cache.chain.then(async () => {
+      const reply = await this.command<unknown>(["EVAL", READ_CACHED, 1, key, cache.digest]);
+      if (!Array.isArray(reply)) throw new Error("Invalid hosted value response.");
+      if (reply.length === 0) { cache.digest = ""; cache.value = null; return null; }
+      if (typeof reply[0] !== "string" || !/^[a-f0-9]{40}$/.test(reply[0]) ||
+          !(reply.length === 2 && typeof reply[1] === "string" || reply.length === 1 && reply[0] === cache.digest && cache.value !== null))
+        throw new Error("Invalid hosted value response.");
+      if (reply.length === 2) { cache.digest = reply[0]; cache.value = reply[1]; }
+      return cache.value;
+    });
+    cache.chain = result.then(() => {}, () => {});
+    return result;
+  }
   setIfAbsent(key: string, value: string): Promise<string | null> { return this.command(["SET", key, value, "NX"]); }
 }
+
+const READ_CACHED = `
+local value = redis.call('GET', KEYS[1])
+if not value then return {} end
+local digest = redis.sha1hex(value)
+if digest == ARGV[1] then return {digest} end
+return {digest, value}`;
+
+// Event history is append-only. A shorter log discards the local prefix.
+// LLEN and LRANGE execute atomically on the primary; no stale TTL reads.
+const READ_EVENTS = `
+local length = redis.call('LLEN', KEYS[1])
+local offset = tonumber(ARGV[1])
+if offset > length then offset = 0 end
+return {offset, redis.call('LRANGE', KEYS[1], offset, -1)}`;
 
 const COMPARE_APPEND = `
 if redis.call('LLEN', KEYS[1]) ~= tonumber(ARGV[1]) then return 0 end
@@ -38,11 +75,25 @@ return 1`;
 
 export class RedisEventBackend implements EventBackend {
   readonly key: string;
+  private values: string[] = [];
+  private readChain: Promise<void> = Promise.resolve();
   constructor(private readonly redis: RedisClient) { this.key = `${redis.config.namespace}:events`; }
-  async read(): Promise<StoredEvent[]> {
-    const values = await this.redis.command<string[]>(["EVAL", "return redis.call('LRANGE', KEYS[1], 0, -1)", 1, this.key]);
-    if (!Array.isArray(values)) throw new Error("Invalid hosted event log.");
-    return values.map(value => JSON.parse(value) as StoredEvent);
+  read(): Promise<StoredEvent[]> {
+    const result = this.readChain.then(async () => {
+      const reply = await this.redis.command<unknown>(["EVAL", READ_EVENTS, 1, this.key, this.values.length]);
+      if (!Array.isArray(reply) || reply.length !== 2 ||
+          !(reply[0] === 0 || reply[0] === this.values.length) ||
+          !Array.isArray(reply[1]) || !reply[1].every((value: unknown) => typeof value === "string"))
+        throw new Error("Invalid hosted event log.");
+      const values = reply[0] === 0 ? reply[1] as string[] : this.values.concat(reply[1]);
+      // Parse before advancing the cursor; bad data must fail again on retry.
+      // Fresh objects keep callers from mutating the cached prefix.
+      const events = values.map(value => JSON.parse(value) as StoredEvent);
+      this.values = values;
+      return events;
+    });
+    this.readChain = result.then(() => {}, () => {});
+    return result;
   }
   async append(events: StoredEvent[]): Promise<void> {
     if (events.length) await this.redis.command(["RPUSH", this.key, ...events.map(e => JSON.stringify(e))]);

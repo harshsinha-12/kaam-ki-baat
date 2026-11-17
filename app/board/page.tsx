@@ -29,12 +29,16 @@ export default function Home() {
   useEffect(() => {
     const key = browserHandoff().boardKey;
     let alive = true;
+    let inFlight = false;
     const tick = async () => {
+      if (document.hidden || inFlight) return;
+      inFlight = true;
       try {
         const r = await fetch(`/api/board?key=${encodeURIComponent(key)}`, { cache: "no-store" });
         const j = (await r.json()) as Board;
         if (alive) setBoard(j);
       } catch { /* keep last state */ }
+      finally { inFlight = false; }
     };
     tick();
     const t = setInterval(tick, 1500);

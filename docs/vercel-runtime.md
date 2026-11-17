@@ -27,7 +27,19 @@ Conversation cards and communication ledgers are restored from the shared audit 
 
 Local development continues using JSONL and private files when Redis is unset. On Vercel, missing hosted storage fails closed; it does not fall back to a fixture, ephemeral filesystem, or anonymous private-source access. Health reports an unavailable state without exposing filesystem paths.
 
-This adapter reads the append-only log to build projections. It is suitable for the current demonstration workload; large audit histories need indexed projections/retention and capacity monitoring. Enable database backups and choose a permanent plan appropriate to the data. A temporary agent database with an expiry is not production hosting.
+The event adapter keeps an encoded prefix in each warm process and atomically reads only the appended suffix from the primary on every read. A new instance still loads the complete audit; a shorter log clears its cached prefix. Reads during an outage fail rather than using stale authentication or task state. Guarded writes retain the existing atomic length comparison, and successful writes are not added to the cache until a subsequent persisted read. Runtime store reuse keeps evaluation refreshes on the same warm reader. Event objects are parsed afresh so callers cannot mutate the cached history.
+
+The evaluation reader checks the current value's SHA-1 digest on the primary and downloads the JSON only when it changes. This digest is a change token, not an authorization mechanism. Same-length edits, deletions and changes from another instance are detected without a TTL delay; provider read-back after writes remains uncached. Background board, workspace, source-viewer, focus and leader polling pauses while the document is hidden. Interval-based pollers also avoid overlapping their own pending requests.
+
+These changes reduce repeated payload transfer; they do not remove command charges, full reads on cold starts, CPU costs of replaying history, or the need to monitor usage. Large histories still need indexed projections/retention and capacity monitoring. Do not rewrite/replace a live append-only event list; for an administrative restore, stop writers and restart application instances to discard all cached prefixes. Enable database backups and choose a permanent plan appropriate to the data. A temporary agent database with an expiry is not production hosting.
+
+## Restoring a bandwidth-suspended Upstash database
+
+For this Vercel-billed database, open the Vercel team's **Integrations**, select **Manage** beside Upstash, then find **Installed Products → kaam-ki-baat-runtime → Settings → Change Configuration**. Select **Pay as You Go**, review the displayed prices and complete payment details yourself. Deleting keys cannot reverse bandwidth already consumed during the month. The existing credentials and namespace can stay in place when upgrading the same database.
+
+Upstash publishes a command rate of $0.20/100K, with regional write replication potentially increasing billed commands. Its current pricing page describes 200 GB/month of included Pay as You Go bandwidth and $0.03/GB above that. Check the Vercel checkout for the applicable Marketplace offer. If a monthly budget control is available, start with a small cap such as $5 and monitor it; reaching the cap can limit database availability. Prod Pack and Enterprise are separate options, not prerequisites for this fix. See [pricing and budget behavior](https://upstash.com/pricing/redis).
+
+After payment completes, verify a successful database read and `/api/health` before claiming restoration. The bandwidth fix is a separate code release and takes effect only after the reviewed change is deployed. No environment migration is needed to retain the current Upstash instance.
 
 Synthetic adapter/concurrency tests establish application behavior. They do not prove a database was provisioned, a deployment succeeded, provider callbacks were repointed, or browser audio works. Record those outcomes separately in `docs/plan.md`.
 
