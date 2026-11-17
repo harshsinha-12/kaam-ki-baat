@@ -27,6 +27,7 @@ export default function Team() {
   const [flow, dispatchFlow] = useReducer(flowReducer, initialFlow);
   const flowRequestId = useRef(0);
   const [expanded, setExpanded] = useState(false);
+  const [leaderExpanded, setLeaderExpanded] = useState(false);
   const [connecting, setConnecting] = useState(true);
   const [asking, setAsking] = useState(false);
   const [finding, setFinding] = useState(false);
@@ -280,7 +281,7 @@ export default function Team() {
                   </ol>
                   <div className={w.ghostInput} aria-hidden><span>https://github.com/owner/repository</span><span className={w.ghostBtn}>Connect</span></div>
                 </section>}
-            <details className={w.leadDisclosure} key={focus === "leader_desk" ? "leader" : "other"} defaultOpen={focus === "leader_desk"}>
+            <details className={w.leadDisclosure} open={focus === "leader_desk" || leaderExpanded} onToggle={(e) => { if (focus !== "leader_desk") setLeaderExpanded(e.currentTarget.open); }}>
               <summary className={w.utilitySummary}><span><AgentGlyph zone="leader_desk" size={19} /> Leader Desk</span><span>{inbox.pending.length} waiting <span className={w.disclosureArrow} aria-hidden>⌄</span></span></summary>
               <section className={w.leadCard} data-active={focus === "leader_desk"}>
               <div className={w.cardHead}><span className={w.cardWho}><AgentGlyph zone="leader_desk" size={22} />Leader Desk</span><span className={w.lockTag}><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>Lead only</span></div>
