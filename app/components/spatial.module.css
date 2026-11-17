@@ -113,3 +113,14 @@
 @media (prefers-reduced-motion: reduce) {
   .compactInput button { transition: none; }
 }
+
+/* Fit the actual sidebar, including on wide screens with a narrow tools panel. */
+.compactInput { container-type: inline-size; background: transparent; border: 0; padding: 0; gap: 12px; }
+.compactInput .inputTop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.compactInput .inputChoice strong { white-space: nowrap; overflow-wrap: normal; font-size: 11px; }
+.compactInput .routeIndicator { gap: 6px; border-radius: 10px; background: #121821; padding: 10px; }
+.compactInput .routeIndicator small { color: #aab4c2; font-size: 10px; }
+.compactInput .routeIndicator strong { font-size: 13px; }
+.compactInput .routeIndicator > span:first-child { gap: 2px; }
+.compactInput .routeHint, .compactInput .routeIndicator > span { font-size: 11px; line-height: 1.5; }
+.compactInput .activateButton:disabled { background: #202a37; border-color: #354154; color: #aab4c2; opacity: 1; }
