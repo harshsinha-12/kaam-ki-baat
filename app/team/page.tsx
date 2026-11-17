@@ -167,10 +167,13 @@ export default function Team() {
       <div className={w.shell}>
         <section className={w.intro} aria-labelledby="workspace-heading">
           <div className={w.introCopy}>
-            <h1 id="workspace-heading">Your project, in context.</h1>
-            <p>Ask a question. Watch it travel through your meeting notes, the lead, and the code. Every answer shows its source.</p>
+            <h1 id="workspace-heading">One workspace. Clear answers.</h1>
+            <p>Find decisions in your meetings, trace the code behind them, and keep every answer grounded in evidence.</p>
           </div>
-          <FlowRail stage={flow.stage} busy={flow.busy} branch={flow.branch} />
+          <details className={w.flowDetails}>
+            <summary><span>How answers are grounded</span><span className={w.flowHint}>Meeting notes · lead review · code evidence</span><span className={w.disclosureArrow} aria-hidden>⌄</span></summary>
+            <div className={w.flowInner}><FlowRail stage={flow.stage} busy={flow.busy} branch={flow.branch} /></div>
+          </details>
         </section>
 
         {!connected && !connecting && (
@@ -193,9 +196,9 @@ export default function Team() {
               </button>
             ))}
           </div>
-          <button className={`${w.btn} ${w.ghost}`} aria-pressed={expanded} onClick={() => setExpanded(value => !value)}>
+          <button className={`${w.btn} ${w.ghost}`} aria-pressed={expanded} disabled={focus === "leader_desk"} onClick={() => setExpanded(value => !value)}>
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>{expanded ? <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /> : <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />}</svg>
-            {expanded ? "Show controls" : "Focus mode"}
+            {expanded ? "Show tools" : "Hide tools"}
           </button>
         </div>
         {error && connected && <p className={w.error} role="alert">{error}</p>}
@@ -215,7 +218,9 @@ export default function Team() {
             </div>
             <div className={w.ideas} aria-label="Example questions">{MEMORY_IDEAS.map(x => <button key={x} type="button" className={w.idea} data-on={q === x} onClick={() => setQ(x)}>{x}</button>)}</div>
             {connected && (
-              <div className={w.sourceBox}>
+              <details className={w.sourceDisclosure}>
+                <summary className={w.sourceSummary}><span>Meeting sources</span><span>{meetings.length} approved {meetings.length === 1 ? "meeting" : "meetings"} <span className={w.disclosureArrow} aria-hidden>⌄</span></span></summary>
+                <div className={w.sourceBox}>
                 <label className={w.label} htmlFor="memory-meeting">Meeting source</label>
                 {meetings.length > 0 ? <>
                   <select id="memory-meeting" className={w.input} value={meetingId} disabled={asking || sending} onChange={e => { setMeetingId(e.target.value); setMem(null); setSent(null); }}>
@@ -229,6 +234,7 @@ export default function Team() {
                   </div>)}
                 </> : <p className={w.note}>No approved Wispr meetings are available to your session. Ask your team lead to import a meeting and grant access.</p>}
               </div>
+              </details>
             )}
             {!mem && (
               <div className={w.empty} data-busy={asking}>
@@ -262,7 +268,8 @@ export default function Team() {
           </section>
 
           {/* CENTRE: you, the project and the lead */}
-          <aside className={w.center} aria-label="Project, voice and the lead">
+          <aside className={w.center} aria-label="Workspace tools">
+            <div className={w.sideHeading}><span>Workspace tools</span><small>Connection, calls and controls</small></div>
             {connected ? <ProjectConnection selectedZone={focus} repository={me!.snapshot?.repository ?? "harshsinha-12/kaam-ki-baat"} onConnected={connectProject} />
               : <section className={w.panel} aria-label="Getting ready">
                   <div className={w.panelHead}><span className={w.panelIcon} aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M6 3v12M18 9v12M6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM6 15c0-4 12-2 12-6" /></svg></span><div><h2>Project connection</h2><p>Three steps before your first answer.</p></div></div>
@@ -273,7 +280,9 @@ export default function Team() {
                   </ol>
                   <div className={w.ghostInput} aria-hidden><span>https://github.com/owner/repository</span><span className={w.ghostBtn}>Connect</span></div>
                 </section>}
-            <section className={w.leadCard} data-active={focus === "leader_desk"}>
+            <details className={w.leadDisclosure} key={focus === "leader_desk" ? "leader" : "other"} defaultOpen={focus === "leader_desk"}>
+              <summary className={w.utilitySummary}><span><AgentGlyph zone="leader_desk" size={19} /> Leader Desk</span><span>{inbox.pending.length} waiting <span className={w.disclosureArrow} aria-hidden>⌄</span></span></summary>
+              <section className={w.leadCard} data-active={focus === "leader_desk"}>
               <div className={w.cardHead}><span className={w.cardWho}><AgentGlyph zone="leader_desk" size={22} />Leader Desk</span><span className={w.lockTag}><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>Lead only</span></div>
               <p>Questions the notes can’t answer go to the lead. The desk opens only for a verified lead with a passkey. Answers come back to Team Memory.</p>
               <div className={w.leadStats}>
@@ -281,8 +290,12 @@ export default function Team() {
                 <span><b>{inbox.answered.length}</b>answered</span>
               </div>
               {focus === "leader_desk" && <a className={`${w.btn} ${w.primary} ${w.full}`} href="/leader">Open Leader Desk</a>}
-            </section>
-            {connected && <div className={w.focusBox}><FocusInputControls compact key={me!.participant!.name} onConfirmedFocus={followFocus} /></div>}
+              </section>
+            </details>
+            {connected && <details className={w.focusDisclosure}>
+              <summary className={w.utilitySummary}><span>Input &amp; devices</span><span>Manual · Webcam · AirPods <span className={w.disclosureArrow} aria-hidden>⌄</span></span></summary>
+              <div className={w.focusBox}><FocusInputControls compact key={me!.participant!.name} onConfirmedFocus={followFocus} /></div>
+            </details>}
           </aside>
 
           {/* RIGHT: Code Navigator */}
