@@ -128,7 +128,7 @@ export function FocusInputControls({ onConfirmedFocus, compact = false }: { onCo
   const airpodsFresh = airpods?.fresh && Date.now() - Date.parse(airpods.receivedAt) <= 6000;
   const webcamLease = controller.current?.lease;
   return <section className={`${styles.inputPanel} ${compact ? styles.compactInput : ""}`} aria-label="Focus input controls">
-    <div className={styles.inputTop}><div><span className={styles.eyebrow}>Workspace control</span><h3>Focus input</h3></div><span className={styles.connectionBadge} data-state={connection}>{changing ? "Switching…" : connection === "connected" ? "Controls connected" : connection}</span></div>
+    <div className={styles.inputTop}><div><span className={styles.eyebrow}>Workspace control</span><h3>Focus input</h3></div><span className={styles.connectionBadge} data-state={connection}>{changing ? "Switching…" : connection === "connected" ? "Connected" : connection}</span></div>
     {!deviceToken ? <form className={styles.connect} onSubmit={e => {
       e.preventDefault(); const token = draft.trim(); setDeviceToken(token); setDraft("");
       try { sessionStorage.setItem("kkb_session", token); } catch { /* private mode */ }
@@ -142,25 +142,25 @@ export function FocusInputControls({ onConfirmedFocus, compact = false }: { onCo
         <legend>Choose one input</legend>
         {(["manual", "webcam", "airpods"] as const).map(input => <label key={input} className={styles.inputChoice} data-active={provider === input}><input type="radio" name="focus-input" aria-label={input === "manual" ? "Manual" : input === "webcam" ? "Webcam" : "AirPods"} checked={provider === input} onChange={() => void switchInput(input)} /><span><strong>{input === "manual" ? "Manual" : input === "webcam" ? "Webcam" : "AirPods"}</strong><small>{input === "manual" ? "Keyboard & click" : input === "webcam" ? "Local head tracking" : "macOS companion"}</small></span></label>)}
       </fieldset>
-      <div className={compact ? styles.routeIndicator : styles.focusReadout} data-zone={currentSelection ? focus?.zone : undefined} role="status" aria-live="polite">
-        <span><small>{compact ? "Targeted agent" : "Selected zone"}</small><strong>{currentSelection && focus?.zone ? focus.zone === "leader_desk" ? "Leader guide" : ZONE_LABELS[focus.zone] : "Awaiting selection"}</strong></span>
-        {compact && <span className={styles.routeHint}>{currentSelection ? provider === "manual" ? "Click or use arrow keys to change the guide · same voice call" : "Turn your head to change the guide · same voice call" : "Select an area to confirm this input"}</span>}
-        {!currentSelection && focus?.zone && <span>Last confirmed: {ZONE_LABELS[focus.zone]}</span>}
-        {compact && <button className={styles.activateButton} disabled={connection !== "connected" || changing || !currentSelection || !zoneAccess?.allowed} onClick={() => void controller.current?.activate().catch(e => setError(e.message))}>{focus?.activeZone === focus?.zone && currentSelection ? `Active: ${ZONE_LABELS[focus.zone!]}` : `Activate ${currentSelection && focus?.zone ? ZONE_LABELS[focus.zone] : "selected zone"}`}</button>}
-        {zoneAccess && !zoneAccess.allowed && <span className={styles.routeHint}>Leader workspace locked · AI guide only</span>}
-      </div>
       {provider === "manual" && <>
         <p className={styles.provenance}>Permission: no motion permission needed · Calibration: not required. Use ← / ↑ / → to select, then Enter or Activate.</p>
         <div className={styles.manualZones} aria-label="Select a zone">{(["team_memory", "leader_desk", "code_navigator"] as const).map((zone, i) => <button key={zone} disabled={connection !== "connected" || changing} aria-pressed={currentSelection && focus?.zone === zone} onClick={() => select(zone)}>{["←", "↑", "→"][i]} {ZONE_LABELS[zone]}</button>)}</div>
       </>}
       {provider === "webcam" && <>
         <p className={styles.provenance}>Permission: {["tracking", "calibrating", "lost"].includes(webcamStatus) ? "camera granted" : webcamStatus === "unavailable" ? "unavailable, see camera status" : "requested when you start camera"} · Calibration: {webcamStatus === "tracking" ? "calibrated" : webcamStatus === "lost" ? "tracking lost; no new selection" : "not confirmed"}</p>
-        <WebcamHeadTracker compact={compact} key={snapshot?.input.epoch} disabled={connection !== "connected" || changing} onStatusChange={setWebcamStatus} onSelect={zone => select(zone, webcamLease)} />
+        <WebcamHeadTracker confirmedZone={currentSelection ? focus?.zone : null} compact={compact} key={snapshot?.input.epoch} disabled={connection !== "connected" || changing} onStatusChange={setWebcamStatus} onSelect={zone => select(zone, webcamLease)} />
       </>}
       {provider === "airpods" && <div>
         <p>AirPods: {!airpodsFresh ? "unavailable, no fresh companion heartbeat" : airpods!.state.replaceAll("_", " ")} · Permission: {!airpodsFresh ? "unknown" : ["denied", "permission_required"].includes(airpods!.state) ? airpods!.state.replaceAll("_", " ") : "reported by companion"} · Calibration: {airpodsFresh && airpods?.calibrated ? "calibrated" : "not confirmed"}</p>
         <p>Open the macOS companion with the same device session. Start motion and recenter there. Head turns select only.</p>
       </div>}
+      <div className={compact ? styles.routeIndicator : styles.focusReadout} data-zone={currentSelection ? focus?.zone : undefined} role="status" aria-live="polite">
+        <span><small>{compact ? "Targeted agent" : "Selected zone"}</small><strong>{currentSelection && focus?.zone ? focus.zone === "leader_desk" ? "Leader guide" : ZONE_LABELS[focus.zone] : "Awaiting selection"}</strong></span>
+        {compact && <span className={styles.routeHint}>{currentSelection ? provider === "manual" ? "Click or use arrow keys to change the guide · same voice call" : "Turn your head to change the guide · same voice call" : provider === "webcam" ? "Start and calibrate the camera, then hold a head turn to select." : "Select an area to confirm this input"}</span>}
+        {!currentSelection && focus?.zone && <span>Last confirmed: {ZONE_LABELS[focus.zone]}</span>}
+        {compact && <button className={styles.activateButton} disabled={connection !== "connected" || changing || !currentSelection || !zoneAccess?.allowed} onClick={() => void controller.current?.activate().catch(e => setError(e.message))}>{focus?.activeZone === focus?.zone && currentSelection ? `Active: ${ZONE_LABELS[focus.zone!]}` : currentSelection && focus?.zone ? `Activate ${ZONE_LABELS[focus.zone]}` : "Select an agent first"}</button>}
+        {zoneAccess && !zoneAccess.allowed && <span className={styles.routeHint}>Leader workspace locked · AI guide only</span>}
+      </div>
       <details className={styles.advancedControls} open={compact ? undefined : true}><summary>Selection &amp; device details</summary>
       <div className={styles.focusActions}>
         {!compact && <button className={styles.activateButton} disabled={connection !== "connected" || changing || !currentSelection || !zoneAccess?.allowed} onClick={() => void controller.current?.activate().catch(e => setError(e.message))}>Activate {currentSelection && focus?.zone ? ZONE_LABELS[focus.zone] : "selected zone"}</button>}

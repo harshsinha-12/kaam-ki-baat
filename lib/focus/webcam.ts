@@ -115,7 +115,7 @@ export class WebcamController {
       await this.video.play();
       if (!this.current(generation)) return;
       this.lastFrameAt = this.env.now();
-      this.publish("calibrating", "Face forward, then choose Calibrate / recenter. No zone is selected until calibration.");
+      this.publish("calibrating", "Face forward, then choose Calibrate camera. No zone is selected until calibration.");
       this.frame = this.env.requestFrame(() => this.tick(generation));
     } catch (error) {
       if (!this.current(generation)) return;
@@ -176,7 +176,7 @@ export class WebcamController {
     this.selector = output.state;
     this.publish(yaw === null ? "lost" : this.selector.neutralYaw === null ? "calibrating" : "tracking",
       yaw === null ? lostMessage : this.selector.neutralYaw === null
-        ? "Face found. Face forward, then choose Calibrate / recenter."
+        ? "Face found. Face forward, then choose Calibrate camera."
         : "Tracking locally. Hold a head turn briefly to select; activation stays explicit.");
     if (output.emit && this.current(generation)) this.callbacks.onSelect(output.emit);
   }
