@@ -498,6 +498,11 @@ details[open] > summary .disclosureArrow { transform: rotate(180deg); }
 .center .repoCard { align-items: flex-start; }
 .center .repoCard > .mono { min-width: 0; overflow-wrap: anywhere; }
 .center .repoFacts { margin-left: 0; }
+.voiceDisclosure { min-width: 0; border: 1px solid var(--line); background: #0b1016; border-radius: 12px; }
+.voiceDisclosure > .utilitySummary { min-height: 48px; padding: 11px 12px; }
+.voiceDisclosure > .utilitySummary svg { width: 17px; height: 17px; flex-shrink: 0; color: var(--text); }
+.voiceDisclosure[open] > summary { border-bottom: 1px solid var(--line); }
+.voiceDisclosure .voice { background: transparent; box-shadow: none; border-radius: 0 0 12px 12px; }
 .voice { padding: 14px; gap: 12px; }
 .voiceHead { min-width: 0; flex-wrap: wrap; }
 .voiceHead > div { min-width: 0; flex: 1 1 140px; }
