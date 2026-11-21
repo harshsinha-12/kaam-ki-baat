@@ -114,7 +114,7 @@ describe("recall frames", () => {
     assert.equal(p.frame.id, "c"); assert.equal(p.freshness, "older_commit");
   });
   it("understands today / yesterday (kal) and returns latest frames for an empty question", () => {
-    assert.deepEqual(recallFrames(frames, { pinnedSha: "abc" }, "kal").hits.map((h) => h.frame.id), ["b"]);
+    assert.deepEqual(recallFrames(frames, { pinnedSha: "abc" }, "kal", now).hits.map((h) => h.frame.id), ["b"]);
     assert.deepEqual(recallFrames(frames, { pinnedSha: "abc" }, "today", now).hits.map((h) => h.frame.id), ["a"]);
     assert.deepEqual(recallFrames(frames, { pinnedSha: "abc" }, "", now).hits.map((h) => h.frame.id), ["a", "b", "c"]);
   });
