@@ -9,7 +9,8 @@ import { performance } from "node:perf_hooks";
 import { buildCodeGraph } from "../lib/codegraph/graph";
 import { getCodeGraph } from "../lib/codegraph/load";
 import { queryGraph } from "../lib/codegraph/graph";
-import { buildSearchIndex, grepFiles, search } from "../lib/codegraph/search";
+import { buildSearchIndex, expand, grepFiles, search, tokenize } from "../lib/codegraph/search";
+import { highlightSymbol } from "../lib/codegraph/highlight";
 import { loadSnapshot } from "../lib/evidence/load";
 import { codeFilesAt, codeRefArg } from "./code-files";
 import { CASES, HELD_OUT, TEST_2026_11 } from "./eval-cases";
@@ -100,11 +101,37 @@ function table(title: string, r: ReturnType<typeof run>) {
     "| --- | --- | --- | --- | --- | --- | --- | --- | --- |", ...rows, ""];
 }
 const dev = run(CASES), held = run(HELD_OUT), stress = run(STRESS), test = run(TEST_2026_11);
+// Highlight quality: when the top answer IS the right function, does the box on
+// screen show why? Old behaviour boxed the declaration and the two lines under it.
+function highlightEval(sets: [string, string[]][][]) {
+  const rows: { anchor: { why: number; lines: number; prec: number }; precise: { why: number; lines: number; prec: number } }[] = [];
+  for (const cases of sets) for (const [q, want] of cases) {
+    const h = search(idx, g, q, "semantic", 1)[0];
+    if (!h || !want.includes(h.label) || h.kind === "file" || h.kind === "test") continue;
+    const file = s.files.find((f) => f.path === h.path); if (!file) continue;
+    const L = file.content.split("\n");
+    const strict = new Set(tokenize(q)), loose = new Set(expand(tokenize(q)).map((x) => x.term));
+    const measure = (marks: { start: number; end: number }[]) => {
+      const ns = [...new Set(marks.flatMap((m) => Array.from({ length: m.end - m.start + 1 }, (_, i) => m.start + i)))];
+      const hits = (n: number, set: Set<string>) => tokenize(L[n - 1] ?? "").some((t) => set.has(t));
+      return { why: +ns.some((n) => n !== h.line && hits(n, strict)), lines: ns.length, prec: ns.filter((n) => n === h.line || hits(n, loose)).length / Math.max(1, ns.length) };
+    };
+    rows.push({ anchor: measure([{ start: h.line, end: Math.min(L.length, h.line + 2) }]), precise: measure(highlightSymbol(L, h.line, q)) });
+  }
+  const m = (k: "anchor" | "precise", f: "why" | "lines" | "prec") => mean(rows.map((r) => r[k][f]));
+  return { n: rows.length, lines: [
+    `### Highlight quality (${rows.length} questions where the top answer is the right function, all sets)`, "",
+    "| Highlight | Shows a line with the question's own words | Lines to read | Highlighted lines that are evidence |", "| --- | --- | --- | --- |",
+    `| declaration + 2 lines (before) | ${pct(m("anchor", "why"))} | ${m("anchor", "lines").toFixed(1)} | ${pct(m("anchor", "prec"))} |`,
+    `| signature + matching body lines (now) | ${pct(m("precise", "why"))} | ${m("precise", "lines").toFixed(1)} | ${pct(m("precise", "prec"))} |`, ""] };
+}
+const hl = highlightEval([CASES, HELD_OUT, STRESS, TEST_2026_11]);
 const lines = [
   `## Code search (Code Navigator) · ${s.repository} @ ${s.pinnedSha.slice(0, 7)}`, "",
   "Can it name the right function from a plain-language question? Metrics follow repository-level localization benchmarks: accuracy and recall at k for functions and files, MRR and nDCG@10. Intervals are bootstrap 95% over questions.", "",
   ...table("Development set", dev), ...table("Held-out set, written after tuning", held), ...table("Stress set: Hinglish and colloquial paraphrases", stress), ...table("Fresh test set (2026-11-16), written before tuning and never used to tune", test),
   "grep ranks files only; graph-v1 returns one seed, so its Acc@5 equals Acc@1.", "",
+  ...hl.lines,
 ];
 console.log(lines.join("\n"));
 if (process.argv.includes("--write")) {

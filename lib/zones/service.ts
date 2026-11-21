@@ -10,15 +10,31 @@ import { meetingCatalog } from "./meeting-context";
 import { contextVersion, focusState, latestConsent } from "./state";
 import { assertPasskey, issueChallenge, registerPasskey } from "./webauthn";
 import { getCodeGraph } from "../codegraph/load";
-import { queryGraph } from "../codegraph/graph";
+import { answerFromSeed, queryGraph } from "../codegraph/graph";
+import { buildSearchIndex, search, type SearchIndex } from "../codegraph/search";
 import { explainFirstPrinciples } from "../codegraph/explain";
 import { understand } from "../core/understand";
 import { ev, zoneEvents } from "./state";
 import { publishSource, readSource, sourceExcerpt } from "../codegraph/source";
+import { captureFrame, framesFor, recallFrames } from "../core/recall-frames";
+import { planCommand } from "../core/voice-commands";
 
 // Framework-free dispatcher for the browser / native companion API
 // (app/api/zones/[action]/route.ts). Deny by default: every action resolves the
 // actor from a server-issued device session token first.
+
+const searchIndexes = new WeakMap<EvidenceSnapshot, SearchIndex>();
+/** Semantic search picks the seed (61% vs 32% top-1 on the dev set); the v1 matcher is the fallback. */
+function locate(snapshot: EvidenceSnapshot, question: string, changed: Set<string>) {
+  const g = getCodeGraph(snapshot);
+  if (!searchIndexes.has(snapshot)) searchIndexes.set(snapshot, buildSearchIndex(g, snapshot.files));
+  const hits = search(searchIndexes.get(snapshot)!, g, question, "semantic", 8).filter(h => h.kind !== "file" && h.kind !== "test");
+  const byId = new Map(g.nodes.map(n => [n.id, n]));
+  const top = hits[0] && byId.get(hits[0].id);
+  const answer = top ? answerFromSeed(g, top, `${hits[0].why[0] ?? "matched"} → ${top.kind} ${top.label}`, changed) : queryGraph(g, question, snapshot.files, changed);
+  const alternatives = hits.slice(0, 5).map(h => ({ label: h.label, kind: h.kind, path: h.path, line: h.line, score: h.score, why: h.why.slice(0, 2) }));
+  return { g, answer, alternatives };
+}
 
 export interface ZoneRuntime {
   store: EventStore;
@@ -30,6 +46,7 @@ export const ZONE_ACTIONS = [
   "me", "focus", "focus-input", "focus-input-status", "activate", "consent", "utterance", "memory_sources", "memory_ask", "ticket_create", "ticket_withdraw", "ticket_call_leader",
   "deliveries", "delivery_seen", "delivery_ack", "code_navigate", "leader_step_up", "leader_presence", "leader_inbox", "leader_resolve",
   "passkey_options", "passkey_register", "passkey_assert", "code_graph_query", "code_focus", "code_files", "code_open", "understand",
+  "command_plan", "recall_capture", "recall_search",
 ] as const;
 export type ZoneAction = (typeof ZONE_ACTIONS)[number];
 
@@ -95,15 +112,14 @@ export async function runZoneAction(rt: ZoneRuntime, action: ZoneAction, token: 
     case "code_graph_query": {
       const access = zoneAccess(actor, "code_navigator");
       if (!access.allowed) return r(403, { ok: false, error: access.reason });
-      const g = getCodeGraph(rt.snapshot);
       const task = typeof body.task_id === "string" ? rt.snapshot.tasks.find(t => t.id === body.task_id && actor.participant.taskIds.includes(t.id) && actor.meetingIds.includes(t.meetingId)) : undefined;
       if (body.task_id && !task) return r(403, { ok: false, error: "task not authorized" });
       const pr = task?.prNumber != null ? rt.snapshot.pullRequests.find(p => p.number === task.prNumber && p.repository === rt.snapshot.repository) : undefined;
       const u = understand(String(body.question ?? ""));
-      const a = queryGraph(g, u.normalized, rt.snapshot.files, new Set(pr?.changedFiles ?? []));
+      const { g, answer: a, alternatives } = locate(rt.snapshot, u.normalized, new Set(pr?.changedFiles ?? []));
       const ruleTask = rt.snapshot.tasks.find((t) => a.seed && t.searchTerms.includes(a.seed.label.toLowerCase()) && actor.meetingIds.includes(t.meetingId));
       const rulePassage = ruleTask ? rt.snapshot.passages.find((p) => ruleTask.passageIds.includes(p.id)) : undefined;
-      const fp = explainFirstPrinciples(rt.snapshot, a, rulePassage ? `${rulePassage.text} (${rulePassage.speaker}, ${rulePassage.id})` : undefined);
+      const fp = explainFirstPrinciples(rt.snapshot, a, rulePassage ? `${rulePassage.text} (${rulePassage.speaker}, ${rulePassage.id})` : undefined, u.normalized);
       const source = fp ? sourceExcerpt(rt.snapshot, fp.path, fp.highlights) : null;
       const sourceFocus = source ? await publishSource(rt.store, actor.participant.id, source, "web") : null;
       // Return only this authorized snapshot, with a bounded visual subset.
@@ -112,7 +128,7 @@ export async function runZoneAction(rt: ZoneRuntime, action: ZoneAction, token: 
       const nodes = [...g.nodes.filter(n => selected.has(n.id)), ...g.nodes.filter(n => !selected.has(n.id))].slice(0, 600);
       const ids = new Set(nodes.map(n => n.id));
       const graph = { nodes, edges: g.edges.filter(e => ids.has(e.from) && ids.has(e.to)).slice(0, 1800), godNodes: g.godNodes.filter(id => ids.has(id)), sha: g.sha, repository: g.repository };
-      return r(200, { ok: true, ...a, graph, sha: g.sha, repository: g.repository, label: rt.snapshot.label, engine: "builtin_static_graph", understood: u, firstPrinciples: fp, sourceFocus });
+      return r(200, { ok: true, ...a, graph, sha: g.sha, repository: g.repository, label: rt.snapshot.label, engine: "semantic_seed_static_graph", understood: u, firstPrinciples: fp, sourceFocus, alternatives });
     }
     case "code_files": {
       if (!zoneAccess(actor, "code_navigator").allowed) return r(403, { ok: false, error: "no repository access" });
@@ -134,6 +150,21 @@ export async function runZoneAction(rt: ZoneRuntime, action: ZoneAction, token: 
       return r(200, { ok: true, focus: readSource(rt.snapshot, await rt.store.all(), actor.participant.id) });
     }
     case "understand": return r(200, { ok: true, ...understand(String(body.text ?? "")) });
+    // Hands-free: plan only. The browser executes allowlisted UI actions itself and
+    // every write still goes through its own authorized action (ticket_create, ...).
+    case "command_plan": return r(200, { ok: true, plan: planCommand(String(body.text ?? "").slice(0, 500)) });
+    case "recall_capture": {
+      if (body.source && !zoneAccess(actor, "code_navigator").allowed) return r(403, { ok: false, error: "no repository access" });
+      if (body.zone === "leader_desk" && !zoneAccess(actor, "leader_desk").allowed) return r(403, { ok: false, error: "leader desk is lead only" });
+      const x = await captureFrame(rt.store, rt.snapshot, actor.participant.id, body);
+      return x.ok ? r(200, x) : r(x.status, { ok: false, error: x.reason });
+    }
+    case "recall_search": {
+      const frames = framesFor(await rt.store.all(), actor.participant.id, rt.snapshot.repository);
+      const res = recallFrames(frames, rt.snapshot, String(body.question ?? "").slice(0, 300));
+      const hits = res.hits.map(h => ({ ...h, sourceAvailable: !!(h.frame.source && rt.snapshot.files.some(f => f.path === h.frame.source!.path)) }));
+      return r(200, { ok: true, hits, window: res.window, total: frames.length });
+    }
     case "leader_resolve": { const x = await resolveTicket(rt.store, rt.snapshot, actor, body); return x.ok ? r(200, x) : fail(x); }
   }
 }

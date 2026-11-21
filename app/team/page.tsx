@@ -12,6 +12,8 @@ import w from "./workspace.module.css";
 import { BrandMark } from "../components/BrandMark";
 import { FlowRail } from "./FlowRail";
 import { flowReducer, initialFlow } from "./flow-state";
+import { HandsFree, type Frame } from "../components/HandsFree";
+import type { Plan } from "@/lib/core/voice-commands";
 
 // Teammate workspace: LEFT Team Memory (doubts + escalation) and RIGHT Code
 // Navigator (graph). CENTER is visible but locked unless the server says otherwise.
@@ -20,7 +22,8 @@ import { flowReducer, initialFlow } from "./flow-state";
 type Me = { participant?: { name: string }; role?: string; zones?: Record<string, { allowed: boolean; reason?: string }>; snapshot?: { label: string; pinnedSha: string; repository: string }; error?: string };
 type Mem = { kind: string; speak: string; offerEscalation: boolean; sources: { kind: string; label: string; url?: string }[]; question: string; provisional: { text: string }[]; pendingTicket?: { id: string } | null };
 type Meeting = { id: string; title: string; source: string; date?: string; fetchedAt?: string; passageCount: number; shareLink?: string };
-type GA = { explanation: string[]; match: string; seed: { label: string; path: string; line: number } | null; subgraph: { nodes: string[] }; graph: ViewGraph; sha: string; repository: string };
+type Alt = { label: string; kind: string; path: string; line: number; score: number; why: string[] };
+type GA = { explanation: string[]; match: string; seed: { label: string; path: string; line: number } | null; subgraph: { nodes: string[] }; graph: ViewGraph; sha: string; repository: string; alternatives?: Alt[] };
 type Ticket = { id: string; question: string; state: string; answer?: { statement: string; conditions?: string; approvedBy: string; decisionVersion: number } };
 
 export default function Team() {
@@ -51,7 +54,10 @@ function TeamWorkspace({ initialProject, onWorkspaceChanged }: { initialProject?
   const [sourceRequest, setSourceRequest] = useState<CodeSourceRequest | null>(null);
   const [sourceRefresh, setSourceRefresh] = useState(0);
   const openGraphSource = useCallback((node: ViewNode) => setSourceRequest({ path: node.path, line: node.line, id: key() }), []);
+  const [lastSource, setLastSource] = useState<CodeSourceFocus | null>(null);
+  const [altIndex, setAltIndex] = useState(0);
   const highlightSource = useCallback((source: CodeSourceFocus) => {
+    setLastSource(source);
     setGa(current => current ? { ...current, subgraph: { nodes: current.graph.nodes.filter(node => node.path === source.path &&
       (["file", "test"].includes(node.kind) || source.highlights.some(h => node.line >= h.start && node.line <= h.end))).map(node => node.id) } } : current);
   }, []);
@@ -106,20 +112,21 @@ function TeamWorkspace({ initialProject, onWorkspaceChanged }: { initialProject?
     poll(); const id = setInterval(poll, 3000); return () => { alive = false; clearInterval(id); };
   }, [connected]);
 
-  const ask = async () => {
-    if (!connected || asking || !q.trim()) return;
+  const ask = async (override?: string) => {
+    const question = (override ?? q).trim();
+    if (!connected || asking || !question) return;
     const requestId = ++flowRequestId.current;
     dispatchFlow({ type: "start", requestId, destination: "memory" });
     setAsking(true); setSent(null); setError(""); setMem(null);
-    try { const r = await zone<Mem>("memory_ask", { question: q, meeting_id: meetingId || undefined });
+    try { const r = await zone<Mem>("memory_ask", { question, meeting_id: meetingId || undefined });
       if (r.status !== 200 || !r.data.kind) throw new Error(r.data.error ?? "Memory unavailable");
       setMem(r.data);
       dispatchFlow({ type: "finish", requestId, success: true });
     } catch (e) { setError((e as Error).message); dispatchFlow({ type: "finish", requestId, success: false }); }
     finally { setAsking(false); }
   };
-  const escalate = async () => {
-    const question = mem?.question ?? q;
+  const escalate = async (override?: string) => {
+    const question = override ?? mem?.question ?? q;
     if (escalation.current?.pending) return;
     const requestId = ++flowRequestId.current;
     dispatchFlow({ type: "start", requestId, destination: "leader" });
@@ -132,18 +139,71 @@ function TeamWorkspace({ initialProject, onWorkspaceChanged }: { initialProject?
     } catch { setError("Question could not be sent. Try again."); dispatchFlow({ type: "finish", requestId, success: false }); }
     finally { attempt.pending = false; setSending(false); }
   };
-  const navigate = async () => {
-    if (!connected || finding || !cq.trim()) return;
+  const navigate = async (override?: string) => {
+    const question = (override ?? cq).trim();
+    if (!connected || finding || !question) return;
     const requestId = ++flowRequestId.current;
     dispatchFlow({ type: "start", requestId, destination: "code" });
     setFinding(true); setError(""); setGa(null);
-    try { const r = await zone<GA>("code_graph_query", { question: cq });
+    try { const r = await zone<GA>("code_graph_query", { question });
       if (r.status !== 200 || !r.data.graph || !r.data.subgraph) throw new Error(r.data.error ?? "Code graph unavailable");
-      setGa(r.data);
+      setGa(r.data); setAltIndex(0);
       setSourceRefresh(n => n + 1);
       dispatchFlow({ type: "finish", requestId, success: true });
     } catch (e) { setError((e as Error).message); dispatchFlow({ type: "finish", requestId, success: false }); }
     finally { setFinding(false); }
+  };
+
+  // Hands-free: run one allowlisted plan in this page and say what happened.
+  const runPlan = async (plan: Plan, confirmed: boolean): Promise<string> => {
+    const c = plan.command;
+    switch (c.type) {
+      case "switch_zone": await selectSpace(c.zone); return plan.say;
+      case "ask_memory": setQ(c.question); if (focus !== "team_memory") await selectSpace("team_memory"); await ask(c.question); return plan.say;
+      case "search_code": setCq(c.query); if (focus !== "code_navigator") await selectSpace("code_navigator"); await navigate(c.query); return "Here is the closest match. Say “agla” for the next one.";
+      case "open_file": {
+        const files = await zone<{ files: { path: string; lineCount: number }[] }>("code_files");
+        const hit = files.data.files?.find(f => f.path === c.path) ?? files.data.files?.find(f => f.path.endsWith(`/${c.path}`));
+        if (!hit) throw new Error(`${c.path} is not in the approved snapshot.`);
+        if (focus !== "code_navigator") await selectSpace("code_navigator");
+        setSourceRequest({ path: hit.path, line: Math.min(Math.max(1, c.line ?? 1), hit.lineCount), id: key() });
+        return `Opened ${hit.path.split("/").pop()}${c.line ? ` at line ${c.line}` : ""}.`;
+      }
+      case "step_result": {
+        const alts = ga?.alternatives ?? [];
+        if (alts.length < 2) throw new Error("There is only one result. Ask in other words for more.");
+        const next = (altIndex + c.direction + alts.length) % alts.length;
+        setAltIndex(next); const a = alts[next];
+        setSourceRequest({ path: a.path, line: a.line, id: key() });
+        return `Result ${next + 1} of ${alts.length}: ${a.label}.`;
+      }
+      case "ask_lead":
+        if (!confirmed) throw new Error("Needs a yes first.");
+        if (c.question) setQ(c.question);
+        await escalate(c.question);
+        return "Sent to the lead. The answer will come back here.";
+      default: throw new Error(plan.say);
+    }
+  };
+  const captureView = () => {
+    if (focus === "code_navigator") {
+      const marks = lastSource?.highlights ?? [];
+      const source = lastSource && marks.length ? { path: lastSource.path, start: Math.min(...marks.map(m => m.start)), end: Math.max(...marks.map(m => m.end)) } : undefined;
+      if (!source && !ga?.seed) return null;
+      return { zone: focus, query: cq, answer: ga?.seed ? `${ga.seed.label} in ${ga.seed.path}` : undefined, source, tags: ga?.alternatives?.slice(0, 3).map(a => a.label) };
+    }
+    if (focus === "team_memory") return mem ? { zone: focus, query: mem.question, answer: mem.speak, meetingId: meetingId || undefined, tags: [mem.kind] } : null;
+    return null;
+  };
+  const openFrame = (f: Frame) => {
+    if (f.zone === "code_navigator") {
+      void selectSpace("code_navigator");
+      if (f.query) setCq(f.query);
+      if (f.source) setSourceRequest({ path: f.source.path, line: f.source.start, id: key() });
+    } else if (f.zone === "team_memory") {
+      void selectSpace("team_memory");
+      if (f.query) setQ(f.query);
+    }
   };
 
   const zoneIndex = focus === "team_memory" ? 0 : focus === "leader_desk" ? 1 : 2;
@@ -220,8 +280,8 @@ function TeamWorkspace({ initialProject, onWorkspaceChanged }: { initialProject?
             <h2 className={w.h}>What did we decide?</h2>
             <p className={w.cardSub}>Pick up where your team left off. Answers cite the meeting line.</p>
             <div className={w.ask}>
-              <input className={w.input} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ask()} aria-label="Ask Team Memory" placeholder="Ask about a decision, owner or deadline" />
-              <button className={`${w.btn} ${w.primary}`} disabled={!connected || asking || !q.trim()} onClick={ask}>{asking ? "Looking up…" : "Ask"}</button>
+              <input className={w.input} value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void ask(); }} aria-label="Ask Team Memory" placeholder="Ask about a decision, owner or deadline" />
+              <button className={`${w.btn} ${w.primary}`} disabled={!connected || asking || !q.trim()} onClick={() => void ask()}>{asking ? "Looking up…" : "Ask"}</button>
             </div>
             <div className={w.ideas} aria-label="Example questions">{MEMORY_IDEAS.map(x => <button key={x} type="button" className={w.idea} data-on={q === x} onClick={() => setQ(x)}>{x}</button>)}</div>
             {connected && (
@@ -257,7 +317,7 @@ function TeamWorkspace({ initialProject, onWorkspaceChanged }: { initialProject?
                 <div className={w.state} data-kind={mem.kind === "confirmed" ? "ok" : ["conditional", "meeting_context"].includes(mem.kind) ? "wait" : "bad"}>{mem.kind.replaceAll("_", " ").replace(/^./, c => c.toUpperCase())}</div>
                 <p className={w.answerText}>{mem.speak}</p>
                 <div className={w.src}>{mem.sources.map((x, i) => <span key={i}><b>{x.kind}</b>{x.url ? <a href={x.url} target="_blank" rel="noreferrer">{x.label}</a> : x.label}</span>)}{mem.provisional.map((p, i) => <span key={`p${i}`} className={w.warn}><b>live, provisional</b>{p.text}</span>)}</div>
-                {mem.offerEscalation && !mem.pendingTicket && !sent && <button className={w.btn} disabled={sending} onClick={escalate}><AgentGlyph zone="leader_desk" size={18} />{sending ? "Sending…" : "Yes, ask the lead"}</button>}
+                {mem.offerEscalation && !mem.pendingTicket && !sent && <button className={w.btn} disabled={sending} onClick={() => void escalate()}><AgentGlyph zone="leader_desk" size={18} />{sending ? "Sending…" : "Yes, ask the lead"}</button>}
                 {sent && <p className={w.note}>{sent}</p>}
               </div>
             )}
@@ -277,6 +337,7 @@ function TeamWorkspace({ initialProject, onWorkspaceChanged }: { initialProject?
           {/* CENTRE: you, the project and the lead */}
           <aside className={w.center} aria-label="Workspace tools">
             <div className={w.sideHeading}><span>Workspace tools</span><small>Connection, calls and controls</small></div>
+            <HandsFree enabled={connected} onPlan={runPlan} captureView={captureView} onOpenFrame={openFrame} />
             {connected ? <ProjectConnection selectedZone={focus} repository={me!.snapshot?.repository ?? "harshsinha-12/kaam-ki-baat"} onConnected={connectProject} onWorkspaceChanged={onWorkspaceChanged} initialProject={initialProject} />
               : <section className={w.panel} aria-label="Getting ready">
                   <div className={w.panelHead}><span className={w.panelIcon} aria-hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M6 3v12M18 9v12M6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM18 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM6 15c0-4 12-2 12-6" /></svg></span><div><h2>Project connection</h2><p>Three steps before your first answer.</p></div></div>
@@ -314,8 +375,8 @@ function TeamWorkspace({ initialProject, onWorkspaceChanged }: { initialProject?
             <h2 className={w.h}>Where is it in the code?</h2>
             <p className={w.cardSub}>Trace an idea to the file, function, line and test.</p>
             <div className={w.ask}>
-              <input className={w.input} value={cq} onChange={(e) => setCq(e.target.value)} onKeyDown={(e) => e.key === "Enter" && navigate()} aria-label="Ask Code Navigator" placeholder="Describe the behaviour you’re looking for" />
-              <button className={`${w.btn} ${w.primary}`} disabled={!connected || finding || !cq.trim()} onClick={navigate}>{finding ? "Finding…" : "Find"}</button>
+              <input className={w.input} value={cq} onChange={(e) => setCq(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void navigate(); }} aria-label="Ask Code Navigator" placeholder="Describe the behaviour you’re looking for" />
+              <button className={`${w.btn} ${w.primary}`} disabled={!connected || finding || !cq.trim()} onClick={() => void navigate()}>{finding ? "Finding…" : "Find"}</button>
             </div>
             <div className={w.ideas} aria-label="Example questions">{CODE_IDEAS.map(x => <button key={x} type="button" className={w.idea} data-on={cq === x} onClick={() => setCq(x)}>{x}</button>)}</div>
             {ga ? <div className={w.graphBox}><CodeGraphView graph={ga.graph} highlight={ga.subgraph.nodes} height={360} onPick={openGraphSource} /></div> : (
@@ -330,6 +391,9 @@ function TeamWorkspace({ initialProject, onWorkspaceChanged }: { initialProject?
             {ga && (
               <div className={w.result}>
                 {ga.seed && <a className={w.seed} href={`https://github.com/${ga.repository}/blob/${ga.sha}/${ga.seed.path}#L${ga.seed.line}`} target="_blank" rel="noreferrer"><span className={w.mono}>{ga.seed.path}:{ga.seed.line}</span><span className={w.sha}>{ga.sha.slice(0, 7)}</span><span className={w.state} data-kind={ga.match === "confirmed" ? "ok" : "wait"}>{ga.match === "confirmed" ? "Confirmed" : "Candidate"}</span></a>}
+                {(ga.alternatives?.length ?? 0) > 1 && <div className={w.alts} aria-label="Other matches">{ga.alternatives!.map((a, i) => (
+                  <button key={`${a.path}#${a.label}`} type="button" className={w.alt} data-on={i === altIndex} title={a.why.join(" · ")}
+                    onClick={() => { setAltIndex(i); setSourceRequest({ path: a.path, line: a.line, id: key() }); }}><b>{a.label}</b><span>{a.path.split("/").pop()}:{a.line}</span></button>))}</div>}
                 {ga.explanation.length > 0 && <ol className={w.steps}>{ga.explanation.map((l, i) => <li key={i}>{l.replace(/^\d+\.\s*/, "")}</li>)}</ol>}
                 <a className={w.link} href={`/graph?q=${encodeURIComponent(cq)}`}>See how it was found in the full graph</a>
               </div>

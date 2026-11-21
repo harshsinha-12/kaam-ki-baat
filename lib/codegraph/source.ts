@@ -3,6 +3,7 @@ import type { EvidenceSnapshot } from "../contracts";
 import type { EventStore, StoredEvent } from "../store/event-store";
 import { ev, zoneEvents } from "../zones/state";
 import { tokenize } from "./search";
+import { highlightSymbol } from "./highlight";
 
 export interface SourceHighlight { start: number; end: number; reason: string }
 export interface CodeSourceFocus {
@@ -39,8 +40,12 @@ export function questionSource(snapshot: EvidenceSnapshot, question: string, pas
   const file = snapshot.files.find(f => f.path === passage.path);
   if (!file) return null;
   const terms = new Set(tokenize(question)), lines = file.content.split("\n");
-  if (passage.anchorLine !== undefined) return sourceExcerpt(snapshot, passage.path, [{ start: passage.anchorLine,
-    end: Math.min(lines.length, passage.anchorLine + 2), reason: "Candidate symbol found through code search · verify in context" }]);
+  if (passage.anchorLine !== undefined) {
+    // Signature plus the body lines that match the question, kept inside the viewer's 100-line window.
+    const marks = highlightSymbol(lines, passage.anchorLine, question).filter(h => h.end - passage.anchorLine! <= 95);
+    return sourceExcerpt(snapshot, passage.path, marks.map(h => ({ ...h, reason: h.reason === "Definition"
+      ? "Candidate symbol found through code search · verify in context" : `${h.reason} · candidate for review` })));
+  }
   let best = passage.lineStart, score = -1;
   for (let n = passage.lineStart; n <= passage.lineEnd; n++) {
     const text = lines[n - 1] ?? "";

@@ -45,7 +45,8 @@ export function understand(raw: string, ctx: { focusTaskTitle?: string } = {}): 
     normalized = `${normalized} (${ctx.focusTaskTitle})`;
   }
 
-  const n = normalized.toLowerCase();
+  // "code freeze" is a team decision, not a place in the code.
+  const n = normalized.toLowerCase().replace(/\bcode[- ]freeze\b/g, "freeze");
   let intent: Intent = "memory", why = "a question about what the team decided";
   if (/\b(escalate)\b|\bask\b.*\b(leader|lead|charan)\b|\b(leader|lead|charan)\b.*\bask\b/.test(n)) { intent = "escalate"; why = "asked to send it to the leader"; }
   else if (/\b(please set|mark|in progress|blocked|done kar)\b/.test(n)) { intent = "update"; why = "asked to change a task status"; }

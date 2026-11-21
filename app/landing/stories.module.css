@@ -1,0 +1,217 @@
+/* Story sections: "How it hears" and "From not sure to a sourced answer".
+   One object travels through stages. Near-monochrome; a single warm ivory
+   (--ivory) marks the thing currently being worked on. A faint grain and a
+   blueprint grid give the panels texture without colour. */
+
+.hears, .relay {
+  --ivory: #ecdcb8;
+  --ivoryDim: rgba(236, 220, 184, .14);
+  --ink: #f4f4f2;
+  --text: #c4c6cb;
+  --mute: #868a93;
+  --dim: #565a62;
+  --line: rgba(255, 255, 255, .07);
+  --line2: rgba(255, 255, 255, .12);
+  --panel: #0b0c0e;
+  --well: #070708;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  --out: cubic-bezier(.16, 1, .3, 1);
+  --spring: cubic-bezier(.34, 1.4, .64, 1);
+}
+
+/* ============================================================= HEARS */
+.hears { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding-top: 34px; }
+@media (max-width: 1100px) { .hears { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 0; } .rail { display: none; } }
+@media (max-width: 620px) { .hears { grid-template-columns: 1fr; } }
+
+/* The rail carries the sentence between stages as a small token. */
+.rail { position: absolute; left: 12.5%; right: 12.5%; top: 10px; height: 1px; background: repeating-linear-gradient(90deg, var(--line2) 0 4px, transparent 4px 9px); }
+.railFill { position: absolute; left: 0; top: 0; height: 1px; width: calc(var(--at) / 3 * 100%); background: linear-gradient(90deg, rgba(236,220,184,.0), var(--ivory)); transition: width .9s var(--out); }
+.token { position: absolute; top: 50%; left: calc(var(--at) / 3 * 100%); transform: translate(-50%, -50%); white-space: nowrap; padding: 4px 10px; border-radius: 99px;
+  background: #15140f; color: var(--ivory); font: 500 11.5px var(--font-mono, ui-monospace), monospace; box-shadow: 0 0 0 1px rgba(236,220,184,.28), 0 6px 18px -6px rgba(236,220,184,.35);
+  transition: left .9s var(--out); animation: tokenIn .5s var(--out); }
+@keyframes tokenIn { from { opacity: 0; transform: translate(-50%, -30%) scale(.92); } }
+
+.card { --mx: 50%; --my: 0%; --rx: 0deg; --ry: 0deg; position: relative; display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 12px; border: 0; border-radius: 20px; text-align: left;
+  color: inherit; font: inherit; cursor: pointer; background: var(--panel); isolation: isolate;
+  box-shadow: inset 0 0 0 1px var(--line), inset 0 1px 0 rgba(255,255,255,.035);
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform .4s var(--out), box-shadow .35s, opacity .35s; }
+.card::before { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
+  background: radial-gradient(380px circle at var(--mx) var(--my), rgba(255,255,255,.05), transparent 50%); opacity: 0; transition: opacity .35s; }
+.card:hover::before, .card[data-state="on"]::before { opacity: 1; }
+.card[data-state="on"] { box-shadow: inset 0 0 0 1px rgba(236,220,184,.26), inset 0 1px 0 rgba(255,255,255,.06), 0 30px 60px -36px rgba(236,220,184,.28); }
+.card[data-state="next"] { opacity: .7; }
+.card[data-state="done"] { opacity: .82; }
+.card:hover { opacity: 1; }
+.card:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.head { display: flex; align-items: baseline; gap: 9px; padding: 2px 4px 0; }
+.num { font: 500 12px var(--font-mono, ui-monospace), monospace; color: var(--dim); transition: color .3s; }
+.kick { font-size: 13px; font-weight: 600; color: var(--mute); letter-spacing: .01em; transition: color .3s; }
+.card[data-state="on"] .num { color: var(--ivory); }
+.card[data-state="on"] .kick { color: var(--ink); }
+.title { font: 650 17.5px/1.2 var(--display, ui-sans-serif); letter-spacing: -.02em; color: var(--ink); padding: 0 4px; text-wrap: balance; }
+.body { font-size: 13.5px; line-height: 1.5; color: var(--mute); padding: 0 4px 4px; text-wrap: pretty; }
+
+/* The well: every stage UI sits on the same blueprint grid, same height. */
+.stage { display: block; }
+.ui { position: relative; height: 232px; display: flex; flex-direction: column; gap: 11px; padding: 13px; border-radius: 14px; overflow: hidden;
+  background: linear-gradient(var(--line) 1px, transparent 1px) 0 0 / 100% 24px, linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0 / 24px 100%, var(--well);
+  background-blend-mode: normal; box-shadow: inset 0 0 0 1px var(--line); }
+.ui::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 80% at 50% 0%, transparent 40%, var(--well) 100%); }
+.ui > * { position: relative; z-index: 1; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+.live { display: inline-flex; align-items: center; gap: 7px; color: var(--mute); }
+.live i { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+.live[data-on="true"] { color: var(--ink); }
+.live[data-on="true"] i { background: var(--ivory); box-shadow: 0 0 0 0 rgba(236,220,184,.6); animation: pulse 1.6s infinite; }
+@keyframes pulse { 70% { box-shadow: 0 0 0 7px rgba(236,220,184,0); } 100% { box-shadow: 0 0 0 0 rgba(236,220,184,0); } }
+.lang { padding: 3px 8px; border-radius: 7px; background: rgba(255,255,255,.06); color: var(--text); font-size: 11.5px; }
+
+/* 01 Heard: words arrive, the filler and the retracted half get a hairline strike. */
+.wave { width: 100%; height: 28px; flex: none; }
+.wave path { fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: .85; vector-effect: non-scaling-stroke; }
+.said { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink); }
+.run { position: relative; transition: color .5s; }
+.word { display: inline; opacity: 0; animation: word .28s var(--out) forwards; animation-delay: calc(var(--w) * 150ms); }
+@keyframes word { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: blur(0); } }
+.run[data-kind="filler"], .run[data-kind="dropped"], .run[data-kind="marker"] { animation: fade .6s ease forwards; animation-delay: 2.1s; }
+@keyframes fade { to { color: var(--dim); } }
+.run[data-kind="filler"]::after, .run[data-kind="dropped"]::after { content: ""; position: absolute; left: 0; right: .3em; top: 55%; height: 1px; background: var(--ivory);
+  transform: scaleX(0); transform-origin: left; animation: strike .5s var(--out) forwards; animation-delay: 2.1s; }
+.run[data-kind="dropped"]::after { animation-delay: 2.35s; }
+@keyframes strike { to { transform: scaleX(1); } }
+.run[data-kind="marker"] { font-style: italic; }
+.keep { margin-top: auto; display: flex; align-items: center; gap: 8px; opacity: 0; transform: translateY(6px); animation: rise .5s var(--spring) forwards; animation-delay: 2.8s; }
+@keyframes rise { to { opacity: 1; transform: none; } }
+.keepLabel { font: 500 10.5px var(--font-mono, ui-monospace), monospace; color: var(--mute); text-transform: uppercase; letter-spacing: .08em; }
+.keepChip { align-self: flex-start; padding: 7px 11px; border-radius: 10px; background: var(--ink); color: #0a0a0a; font-size: 13.5px; font-weight: 600; letter-spacing: -.005em; }
+.keepChip[data-small] { font-size: 12.5px; padding: 6px 10px; animation: rise .45s var(--spring) both; }
+
+/* 02 Understood: words connect to meanings with a drawn line. */
+.map { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.map li { display: grid; grid-template-columns: minmax(0, .9fr) 26px minmax(0, 1.2fr); align-items: center; gap: 6px; opacity: 0; animation: rise .45s var(--out) forwards; animation-delay: calc(.35s + var(--i) * .32s); }
+.mFrom { justify-self: start; padding: 4px 8px; border-radius: 7px; background: rgba(255,255,255,.06); font-size: 12.5px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.mFrom u { text-decoration: none; box-shadow: inset 0 -1.5px 0 var(--ivory); }
+.mFrom s { color: var(--mute); text-decoration-color: var(--dim); }
+.mLine { height: 1px; background: var(--line2); position: relative; transform: scaleX(0); transform-origin: left; animation: strike .4s var(--out) forwards; animation-delay: calc(.55s + var(--i) * .32s); }
+.mLine::after { content: ""; position: absolute; right: -2px; top: -2px; width: 5px; height: 5px; border-radius: 50%; background: var(--ivory); }
+.mTo { display: grid; font: 12px var(--font-mono, ui-monospace), monospace; color: var(--ink); line-height: 1.35; min-width: 0; overflow-wrap: anywhere; }
+.mTo small { font: 500 10px var(--font-sans, ui-sans-serif); text-transform: uppercase; letter-spacing: .08em; color: var(--mute); }
+.route { margin-top: auto; display: flex; align-items: baseline; gap: 7px; padding-top: 10px; border-top: 1px dashed var(--line2); font-size: 12px; color: var(--mute);
+  opacity: 0; animation: rise .45s var(--out) forwards; animation-delay: 1.6s; }
+.route b { color: var(--ink); font-weight: 600; }
+.route em { margin-left: auto; font: normal 11px var(--font-mono, ui-monospace), monospace; color: var(--dim); }
+
+/* 03 Decided: a claim, three checks that fail honestly, a stamp. */
+.claim { display: grid; grid-template-columns: auto 1fr; align-items: end; gap: 2px 10px; padding: 9px 11px; border-radius: 10px; background: rgba(255,255,255,.035); box-shadow: inset 0 0 0 1px var(--line); }
+.claim span:first-child { grid-column: 1 / -1; font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: .08em; }
+.claim b { font: 650 22px/1 var(--display, ui-sans-serif); letter-spacing: -.02em; color: var(--ink); }
+.claimSrc { justify-self: end; font: 11px var(--font-mono, ui-monospace), monospace; color: var(--dim); white-space: nowrap; }
+.ledger { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.ledger li { display: grid; grid-template-columns: 16px 74px minmax(0, 1fr); align-items: center; gap: 8px; font-size: 12.5px; color: var(--mute); opacity: 0; animation: rise .4s var(--out) forwards; animation-delay: calc(.3s + var(--i) * .38s); }
+.ledger b { font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ledger svg { width: 16px; height: 16px; fill: none; stroke: var(--mute); stroke-width: 1.3; stroke-linecap: round; }
+.ledger circle { stroke-dasharray: 41; stroke-dashoffset: 41; animation: draw .5s var(--out) forwards; animation-delay: calc(.35s + var(--i) * .38s); }
+.ledger path { stroke-dasharray: 8; stroke-dashoffset: 8; animation: draw .3s var(--out) forwards; animation-delay: calc(.7s + var(--i) * .38s); }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.stamp { margin-top: auto; align-self: flex-end; display: grid; justify-items: center; padding: 7px 14px 6px; border-radius: 8px; color: var(--ivory);
+  box-shadow: inset 0 0 0 1.5px var(--ivory); transform: rotate(-5deg); opacity: 0; animation: stamp .5s var(--spring) forwards; animation-delay: 1.75s; }
+.stamp span { font: 700 14px var(--display, ui-sans-serif); letter-spacing: .06em; text-transform: uppercase; }
+.stamp small { font: 10.5px var(--font-mono, ui-monospace), monospace; color: rgba(236,220,184,.7); }
+@keyframes stamp { from { opacity: 0; transform: rotate(-12deg) scale(1.5); } to { opacity: 1; transform: rotate(-5deg) scale(1); } }
+
+/* 04 Answered: words light up as they are spoken; the citation follows. */
+.agent { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); font-weight: 550; font-size: 12.5px; }
+.agent i { width: 16px; height: 16px; border-radius: 5px; background: linear-gradient(135deg, #cfd6df, #8f99a6); box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
+.voice { display: inline-flex; align-items: center; gap: 2px; height: 16px; }
+.voice i { width: 2px; height: 30%; border-radius: 2px; background: var(--ink); animation: bars .9s ease-in-out infinite; animation-delay: calc(var(--i) * -.17s); }
+@keyframes bars { 50% { height: 100%; } }
+.reply { margin: 0; padding: 11px 13px; border-radius: 14px 14px 14px 4px; background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px var(--line); font-size: 15px; line-height: 1.45; color: var(--dim); }
+.reply span { animation: lit .3s ease forwards; animation-delay: calc(.3s + var(--w) * .22s); }
+@keyframes lit { to { color: var(--ink); } }
+.cite { display: flex; flex-wrap: wrap; gap: 5px; opacity: 0; animation: rise .4s var(--out) forwards; animation-delay: 2.3s; }
+.cite span { padding: 3px 7px; border-radius: 6px; font: 11px var(--font-mono, ui-monospace), monospace; color: var(--text); box-shadow: inset 0 0 0 1px var(--line2); }
+.cite span:first-child { box-shadow: inset 0 0 0 1px rgba(236,220,184,.35); color: var(--ivory); }
+.choices { margin-top: auto; display: flex; gap: 6px; opacity: 0; animation: rise .4s var(--out) forwards; animation-delay: 2.6s; }
+.choices span { padding: 6px 11px; border-radius: 9px; font-size: 12.5px; background: rgba(255,255,255,.06); color: var(--text); }
+.choices span:first-child { background: var(--ink); color: #0a0a0a; font-weight: 600; }
+
+/* Inactive cards show their finished state instantly. */
+.stage[data-settled="true"] *, .stage[data-settled="true"] *::after { animation-delay: 0s !important; animation-duration: 0s !important; }
+.stage[data-settled="true"] .voice i, .stage[data-settled="true"] .live i { animation: none !important; }
+
+/* ========================================================= ESCALATION */
+.relay { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); gap: 14px; align-items: stretch; }
+@media (max-width: 980px) { .relay { grid-template-columns: 1fr; } }
+.lanes { display: grid; gap: 8px; padding: 14px 14px 10px; border-radius: 22px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line), inset 0 1px 0 rgba(255,255,255,.035); min-width: 0; }
+.track { position: relative; height: 330px; margin: 0 22px 0 92px; cursor: grab; touch-action: pan-y; user-select: none; outline: none; }
+.track:active { cursor: grabbing; }
+.track:focus-visible { box-shadow: 0 0 0 2px var(--ink); border-radius: 14px; }
+.lane { position: absolute; left: -86px; right: -16px; height: 84px; transform: translateY(-50%); border-radius: 14px; background: rgba(255,255,255,.018); box-shadow: inset 0 0 0 1px rgba(255,255,255,.035);
+  transition: background .5s, box-shadow .5s; }
+.lane span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 64px; line-height: 1.3; font: 500 10.5px var(--font-mono, ui-monospace), monospace; text-transform: uppercase; letter-spacing: .1em; color: var(--dim); transition: color .4s; }
+.lane[data-on="true"] { background: linear-gradient(90deg, rgba(236,220,184,.05), rgba(255,255,255,.015)); box-shadow: inset 0 0 0 1px rgba(236,220,184,.12); }
+.lane[data-on="true"] span { color: var(--ivory); }
+.path { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.pathBase { fill: none; stroke: rgba(255,255,255,.14); stroke-width: 1.2; stroke-dasharray: 3 6; }
+.pathTrail { fill: none; stroke: var(--ivory); stroke-width: 1.6; stroke-linecap: round; }
+.station { position: absolute; transform: translate(-50%, -50%); z-index: 2; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%;
+  background: #121316; color: var(--mute); cursor: pointer; box-shadow: inset 0 0 0 1px var(--line2); transition: background .35s, color .35s, box-shadow .35s, transform .35s var(--spring); }
+.station i { font: 600 12px var(--font-mono, ui-monospace), monospace; font-style: normal; }
+.station[data-state="done"] { color: var(--ink); box-shadow: inset 0 0 0 1px rgba(236,220,184,.4); }
+.station[data-state="on"] { background: var(--ivory); color: #16130c; transform: translate(-50%, -50%) scale(1.12); box-shadow: 0 0 0 6px rgba(236,220,184,.08); }
+.station:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.stLabel { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); white-space: nowrap; pointer-events: none;
+  font: 600 12px var(--font-sans, ui-sans-serif); color: var(--mute); transition: color .3s; }
+.stLabel[data-edge="start"] { left: -6px; transform: none; }
+.stLabel[data-edge="end"] { left: auto; right: -6px; transform: none; }
+.station[data-state="done"] .stLabel { color: var(--text); }
+.station[data-state="on"] .stLabel, .station:hover .stLabel { color: var(--ink); }
+.ring { position: absolute; left: 0; top: 0; z-index: 1; width: 0; height: 0; pointer-events: none; will-change: transform; }
+.ring i { position: absolute; left: -21px; top: -21px; width: 42px; height: 42px; border-radius: 50%;
+  box-shadow: 0 0 0 1.5px var(--ivory), 0 0 24px 2px rgba(236,220,184,.25); animation: halo 2.4s ease-in-out infinite; }
+@keyframes halo { 50% { box-shadow: 0 0 0 1.5px var(--ivory), 0 0 34px 6px rgba(236,220,184,.18); } }
+.hint { margin: 0; padding: 0 6px; font-size: 11.5px; color: var(--dim); }
+@media (max-width: 720px) { .stLabel { display: none; } .track { margin-left: 70px; } .lane { left: -64px; } .lane span { width: 48px; font-size: 9.5px; } }
+
+/* The ticket itself: a pass that gets stamped at every step. */
+.pass { --mx: 50%; --my: 0%; --rx: 0deg; --ry: 0deg; position: relative; display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 22px; overflow: hidden; isolation: isolate;
+  background: radial-gradient(500px circle at var(--mx) var(--my), rgba(255,255,255,.045), transparent 45%), linear-gradient(180deg, #111215, #0b0c0e);
+  box-shadow: inset 0 0 0 1px var(--line2), inset 0 1px 0 rgba(255,255,255,.06), 0 40px 80px -50px rgba(0,0,0,.9);
+  transform: perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform .45s var(--out); }
+.pass::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--grain); opacity: .18; mix-blend-mode: overlay; pointer-events: none; }
+/* perforation between header and body, like a ticket stub */
+.pass::after { content: ""; position: absolute; left: 18px; right: 18px; top: 54px; height: 1px; background: repeating-linear-gradient(90deg, var(--line2) 0 5px, transparent 5px 10px); }
+.pass header { display: flex; align-items: center; gap: 8px; height: 24px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--mute); }
+.pass header code { font: 500 11.5px var(--font-mono, ui-monospace), monospace; letter-spacing: 0; text-transform: none; color: var(--text); }
+.status { margin-left: auto; padding: 4px 9px; border-radius: 99px; letter-spacing: .04em; color: #16130c; background: var(--ivory); animation: pop .45s var(--spring); }
+.pass[data-step="0"] .status, .pass[data-step="1"] .status { background: transparent; color: var(--ivory); box-shadow: inset 0 0 0 1px rgba(236,220,184,.45); }
+@keyframes pop { from { transform: scale(.7); opacity: 0; } }
+.q { margin: 10px 0 0; font: 650 24px/1.15 var(--display, ui-sans-serif); letter-spacing: -.025em; color: var(--ink); }
+.now { margin: -4px 0 0; font-size: 13px; line-height: 1.45; color: var(--mute); animation: rise .4s var(--out); }
+.now b { font-weight: 600; color: var(--ivory); }
+.pass dl { margin: 0; display: grid; gap: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.pass dl div { display: grid; grid-template-columns: 86px minmax(0, 1fr); gap: 10px; padding: 8px 11px; font-size: 12.5px; }
+.pass dl div + div { border-top: 1px solid var(--line); }
+.pass dt { color: var(--dim); }
+.pass dd { margin: 0; color: var(--text); min-width: 0; }
+.pass dd em { font-style: normal; color: var(--mute); }
+.struck { text-decoration: line-through; text-decoration-color: var(--ivory); color: var(--dim); }
+.newv { font-weight: 600; color: var(--ink); animation: rise .45s var(--out); }
+.stamps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; min-height: 92px; align-content: start; }
+.stamps li { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 8px; font-size: 12px; color: var(--text); animation: rise .4s var(--out) both; }
+.stamps li span { font: 11px var(--font-mono, ui-monospace), monospace; color: var(--dim); padding-top: 1px; }
+.pass footer { margin-top: auto; display: grid; gap: 10px; }
+.toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--mute); cursor: pointer; }
+.toggle input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.toggle i { position: relative; width: 30px; height: 18px; border-radius: 99px; background: #23252b; transition: background .25s; flex: none; }
+.toggle i::after { content: ""; position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: #8b8f98; transition: transform .3s var(--out), background .25s; }
+.toggle input:checked + i { background: var(--ivory); }
+.toggle input:checked + i::after { transform: translateX(12px); background: #16130c; }
+.toggle input:focus-visible + i { outline: 2px solid var(--ink); outline-offset: 2px; }
+.spoken { padding: 10px 12px; border-radius: 12px 12px 12px 4px; background: rgba(236,220,184,.08); box-shadow: inset 0 0 0 1px rgba(236,220,184,.22); color: var(--ink); font-size: 13.5px; animation: rise .45s var(--out); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hears *, .relay *, .hears *::after, .relay *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition: none !important; }
+  .card, .pass { transform: none !important; }
+}

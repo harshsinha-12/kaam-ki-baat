@@ -6,8 +6,7 @@ import { AgentGlyph } from "../components/AgentGlyph";
 import { BrandMark } from "../components/BrandMark";
 import { VoiceWave } from "../components/VoiceWave";
 import { DemoGraph } from "../components/DemoGraph";
-import { arcLength, catmullRomToBezier, damp, toSvgPath, type V2 } from "../../lib/motion/curves";
-import { understand } from "../../lib/core/understand";
+import { Escalation, Hears } from "./Stories";
 
 // Kaam Ki Baat landing. The page explains the product by doing it: look left
 // for Team Memory, face front for the Leader Desk, look right for the Code
@@ -372,74 +371,6 @@ function DoubtLoop() {
   );
 }
 
-/* ------------------------------------------------------------- hearing */
-const HEARD_SAMPLE = "umm, code freeze 3:30, nahi matlab, final time kab hai?";
-const HEARS = [
-  { k: "Heard", t: "Wispr hears it", b: "Meeting notes come from Wispr Flow, and live speech from an app you opt into. Fillers and self-corrections are cleaned up.", ui: "heard" },
-  { k: "Understood", t: "It works out what you mean", b: "“Freeze kab hai” becomes the open freeze decision. “Woh code” becomes the function you were just talking about.", ui: "mean" },
-  { k: "Decided", t: "The evidence decides", b: "Fixed rules check the source: who said it, whether it was proposed or approved, and whether the PR is open or merged.", ui: "decide" },
-  { k: "Answered", t: "An agent answers, with the line", b: "One short sentence in Hindi or English, spoken by Bolna. The cited passage or code line opens on screen.", ui: "answer" },
-];
-
-function HearsUI({ ui, on }: { ui: string; on: boolean }) {
-  const reduced = useContext(ReducedMotion);
-  if (ui === "heard") {
-    const u = understand(HEARD_SAMPLE);
-    return (
-      <div className={s.hUi}>
-        <div className={s.hTop}><span className={s.live}><i />Listening</span><span className={s.chip}>EN</span><span className={s.chip}>हिं</span><span className={`${s.chip} ${s.chipOn}`}>Hinglish</span></div>
-        <div className={s.wave} aria-hidden>{Array.from({ length: 18 }, (_, i) => <i key={i} style={{ "--i": i } as CSSProperties} className={on ? s.waveOn : ""} />)}</div>
-        <div className={s.hText}>{u.heard}</div>
-        <div className={s.editTags}>{u.edits.map((e, i) => <span key={i} className={s.editTag}>{e.kind === "filler" ? `filler: ${e.text}` : e.kind === "correction" ? `correction: ${e.text.replace(/^umm,?\s*/i, "")}` : e.kind}</span>)}</div>
-        <div className={s.hClean}>{u.cleaned}</div>
-      </div>
-    );
-  }
-  if (ui === "mean") return (
-    <div className={s.hUi}>
-      {[["freeze kab hai", "decision: code freeze"], ["woh code", "persistVerifiedUpdate()"], ["mera kaam", "Harsh · 3 tasks"], ["ho gaya?", "PR #11 · merged"]].map(([a, b]) => (
-        <div key={a} className={s.mapRow}><span className={s.mapFrom}>{a}</span><span className={s.mapArrow}>→</span><span className={s.mapTo}>{b}</span></div>
-      ))}
-    </div>
-  );
-  if (ui === "decide") return (
-    <div className={s.hUi}>
-      <div className={s.docLine}><b>Freeze</b> <span className={s.strike}>3:30</span> → <span className={s.unknown}>not decided</span></div>
-      {["Said by Harsh, as a question", "No owner, so not approved", "Ask the lead instead of guessing"].map((t, i) => (
-        <div key={t} className={s.check}><span className={i === 2 ? s.dotWait : s.dotOk} />{t}</div>
-      ))}
-    </div>
-  );
-  return (
-    <div className={s.hUi}>
-      <div className={s.hTop}><AgentGlyph zone="team_memory" size={20} active reduced={reduced} /><span style={{ fontWeight: 550 }}>Team Memory</span></div>
-      <div className={s.bubble}>Freeze abhi decide nahi hua. Main Charan se puchhun?</div>
-      <div className={s.hMeta}>Sprint sync · Harsh · passage 11</div>
-    </div>
-  );
-}
-
-function Hears() {
-  const reduced = useContext(ReducedMotion);
-  const [ref, inView] = useInView<HTMLDivElement>(0.3);
-  const [i, setI] = useState(0);
-  const [manual, setManual] = useState(false);
-  useEffect(() => { if (reduced || !inView || manual) return; const id = setInterval(() => setI((x) => (x + 1) % HEARS.length), 3200); return () => clearInterval(id); }, [inView, manual, reduced]);
-  return (
-    <div ref={ref} className={s.hears} style={{ "--step": i } as CSSProperties}>
-      <div className={s.hRail} aria-hidden><i /></div>
-      {HEARS.map((h, k) => (
-        <button key={h.k} type="button" className={s.hCol} data-on={k === i} data-done={k < i} aria-pressed={k === i} onClick={() => { setManual(true); setI(k); }}>
-          <span className={s.hHead}><span className={s.hNum}>{k + 1}</span><span className={s.hKey}>{h.k}</span></span>
-          <HearsUI ui={h.ui} on={k === i} />
-          <span className={s.hTitle}>{h.t}</span>
-          <span className={s.hBody}>{h.b}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 /* ------------------------------------------------------------- agents */
 const DIVE: { z: Zone; n: string; title: string; body: string; points: string[] }[] = [
   { z: "team_memory", n: "01", title: "Team Memory answers only what was approved.", body: "Ask in Hindi, English or both, and correct yourself mid-sentence. It answers from approved Wispr meeting passages and verified decisions, and cites who said it. If something was only proposed, it says so instead of filling the gap.", points: ["Proposed is never reported as decided", "Understands Hinglish and self-corrections", "Unknowns go to the lead, not to a guess"] },
@@ -559,88 +490,6 @@ function LeadDesk() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------- escalation */
-const PIPE = [
-  { t: "Member asks", d: "“Code freeze kab hai?”", say: "Only proposed in the notes" },
-  { t: "No verified answer", d: "It says so and offers to ask.", say: "A ticket goes to the lead" },
-  { t: "Lead approves", d: "Verified role and a fresh passkey.", say: "Approved: 3:45 if CI is green" },
-  { t: "Saved and read back", d: "Versioned and append-only.", say: "Decision v2, read back" },
-  { t: "Answer delivered", d: "Now, or on the next call.", say: "“Approved by Charan”" },
-];
-
-function SplinePacket({ container, step, count }: { container: RefObject<HTMLDivElement | null>; step: number; count: number }) {
-  const [geo, setGeo] = useState<{ d: string; w: number; h: number; pts: V2[] } | null>(null);
-  const dot = useRef<SVGCircleElement>(null);
-  const trail = useRef<SVGPathElement>(null);
-  useEffect(() => {
-    const el = container.current;
-    if (!el) return;
-    const measure = () => {
-      const r = el.getBoundingClientRect();
-      const badges = [...el.querySelectorAll("[data-badge]")].map((b) => { const q = b.getBoundingClientRect(); return { x: q.left - r.left + q.width / 2, y: q.top - r.top + q.height / 2 }; });
-      if (badges.length < 2) return;
-      const pts: V2[] = [];
-      badges.forEach((b, i) => { pts.push(b); if (i < badges.length - 1) pts.push({ x: (b.x + badges[i + 1].x) / 2, y: b.y - (i % 2 ? -14 : 14) }); });
-      setGeo({ d: toSvgPath(catmullRomToBezier(pts)), w: r.width, h: r.height, pts });
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [container]);
-  useEffect(() => {
-    if (!geo) return;
-    const curve = arcLength(catmullRomToBezier(geo.pts), 48);
-    const target = step / (count - 1);
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let u = reduce ? target : (dot.current?.dataset.u ? Number(dot.current.dataset.u) : 0);
-    let last = performance.now(), raf = 0;
-    const frame = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000); last = now;
-      u = reduce ? target : damp(u, target, 5, dt);
-      const p = curve.at(u);
-      if (dot.current) { dot.current.setAttribute("cx", String(p.x)); dot.current.setAttribute("cy", String(p.y)); dot.current.dataset.u = String(u); }
-      if (trail.current) trail.current.style.strokeDashoffset = String(curve.total * (1 - u));
-      if (Math.abs(u - target) > 0.0005) raf = requestAnimationFrame(frame);
-    };
-    raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
-  }, [geo, step, count]);
-  if (!geo) return null;
-  const total = arcLength(catmullRomToBezier(geo.pts), 48).total;
-  return (
-    <svg className={s.splineSvg} width={geo.w} height={geo.h} aria-hidden>
-      <path d={geo.d} fill="none" stroke="#2a2a2a" strokeWidth="1.5" strokeDasharray="4 6" />
-      <path ref={trail} d={geo.d} fill="none" stroke="#d9d9d9" strokeWidth="1.5" strokeLinecap="round" style={{ strokeDasharray: total, strokeDashoffset: total }} />
-      <circle ref={dot} r="5" fill="#fff" />
-    </svg>
-  );
-}
-
-function Escalation() {
-  const reduced = useContext(ReducedMotion);
-  const [ref, inView] = useInView<HTMLDivElement>(0.4);
-  const [step, setStep] = useState(0);
-  const [manual, setManual] = useState(false);
-  useEffect(() => {
-    if (!inView || manual || reduced) return;
-    const id = setInterval(() => setStep((x) => (x + 1) % PIPE.length), 1800);
-    return () => clearInterval(id);
-  }, [inView, manual, reduced]);
-  return (
-    <div ref={ref} className={s.pipe}>
-      <SplinePacket container={ref} step={step} count={PIPE.length} />
-      {PIPE.map((p, i) => (
-        <button key={p.t} type="button" className={`${s.pStep} ${i <= step ? s.pOn : ""}`} onClick={() => { setManual(true); setStep(i); }}>
-          <span className={s.pBadge} data-badge>{i + 1}</span>
-          <span className={s.pTitle}>{p.t}</span>
-          <span className={s.pDesc}>{p.d}</span>
-          <span className={s.pSay}>{p.say}</span>
-        </button>
-      ))}
     </div>
   );
 }

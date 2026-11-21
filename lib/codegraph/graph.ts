@@ -150,13 +150,18 @@ export function queryGraph(g: CodeGraph, question: string, files: { path: string
   }
   if (!best) return { seed: null, path: [], subgraph: { nodes: [], edges: [] }, match: "none", explanation: ["No symbol in the graph matches that question at this commit."] };
 
-  const seed = best.n;
+  return answerFromSeed(g, best.n, `“${best.hits.join("”, “")}” matched ${best.n.kind} ${best.n.label}`, changedInPr);
+}
+
+/** Build the explained path (seed → file → callers → test) for a chosen symbol. */
+export function answerFromSeed(g: CodeGraph, seed: GNode, matchWhy: string, changedInPr: Set<string> = new Set()): GraphAnswer {
+  const byId = new Map(g.nodes.map((n) => [n.id, n]));
   const file = byId.get(`file:${seed.path}`)!;
   const users = g.edges.filter((e) => e.to === seed.id && e.kind === "uses").map((e) => byId.get(e.from)!).filter(Boolean);
-  const tests = g.edges.filter((e) => (e.to === seed.id || e.to === file.id) && e.kind === "tests").map((e) => byId.get(e.from)!).filter(Boolean);
+  const tests = g.edges.filter((e) => (e.to === seed.id || e.to === file?.id) && e.kind === "tests").map((e) => byId.get(e.from)!).filter(Boolean);
   const path: GraphAnswer["path"] = [
-    { node: seed, via: "match", why: `“${best.hits.join("”, “")}” matched ${seed.kind} ${seed.label}` },
-    { node: file, via: "defines", why: `defined in ${seed.path} at line ${seed.line}` },
+    { node: seed, via: "match", why: matchWhy },
+    ...(file ? [{ node: file, via: "defines" as const, why: `defined in ${seed.path} at line ${seed.line}` }] : []),
     ...users.slice(0, 2).map((u) => ({ node: u, via: "uses" as const, why: `called from ${u.path}` })),
     ...tests.slice(0, 1).map((t) => ({ node: t, via: "tests" as const, why: `related test file ${t.path} (static link, execution unverified)` })),
   ];
