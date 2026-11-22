@@ -595,3 +595,9 @@ Permanent free-plan Redis is provisioned; automatic paid upgrades and eviction a
 **User-approved live provider cutover:** all seven Bolna tool URLs plus completion webhook now point to Vercel. Fresh GET verified persisted tasks/prompts/welcome/auth unchanged except approved URLs. Deployed tool-key check reaches missing-call-token refusal; callback-key check reaches missing-execution-ID refusal. A one-minute, explicitly HTTP-only readiness session with consent=false reaches400 fresh-recording-consent-required, proving deployed browser-call configuration passes without requesting a provider session. No new provider call/audio session was started by this lane. Actual microphone/audio after cutover and camera permission on the Vercel origin remain user/device verification, distinct from prior positive Chrome hardware evidence.
 
 **Validation:** latest-main217 tests and both typechecks pass; combined `02a2a9b` local production build passed, and Vercel's later `d8f5905` deployment is serving successfully. Synthetic UI at1280/390px confirms camera/preview centers exactly on the viewport and no horizontal overflow; help section absent. This is simulated application state, not new physical tracking evidence. Managed localhost3000 was restored to an isolated production release (`9efd67b`), binds both address families, uses hosted storage and serves `/team`/`evals`200; source checkouts preserved. Latest motion/meeting additions are verified on Vercel, not claimed as local-release parity.
+
+### Cancel abandoned repository imports · 22 Nov 2026
+
+Charan is checking the lifetime of sibling file downloads when a public repository import fails.
+
+The import now aborts sibling fetches on failure and releases its deadline timer. A controlled transport observed zero of two pending reads cancelled on main and both cancelled on the fix. Nine import tests, all 278 repository tests and both TypeScript checks passed.

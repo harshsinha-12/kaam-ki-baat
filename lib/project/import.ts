@@ -37,11 +37,12 @@ export async function importPublicRepository(url: unknown, transport: typeof fet
   if (!repository || repository.split("/").some(part => part === "." || part === ".."))
     throw new RepositoryImportError("Enter a public GitHub repository URL, such as https://github.com/pingdotgg/t3code.");
   const encoded = repository.split("/").map(encodeURIComponent).join("/");
-  const signal = AbortSignal.timeout(50000);
+  const controller = new AbortController();
+  const deadline = setTimeout(() => controller.abort(), 50000);
   const request = async (target: string, limit: number) => bytes(await transport(target, {
     // No account token: this flow must never import a private repository.
     headers: { Accept: "application/vnd.github+json", "User-Agent": "Kaam-Ki-Baat", "X-GitHub-Api-Version": "2022-11-28" },
-    redirect: "error", signal, cache: "no-store",
+    redirect: "error", signal: controller.signal, cache: "no-store",
   }), limit);
   try {
     const metadata = JSON.parse((await request(`https://api.github.com/repos/${encoded}`, 65536)).toString());
@@ -100,7 +101,10 @@ export async function importPublicRepository(url: unknown, transport: typeof fet
       files, participants: [{ id: `repo_${randomBytes(12).toString("hex")}`, name: "Repository visitor", role: "member", repoAccess: true, meetingIds: [], taskIds: [] }],
       meetings: [], passages: [], tasks: [], pullRequests: [], checks: [] };
   } catch (error) {
+    controller.abort();
     if (error instanceof RepositoryImportError) throw error;
     throw new RepositoryImportError("Public repository import could not finish. Please retry; the existing workspace was preserved.", 502);
+  } finally {
+    clearTimeout(deadline);
   }
 }
