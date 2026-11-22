@@ -5,6 +5,16 @@ Rules live in [AGENTS.md](../AGENTS.md). Design lives in [architecture.md](archi
 
 Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competition.md)).
 
+## HF1 — hands-free "Hey Wispr", memory frames, search seed and story sections — 2026-11-22 (Claude)
+
+- Requested by the user: drive Kaam Ki Baat by voice ("Hey Wispr"), give agents more control, a persistent "photographic" memory, better code mapping and highlighting with a benchmark, research the Scaler × Wispr hackathon, and redesign the landing "How it hears" and "From not sure to a sourced answer" sections. Branch `claude/hey-wispr-recall-motion`, base `d814ee0`.
+- Core (`lib/core/wake-phrase.ts`, `voice-commands.ts`, `recall-frames.ts`): opt-in wake phrase state machine, allowlisted command planner (writes need "yes"; task status refused), memory frames as bounded, read-back, participant/repository-scoped events. Wispr Flow cannot be extended by us; it is used as the keyboard for the command field. Design in [hands-free.md](hands-free.md).
+- Zones (shared, small): `command_plan`, `recall_capture`, `recall_search`; `code_graph_query` now seeds with semantic search and returns `alternatives`; `recall_frame` zone kind; "code freeze" now routes to Team Memory in `understand`.
+- Code search: Hinglish function-word stoplist, name-coverage boost (0.6, chosen on dev only), `lib/codegraph/highlight.ts` signature + matching body lines (used by voice `questionSource` and the workspace explanation fallback). Fresh test Acc@1 18% → 27%, Acc@5 73% → 86%; highlight shows a matching line 48% → 97%. Held-out Acc@1 still 8%. Report `docs/evals/code-search.md`.
+- UI: `app/components/HandsFree.tsx` in the workspace tools column; other-match chips in Code Navigator; `app/landing/Stories.tsx` replaces the old Hears and Escalation (one sentence through four stages; a ticket relay across member / Kaam Ki Baat / lead lanes with drag, keys and a "hung up" toggle); near-monochrome with one ivory accent.
+- Research: [research/scaler-india-runs-on-voice.md](research/scaler-india-runs-on-voice.md) (registration closes 27 Nov; Round 2 problem statement 27 Nov, due 29 Nov; finale 13 Dec).
+- **Verified 2026-11-22:** 269 local tests pass; the 8 failures are the known environment ones (no `next`/local `tsx` package installed here). 22 new tests in `tests/hands-free.test.ts`. Landing and workspace were bundled with esbuild against mocked APIs and screenshotted at 1440 and 390 px. **Not verified:** CI typecheck/build, real microphone and speech recognition, Wispr Flow dictating into the field, deployment. No provider changes, calls, merge or deployment.
+
 ## G54 — readable Code Navigator graph — 2026-11-17
 
 - **Implemented and locally verified, Codex; ready for review/release:** [PR #54](https://github.com/harshsinha-12/kaam-ki-baat/pull/54), implementation `1cae9a7`, branch `codex/readable-code-graph`, fetched base `a8628da`; original checkout and its unrelated uncommitted plan checkpoint preserved. Own `app/components/CodeGraphView.tsx`, `code-graph.module.css`, `lib/codegraph/view.ts` and its focused tests; camera/focus changes in `WebcamHeadTracker.tsx`, `webcam.module.css`, `FocusInputControls.tsx`, `spatial.module.css` and calibration-message copy in `lib/focus/webcam.ts`.
@@ -364,6 +374,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 | GH2 | Private repository connection and lifecycle | Unclaimed | todo, user requested 2026-11-15; server `GITHUB_TOKEN` transport exists, no private end-to-end verification | Add GitHub App install/repository picker, read-only Contents/Pull requests/Checks permissions, encrypted server credentials, short-lived token refresh, revocation/disconnect and denial/expiry tests. Verify source/PR/check access and participant scopes before saying connected. [Setup and API requirements](workspace-setup.md). |
 
 ## 5. Change log (newest first; one line each)
+
+- 2026-11-22 · Claude · HF1 on `claude/hey-wispr-recall-motion`: opt-in "Hey Wispr" wake phrase + Wispr Flow command field, allowlisted voice commands, memory frames, semantic-seeded Code Navigator with alternatives, precise highlights, redesigned Hears and Escalation landing sections, Scaler × Wispr research. 269 local tests pass (8 known env failures); CI, real mic and deployment not verified.
 
 - 2026-11-15 · Claude · Workspace motion (`claude/workspace-motion`): `/team` gains a live **flow rail** (You ask → Wispr Flow → Kaam Ki Baat → Leader Desk | Code Navigator) driven by real state (asking/answer/escalation/graph result), pitch-black aurora backdrop, staggered entrances, rotating gradient ring + floating glyph on the selected agent, zone-coloured focus rings and card sweep, answer reveal, shimmer on idle labels; all motion off under reduced-motion. Files: `app/team/FlowRail.tsx`, `app/team/page.tsx` (3 derived values + one element), `app/zones/zones.module.css` (appended, `.teamPage`-scoped). Static mock screenshotted; CI is the gate (no local npm).
 

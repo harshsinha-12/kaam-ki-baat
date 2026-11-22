@@ -26,7 +26,8 @@ export type ZoneKind =
   | "webauthn_used"
   | "code_focus"
   | "project_voice_binding"
-  | "repository_workspace";
+  | "repository_workspace"
+  | "recall_frame";
 
 export const zoneEvents = (events: StoredEvent[], kind?: ZoneKind): ZoneEvent[] =>
   events.filter((e): e is ZoneEvent => e.type === "zone" && (!kind || e.kind === kind));

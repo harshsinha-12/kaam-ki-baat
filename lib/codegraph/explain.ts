@@ -1,5 +1,6 @@
 import type { EvidenceSnapshot } from "../contracts";
 import type { GraphAnswer } from "./graph";
+import { highlightSymbol } from "./highlight";
 
 // Explain a code answer from first principles, in the order a teammate would
 // reason: what this code is for → the rule it must keep → the exact lines that
@@ -24,7 +25,7 @@ const RULES: [RegExp, string][] = [
   [/idempotency|replayed/i, "makes a repeated request return the first result"],
 ];
 
-export function explainFirstPrinciples(snapshot: EvidenceSnapshot, a: GraphAnswer, rule?: string): FirstPrinciples | null {
+export function explainFirstPrinciples(snapshot: EvidenceSnapshot, a: GraphAnswer, rule?: string, question?: string): FirstPrinciples | null {
   if (!a.seed) return null;
   const file = snapshot.files.find((f) => f.path === a.seed!.path);
   if (!file) return null;
@@ -44,6 +45,9 @@ export function explainFirstPrinciples(snapshot: EvidenceSnapshot, a: GraphAnswe
     const hit = RULES.find(([re]) => re.test(l.text));
     if (hit && !highlights.some((h) => h.reason === hit[1])) highlights.push({ start: l.n, end: l.n, reason: hit[1] });
   }
+  // No known rule in this body: box the signature and the lines that match the question.
+  if (!highlights.length) for (const h of question ? highlightSymbol(all, start, question).filter((h) => h.end - start <= 95) : [])
+    highlights.push({ ...h, reason: h.reason === "Definition" ? "where it is defined" : h.reason.replace(/^Matches/, "matches") });
   if (!highlights.length) highlights.push({ start, end: Math.min(end, start + 2), reason: "where the logic starts" });
   highlights.sort((x, y) => x.start - y.start);
 

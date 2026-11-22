@@ -19,9 +19,13 @@ const STOP = new Set("the a an is are was be to of and or for in on at by it thi
 export function splitIdent(s: string): string[] {
   return s.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_\-./#:]+/g, " ").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 }
+// Hindi/Hinglish function words (postpositions, question words, auxiliaries).
+// A generic language list, not taken from any eval question: they carry no code
+// meaning, and without it "kahan hai" or "wala" outweigh the words that do.
+const HINGLISH_STOP = new Set("hai hain tha thi the ho hota hoti hote ka ki ke ko se me mein par pe ne bhi aur ya toh to kya kahan kaha kab kaun kaunsa kaunsi kis kisne kyun kaise jab agar woh wo yeh ye voh is us iska uska wala wali wale kar karo karta karti karte kiya kiye raha rahi rahe hua hue hui jata jati jaate liye lie sab kuch koi abhi bas na nahi haan ji".split(" "));
 export const stem = (w: string) => (w.length > 4 ? w.replace(/(ings|ing|ies|es|ed|s)$/, "") : w);
 export function tokenize(text: string): string[] {
-  return splitIdent(text).filter((w) => w.length > 1 && !STOP.has(w)).map(stem);
+  return splitIdent(text).filter((w) => w.length > 1 && !STOP.has(w) && !HINGLISH_STOP.has(w)).map(stem);
 }
 
 // Plain-language → code vocabulary. Small, inspectable, team-specific.
@@ -124,6 +128,7 @@ function bm25(idx: SearchIndex, q: { term: string; w: number }[], d: DocEntry): 
   return { s, matched };
 }
 
+const COVERAGE = 0.6; // chosen on the development set only (0, 0.3, 0.6, 1.0 tried)
 export function search(idx: SearchIndex, g: Pick<CodeGraph, "edges" | "nodes">, query: string, mode: SearchMode = "semantic", limit = 8): Hit[] {
   const raw = query.trim();
   if (!raw) return [];
@@ -162,6 +167,16 @@ export function search(idx: SearchIndex, g: Pick<CodeGraph, "edges" | "nodes">, 
         const cur = scored.get(d.id)!;
         scored.set(d.id, { s: cur.s + 0.25 * best, why: [...cur.why, "boosted by connected code"] });
       }
+    }
+    // name coverage: a symbol whose own name is spelled out by the question is
+    // the thing being asked about, not just a body that mentions the words.
+    const qw = new Map(q.map((x) => [x.term, x.w]));
+    for (const d of idx.docs) {
+      const cur = scored.get(d.id); if (!cur || d.kind === "file" || d.kind === "test") continue;
+      const name = [...new Set(tokenize(d.label))];
+      if (!name.length) continue;
+      const cov = name.reduce((a, t) => a + Math.min(1, qw.get(t) ?? 0), 0) / name.length;
+      if (cov > 0) { cur.s *= 1 + COVERAGE * cov; cur.why.push(`name ${Math.round(cov * 100)}% in question`); }
     }
     // behaviour lives in functions in lib/; tests and UI copy are evidence, not answers
     for (const d of idx.docs) {
