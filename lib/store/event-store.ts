@@ -46,14 +46,14 @@ export function eventsLogPath(envValue = process.env.KKB_EVENTS_FILE): string {
 export function parseLog(raw: string): StoredEvent[] {
   const lines = raw.split("\n");
   const out: StoredEvent[] = [];
-  for (let i = 0; i < lines.length; i++) {
+  // The final split element is either empty or an uncommitted tail.
+  // dropTornTail removes that same tail before the next durable append.
+  for (let i = 0; i < lines.length - 1; i++) {
     const line = lines[i];
     if (!line.trim()) continue;
     try {
       out.push(JSON.parse(line) as StoredEvent);
     } catch (e) {
-      const unterminatedTail = i === lines.length - 1 && !raw.endsWith("\n");
-      if (unterminatedTail) continue;
       throw new Error(`Event log is corrupt at line ${i + 1}: ${(e as Error).message}`);
     }
   }
