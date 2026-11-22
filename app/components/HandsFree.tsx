@@ -51,7 +51,10 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
   const [pending, setPending] = useState<Plan | null>(null);
   const pendingRef = useRef(pending); pendingRef.current = pending;
   const [voiceReply, setVoiceReply] = useState(true);
-  const [frames, setFrames] = useState<RecallHitView[] | null>(null);
+  const [recallState, setRecallState] = useState<
+    { status: "idle" | "loading" | "error" } | { status: "ready"; hits: RecallHitView[]; message: string }
+  >({ status: "idle" });
+  const recallRequest = useRef(0);
   const [recallQ, setRecallQ] = useState("");
   const [busy, setBusy] = useState(false);
   const seq = useRef(0);
@@ -67,12 +70,26 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
   const push = useCallback((entry: Omit<Log, "id">) => setLog((l) => [{ ...entry, id: ++seq.current }, ...l].slice(0, 5)), []);
 
   const recall = useCallback(async (question: string) => {
-    const r = await zone<{ hits: RecallHitView[]; total: number; window?: string }>("recall_search", { question });
-    if (r.status !== 200) throw new Error(r.data.error ?? "Recall failed");
-    setFrames(r.data.hits);
-    return r.data.hits.length ? `Found ${r.data.hits.length} frame${r.data.hits.length > 1 ? "s" : ""}${r.data.window ? ` from ${r.data.window}` : ""}.`
-      : r.data.total ? "No saved frame matches that." : "No frames yet. Say “remember this” on any answer.";
+    const request = ++recallRequest.current;
+    setRecallState({ status: "loading" });
+    try {
+      const r = await zone<{ hits: RecallHitView[]; total: number; window?: string }>("recall_search", { question });
+      if (r.status !== 200) throw new Error(r.data.error ?? "Recall failed");
+      const { hits, total, window } = r.data;
+      const message = hits.length ? `Found ${hits.length} frame${hits.length > 1 ? "s" : ""}${window ? ` from ${window}` : ""}.`
+        : total ? "No saved frame matches that." : "No frames yet. Say “remember this” on any answer.";
+      if (request === recallRequest.current) setRecallState({ status: "ready", hits, message });
+      return message;
+    } catch (error) {
+      if (request === recallRequest.current) setRecallState({ status: "error" });
+      throw error;
+    }
   }, []);
+
+  const searchFrames = (question: string) => {
+    // The recall drawer renders the error; voice callers handle the rejection separately.
+    void recall(question).catch(() => {});
+  };
 
   const run = useCallback(async (command: string) => {
     // A pending confirmation is answered first: "yes/haan" runs it, anything else cancels it.
@@ -206,18 +223,22 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
         {log.map((l) => <li key={l.id} data-kind={l.kind}><span>{l.heard}</span><small>{l.say}</small></li>)}
       </ol>}
 
-      <details className={h.frames} onToggle={(e) => { if (e.currentTarget.open && !frames) void recall("").catch(() => setFrames([])); }}>
-        <summary><span>Memory frames</span><small>{frames ? `${frames.length} shown` : "Say “remember this”"}</small></summary>
+      <details className={h.frames} onToggle={(e) => { if (e.currentTarget.open && recallState.status === "idle") searchFrames(""); }}>
+        <summary><span>Memory frames</span><small>{recallState.status === "ready" ? `${recallState.hits.length} shown` : null}</small></summary>
         <div className={h.framesBody}>
           <div className={h.cmd}>
-            <input className={h.input} value={recallQ} onChange={(e) => setRecallQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void recall(recallQ).catch(() => setFrames([])); }}
+            <input className={h.input} value={recallQ} onChange={(e) => setRecallQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") searchFrames(recallQ); }}
               placeholder="What was I looking at… (kal, passkey, freeze)" aria-label="Search memory frames" />
-            <button type="button" className={h.go} onClick={() => void recall(recallQ).catch(() => setFrames([]))} aria-label="Search frames">⌕</button>
+            <button type="button" className={h.go} onClick={() => searchFrames(recallQ)} aria-label="Search frames">⌕</button>
           </div>
           <button type="button" className={h.snap} disabled={!enabled} onClick={() => void run("remember this")}>Remember this view</button>
-          {frames?.length === 0 && <p className={h.note}>Nothing yet. Frames keep the question, the answer and the exact lines, never a picture of your screen.</p>}
+          <div role="status">
+            {recallState.status === "loading" && "Searching saved frames…"}
+            {recallState.status === "error" && "Couldn’t load saved frames. Search again to retry."}
+            {recallState.status === "ready" && recallState.message}
+          </div>
           <ul className={h.filmstrip}>
-            {frames?.map((hit) => (
+            {recallState.status === "ready" && recallState.hits.map((hit) => (
               <li key={hit.frame.id}>
                 <button type="button" className={h.frame} data-zone={hit.frame.zone} onClick={() => onOpenFrame(hit.frame)}>
                   <span className={h.frameTop}><i data-zone={hit.frame.zone} />{new Date(hit.frame.at).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
