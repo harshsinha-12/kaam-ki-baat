@@ -127,16 +127,23 @@ function TeamWorkspace({ initialProject, onWorkspaceChanged }: { initialProject?
   };
   const escalate = async (override?: string) => {
     const question = override ?? mem?.question ?? q;
-    if (escalation.current?.pending) return;
+    if (escalation.current?.pending) throw new Error("Your question is still being sent.");
     const requestId = ++flowRequestId.current;
     dispatchFlow({ type: "start", requestId, destination: "leader" });
     if (escalation.current?.question !== question || escalation.current?.meetingId !== meetingId) escalation.current = { question, meetingId, id: key(), pending: false };
     const attempt = escalation.current!;
-    attempt.pending = true; setSending(true);
-    try { const r = await zone<{ ticket: Ticket }>("ticket_create", { question, meeting_id: meetingId || undefined, confirmed: true, idempotency_key: attempt.id });
-      setSent(r.data.ticket ? `Sent to the leader as ${r.data.ticket.id}. I won't guess; you'll see the answer here.` : r.data.error ?? "not sent");
-      dispatchFlow({ type: "finish", requestId, success: Boolean(r.data.ticket) });
-    } catch { setError("Question could not be sent. Try again."); dispatchFlow({ type: "finish", requestId, success: false }); }
+    attempt.pending = true; setSending(true); setSent(null); setError("");
+    try {
+      const r = await zone<{ ticket?: Ticket }>("ticket_create", { question, meeting_id: meetingId || undefined, confirmed: true, idempotency_key: attempt.id });
+      if (r.status !== 200 || !r.data.ticket?.id) throw new Error(r.data.error ?? "No ticket receipt was returned. Try again.");
+      const receipt = `Sent to the leader as ${r.data.ticket.id}. You'll see the answer here.`;
+      setSent(receipt);
+      dispatchFlow({ type: "finish", requestId, success: true });
+      return receipt;
+    } catch (error) {
+      dispatchFlow({ type: "finish", requestId, success: false });
+      throw error;
+    }
     finally { attempt.pending = false; setSending(false); }
   };
   const navigate = async (override?: string) => {
@@ -180,8 +187,7 @@ function TeamWorkspace({ initialProject, onWorkspaceChanged }: { initialProject?
       case "ask_lead":
         if (!confirmed) throw new Error("Needs a yes first.");
         if (c.question) setQ(c.question);
-        await escalate(c.question);
-        return "Sent to the lead. The answer will come back here.";
+        return escalate(c.question);
       default: throw new Error(plan.say);
     }
   };
@@ -317,7 +323,7 @@ function TeamWorkspace({ initialProject, onWorkspaceChanged }: { initialProject?
                 <div className={w.state} data-kind={mem.kind === "confirmed" ? "ok" : ["conditional", "meeting_context"].includes(mem.kind) ? "wait" : "bad"}>{mem.kind.replaceAll("_", " ").replace(/^./, c => c.toUpperCase())}</div>
                 <p className={w.answerText}>{mem.speak}</p>
                 <div className={w.src}>{mem.sources.map((x, i) => <span key={i}><b>{x.kind}</b>{x.url ? <a href={x.url} target="_blank" rel="noreferrer">{x.label}</a> : x.label}</span>)}{mem.provisional.map((p, i) => <span key={`p${i}`} className={w.warn}><b>live, provisional</b>{p.text}</span>)}</div>
-                {mem.offerEscalation && !mem.pendingTicket && !sent && <button className={w.btn} disabled={sending} onClick={() => void escalate()}><AgentGlyph zone="leader_desk" size={18} />{sending ? "Sending…" : "Yes, ask the lead"}</button>}
+                {mem.offerEscalation && !mem.pendingTicket && !sent && <button className={w.btn} disabled={sending} onClick={() => void escalate().catch((error: unknown) => setError(error instanceof Error ? error.message : "Question could not be sent. Try again."))}><AgentGlyph zone="leader_desk" size={18} />{sending ? "Sending…" : "Yes, ask the lead"}</button>}
                 {sent && <p className={w.note}>{sent}</p>}
               </div>
             )}
