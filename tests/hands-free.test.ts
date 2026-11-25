@@ -118,6 +118,38 @@ describe("recall frames", () => {
     assert.deepEqual(recallFrames(frames, { pinnedSha: "abc" }, "today", now).hits.map((h) => h.frame.id), ["a"]);
     assert.deepEqual(recallFrames(frames, { pinnedSha: "abc" }, "", now).hits.map((h) => h.frame.id), ["a", "b", "c"]);
   });
+  it("keeps yesterday within local midnights when the clock changes", () => {
+    const previousTZ = process.env.TZ;
+    process.env.TZ = "America/New_York";
+    try {
+      const cases = [
+        {
+          now: "2026-03-09T12:00:00-04:00",
+          before: "2026-03-07T23:30:00-05:00",
+          yesterday: "2026-03-08T00:30:00-05:00",
+          today: "2026-03-09T00:00:00-04:00",
+        },
+        {
+          now: "2026-11-02T12:00:00-05:00",
+          before: "2026-10-31T23:30:00-04:00",
+          yesterday: "2026-11-01T00:30:00-04:00",
+          today: "2026-11-02T00:00:00-05:00",
+        },
+      ];
+      for (const sample of cases) {
+        const saved = [
+          frame("before", sample.before, {}),
+          frame("yesterday", sample.yesterday, {}),
+          frame("today", sample.today, {}),
+        ];
+        const result = recallFrames(saved, { pinnedSha: "abc" }, "yesterday", new Date(sample.now));
+        assert.deepEqual(result.hits.map((hit) => hit.frame.id), ["yesterday"]);
+      }
+    } finally {
+      if (previousTZ === undefined) delete process.env.TZ;
+      else process.env.TZ = previousTZ;
+    }
+  });
   it("returns nothing rather than a random frame when nothing matches", () => assert.equal(recallFrames(frames, { pinnedSha: "abc" }, "xylophone").hits.length, 0));
 });
 

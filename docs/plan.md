@@ -5,6 +5,10 @@ Rules live in [AGENTS.md](../AGENTS.md). Design lives in [architecture.md](archi
 
 Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competition.md)).
 
+## Recall calendar boundaries — 2026-11-25
+
+- Codex owns the previous-day window in `lib/core/recall-frames.ts` and its regression in `tests/hands-free.test.ts`. Base `8a10482`. Previous-day recall uses local calendar boundaries across both daylight-saving transitions.
+
 ## HF1 — hands-free "Hey Wispr", memory frames, search seed and story sections — 2026-11-22 (Claude)
 
 - Requested by the user: drive Kaam Ki Baat by voice ("Hey Wispr"), give agents more control, a persistent "photographic" memory, better code mapping and highlighting with a benchmark, research the Scaler × Wispr hackathon, and redesign the landing "How it hears" and "From not sure to a sourced answer" sections. Branch `claude/hey-wispr-recall-motion`, base `d814ee0`.
