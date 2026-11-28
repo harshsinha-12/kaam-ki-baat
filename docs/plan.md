@@ -630,3 +630,9 @@ The import now aborts sibling fetches on failure and releases its deadline timer
 
 - Codex owns `lib/story/trail.ts` and `tests/story.test.ts` on `fix/story-trail-reference-parsing`, based on `8a10482`. Scope is exact pull request number parsing and duplicate references in the repository story.
 - Both regressions failed on the base. The parser now uses the complete PR number, respects reference boundaries and deduplicates repeated PRs. All 279 fixture tests and the core TypeScript check passed locally.
+
+### Memory frame search feedback · 22 Nov 2026
+
+Charan is updating the recall drawer to distinguish searches with no matches from an empty memory or a failed request.
+
+Implemented on fix/recall-search-states. The drawer announces search progress and results, uses the server total to distinguish an unmatched query, and offers a retry after a failure. Older responses cannot overwrite a later drawer search. At 390px a Chromium test of the component with a mocked API failed on main and passed on the branch for a refusal, an unmatched query, an empty library and a successful retry. All 277 repository tests, both typechecks and diff whitespace checks passed.
