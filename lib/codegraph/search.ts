@@ -59,7 +59,7 @@ for (const group of GENERIC) for (const w of group) GENERIC_MAP.set(stem(w), [..
 export function expand(terms: string[]): { term: string; w: number; from?: string }[] {
   const out = new Map<string, { term: string; w: number; from?: string }>();
   for (const t of terms) out.set(t, { term: t, w: 1 });
-  for (const t of terms) for (const c of CONCEPTS[t] ?? CONCEPTS[t + "s"] ?? []) for (const s of tokenize(c)) if (!out.has(s)) out.set(s, { term: s, w: 0.45, from: t });
+  for (const t of terms) for (const c of (Object.hasOwn(CONCEPTS, t) ? CONCEPTS[t] : Object.hasOwn(CONCEPTS, t + "s") ? CONCEPTS[t + "s"] : [])) for (const s of tokenize(c)) if (!out.has(s)) out.set(s, { term: s, w: 0.45, from: t });
   for (const t of terms) for (const c of GENERIC_MAP.get(t) ?? []) for (const s of tokenize(c)) if (!out.has(s)) out.set(s, { term: s, w: 0.35, from: t });
   return [...out.values()];
 }
@@ -78,7 +78,7 @@ function feedbackTerms(idx: SearchIndex, ranked: [string, number][], have: Set<s
     const tf = new Map<string, number>();
     for (const t of d.tokens) tf.set(t, (tf.get(t) ?? 0) + 1);
     for (const [t, f] of tf) {
-      if (have.has(t) || t.length < 4 || (idx.df[t] ?? 0) > idx.docs.length * 0.05) continue;
+      if (have.has(t) || t.length < 4 || (Object.hasOwn(idx.df, t) ? idx.df[t] : 0) > idx.docs.length * 0.05) continue;
       weight.set(t, (weight.get(t) ?? 0) + (f / d.tokens.length) * (sc / max));
     }
   }
@@ -107,7 +107,7 @@ export function buildSearchIndex(g: CodeGraph, files: { path: string; content: s
     }
     docs.push({ id: n.id, kind: n.kind, label: n.label, path: n.path, line: n.line, tokens: parts });
   }
-  const df: Record<string, number> = {};
+  const df: Record<string, number> = Object.create(null);
   for (const d of docs) for (const t of new Set(d.tokens)) df[t] = (df[t] ?? 0) + 1;
   const avgLen = docs.reduce((a, d) => a + d.tokens.length, 0) / Math.max(1, docs.length);
   return { sha: g.sha, repository: g.repository, docs, df, avgLen };
@@ -120,7 +120,7 @@ function bm25(idx: SearchIndex, q: { term: string; w: number }[], d: DocEntry): 
   let s = 0; const matched: string[] = [];
   for (const { term, w } of q) {
     const f = tf.get(term); if (!f) continue;
-    const n = idx.df[term] ?? 0;
+    const n = Object.hasOwn(idx.df, term) ? idx.df[term] : 0;
     const idf = Math.log(1 + (N - n + 0.5) / (n + 0.5));
     s += w * idf * ((f * (k1 + 1)) / (f + k1 * (1 - b + (b * d.tokens.length) / idx.avgLen)));
     matched.push(term);

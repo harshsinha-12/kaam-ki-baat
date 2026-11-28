@@ -249,6 +249,38 @@ test("cross-instance leases exclude a duplicate provider request and permit expl
   const retry=await acquireLease(fixture.store(),"same-device");assert.ok(retry);await retry();
 });
 
+test("lease release outage preserves a completed operation and retains exclusion until expiry", async (t) => {
+  const { acquireLease } = await import("../lib/store/lease");
+  const fixture = redisFixture();
+  let now = 1000;
+  t.mock.method(Date, "now", () => now);
+  const warning = t.mock.method(console, "warn", () => {});
+  const lease = await acquireLease(fixture.store(), "completed-operation", 1000);
+  assert.ok(lease);
+  const completed = (async () => {
+    try {
+      await fixture.store().append({
+        type: "zone", kind: "test_receipt", key: "done", at: new Date().toISOString(), data: {},
+      });
+      return "done";
+    } finally {
+      fixture.fail();
+      await lease();
+    }
+  })();
+  assert.equal(await completed, "done");
+  assert.equal(warning.mock.callCount(), 1);
+  fixture.recover();
+  assert.ok((await fixture.store().all()).some(event => event.type === "zone" && event.kind === "test_receipt"));
+  assert.equal(await acquireLease(fixture.store(), "completed-operation"), null);
+  now = 2001;
+  const retry = await acquireLease(fixture.store(), "completed-operation");
+  assert.ok(retry);
+  await lease();
+  assert.equal(await acquireLease(fixture.store(), "completed-operation"), null);
+  await retry();
+});
+
 test("conversation cards and communication ledger survive a fresh runtime instance", async () => {
   const { issueCallSession } = await import("../lib/auth/call-session");
   const { runTool } = await import("../lib/tools/runtime");
