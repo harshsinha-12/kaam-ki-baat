@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createHash, randomUUID } from "node:crypto";
+import { link, mkdir, open, readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import type { EvidenceSnapshot } from "../contracts";
 import { validateHostedSnapshot } from "../evidence/hosted";
@@ -50,9 +50,28 @@ async function save(snapshot: EvidenceSnapshot): Promise<string> {
   if (config) await new RedisClient(config).setIfAbsent(`${config.namespace}:public-repository:${id}`, text);
   else {
     if (process.env.VERCEL) throw new Error("Public repository storage is not configured.");
-    await mkdir(directory(), { recursive: true, mode: 0o700 });
-    try { await writeFile(path.join(directory(), `${id}.json`), text, { mode: 0o600, flag: "wx" }); }
-    catch (error) { if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error; }
+    const dir = directory();
+    await mkdir(dir, { recursive: true, mode: 0o700 });
+    const pending = path.join(dir, `.${id}-${randomUUID()}.tmp`);
+    const file = await open(pending, "wx", 0o600);
+    try {
+      try {
+        await file.writeFile(text);
+        await file.sync();
+      } finally {
+        await file.close();
+      }
+      // Publish the complete file without replacing a concurrent writer's snapshot.
+      try {
+        await link(pending, path.join(dir, `${id}.json`));
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      }
+    } finally {
+      await unlink(pending).catch(() => {
+        console.warn("Could not remove a temporary repository snapshot.");
+      });
+    }
   }
   if (await readStored(id) !== text) throw new Error("Public repository read-back failed.");
   remember(`${scope()}:${id}`, snapshot);

@@ -78,7 +78,11 @@ function timeWindow(q: string, now: Date): { from: number; to: number; label: st
   const t = now.getTime(), start = new Date(now); start.setHours(0, 0, 0, 0);
   const s = start.getTime();
   if (/\b(today|aaj)\b/.test(q)) return { from: s, to: t + 1, label: "today" };
-  if (/\b(yesterday|kal)\b/.test(q)) return { from: s - DAY, to: s, label: "yesterday" };
+  if (/\b(yesterday|kal)\b/.test(q)) {
+    const previous = new Date(start);
+    previous.setDate(previous.getDate() - 1);
+    return { from: previous.getTime(), to: s, label: "yesterday" };
+  }
   if (/\b(last week|pichhle hafte|pichle hafte|this week)\b/.test(q)) return { from: t - 7 * DAY, to: t + 1, label: "the last 7 days" };
   if (/\b(just now|abhi|a minute ago|thodi der pehle)\b/.test(q)) return { from: t - 30 * 60_000, to: t + 1, label: "the last 30 minutes" };
   return null;
