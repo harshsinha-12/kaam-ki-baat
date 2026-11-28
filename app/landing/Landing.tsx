@@ -7,6 +7,7 @@ import { BrandMark } from "../components/BrandMark";
 import { VoiceWave } from "../components/VoiceWave";
 import { DemoGraph } from "../components/DemoGraph";
 import { Escalation, Hears } from "./Stories";
+import { GITHUB_ACTIVITY, activityPercents } from "./github-activity";
 
 // Kaam Ki Baat landing. The page explains the product by doing it: look left
 // for Team Memory, face front for the Leader Desk, look right for the Code
@@ -319,7 +320,68 @@ function Evals() {
         </div>
         <p className={s.eNote}>The 94 s call ended with a voice-provider error. Each call has a written review. <a href="/evals">Open call evals</a></p>
       </article>
+      <GithubActivity run={run} />
     </div>
+  );
+}
+
+/* ---------------------------------------------------- github activity */
+// Same cross as a GitHub profile activity chart. Arm length is the share of
+// public contributions in the fetched year. A 0% bucket keeps its axis and
+// label, and does not get a percentage.
+const ACTIVITY_LAYOUT = { cx: 270, cy: 158, arm: 108 } as const;
+function GithubActivity({ run }: { run: boolean }) {
+  const counts = GITHUB_ACTIVITY;
+  const share = activityPercents(counts);
+  const { cx, cy, arm } = ACTIVITY_LAYOUT;
+  const place = (pct: number, axis: "n" | "e" | "s" | "w") => {
+    // A 1% share of the axis is only a pixel, so any non-zero share gets a short
+    // stub. Zero stays on the origin and draws no dot.
+    const scaled = Math.round(((pct / 100) * arm) * 10) / 10;
+    const len = pct <= 0 ? 0 : Math.max(8, scaled);
+    if (axis === "n") return { x: cx, y: Math.round((cy - len) * 10) / 10 };
+    if (axis === "s") return { x: cx, y: Math.round((cy + len) * 10) / 10 };
+    if (axis === "w") return { x: Math.round((cx - len) * 10) / 10, y: cy };
+    return { x: Math.round((cx + len) * 10) / 10, y: cy };
+  };
+  const dots = {
+    commits: place(share.commits, "w"),
+    codeReview: place(share.codeReview, "n"),
+    pullRequests: place(share.pullRequests, "s"),
+    issues: place(share.issues, "e"),
+  };
+  const pct = (n: number) => (n > 0 ? `${n}%` : "");
+  const label = `Public GitHub activity for ${counts.login}, ${counts.from} to ${counts.to}: ${share.commits}% commits (${counts.commits}), ${share.pullRequests}% pull requests (${counts.pullRequests}), ${share.codeReview}% code review (${counts.codeReview}), ${share.issues}% issues (${counts.issues}).`;
+  return (
+    <article className={`${s.eCard} ${s.activityCard}`}>
+      <header>
+        <h3>A year on GitHub</h3>
+        <span>{counts.login} · public activity · 23 Nov 2025 to 28 Nov 2026</span>
+      </header>
+      <svg className={s.activity} viewBox="0 0 560 320" role="img" aria-label={label} data-run={run}>
+        <line className={s.activityAxis} x1={cx - arm} y1={cy} x2={cx + arm} y2={cy} />
+        <line className={s.activityAxis} x1={cx} y1={cy - arm} x2={cx} y2={cy + arm} />
+        <g className={s.activityValues} style={{ transformOrigin: `${cx}px ${cy}px` }}>
+          <line className={s.activityValue} x1={cx} y1={cy} x2={dots.commits.x} y2={dots.commits.y} />
+          <line className={s.activityValue} x1={cx} y1={cy} x2={dots.codeReview.x} y2={dots.codeReview.y} />
+          <line className={s.activityValue} x1={cx} y1={cy} x2={dots.pullRequests.x} y2={dots.pullRequests.y} />
+          <line className={s.activityValue} x1={cx} y1={cy} x2={dots.issues.x} y2={dots.issues.y} />
+          <circle className={s.activityDot} cx={dots.commits.x} cy={dots.commits.y} r="5.5" />
+          <circle className={s.activityDot} cx={dots.codeReview.x} cy={dots.codeReview.y} r="4.5" />
+          <circle className={s.activityDot} cx={dots.pullRequests.x} cy={dots.pullRequests.y} r="4.5" />
+          {share.issues > 0 && <circle className={s.activityDot} cx={dots.issues.x} cy={dots.issues.y} r="4.5" />}
+        </g>
+        <text className={s.activityPct} x={cx} y={28} textAnchor="middle">{pct(share.codeReview)}</text>
+        <text className={s.activityName} x={cx} y={46} textAnchor="middle">Code review</text>
+        <text className={s.activityPct} x={cx} y={286} textAnchor="middle">{pct(share.pullRequests)}</text>
+        <text className={s.activityName} x={cx} y={304} textAnchor="middle">Pull requests</text>
+        <text className={s.activityPct} x={cx - arm - 16} y={152} textAnchor="end">{pct(share.commits)}</text>
+        <text className={s.activityName} x={cx - arm - 16} y={172} textAnchor="end">Commits</text>
+        {share.issues > 0 && <text className={s.activityPct} x={cx + arm + 16} y={152} textAnchor="start">{pct(share.issues)}</text>}
+        <text className={s.activityName} x={cx + arm + 16} y={share.issues > 0 ? 172 : 163} textAnchor="start">Issues</text>
+      </svg>
+      <p className={s.eNote}>{counts.commits} commits, {counts.pullRequests} pull requests, {counts.codeReview} reviews, {counts.issues} issues. Private contributions stay out of this split. <a href={counts.profile} target="_blank" rel="noreferrer">GitHub profile</a></p>
+    </article>
   );
 }
 
@@ -753,7 +815,7 @@ export default function Landing() {
         </section>
 
         <section id="evals" className={s.section}>
-          <SectionHead title="Measured, not guessed." lede="Numbers from our own repository and our own calls. Read them as a regression guard, not a public benchmark." />
+          <SectionHead title="Measured, not guessed." lede="Numbers from our own repository, our own calls, and one public year on GitHub. Read them as a regression guard, not a public benchmark." />
           <Evals />
         </section>
 
