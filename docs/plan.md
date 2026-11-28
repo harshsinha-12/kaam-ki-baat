@@ -611,3 +611,9 @@ Implemented on fix/voice-ticket-receipt. The first refusal case failed on main. 
 Charan is checking that the recovery reader and the next writer agree on which events can satisfy an idempotent retry after an interrupted append.
 
 The reader now uses the same newline boundary as tail recovery. The disk-backed retry regression failed on main and passes here across a second append and reopen. All 278 tests and both TypeScript checks passed.
+
+### Cancel abandoned repository imports · 22 Nov 2026
+
+Charan is checking the lifetime of sibling file downloads when a public repository import fails.
+
+The import now aborts sibling fetches on failure and releases its deadline timer. A controlled transport observed zero of two pending reads cancelled on main and both cancelled on the fix. Nine import tests, all 278 repository tests and both TypeScript checks passed.

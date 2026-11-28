@@ -245,3 +245,23 @@ test("HTTP import rotates the browser scope, preserves it on reconnect and keeps
     assert.equal((await repositoryRuntimeForDevice(base, renewed.token)).snapshot.repository, "public/repo");
   } finally { globals.__kkbRuntime = oldRuntime; globalThis.fetch = transport; }
 }));
+
+test("a failed file download cancels other in-flight reads in its batch", async () => {
+  const fixture = githubFixture();
+  let waiting = 0;
+  let cancelled = 0;
+  const transport: typeof fetch = async (input, init) => {
+    const url = new URL(String(input));
+    if (url.hostname !== "raw.githubusercontent.com") return fixture.transport(input, init);
+    if (url.pathname.endsWith("/README.md")) return new Response("unavailable", { status: 503 });
+    const signal = init?.signal;
+    assert.ok(signal);
+    waiting++;
+    return new Promise<Response>((_, reject) => {
+      signal.addEventListener("abort", () => { cancelled++; reject(signal.reason); }, { once: true });
+    });
+  };
+  await assert.rejects(importPublicRepository("https://github.com/public/repo", transport), /could not return/);
+  assert.equal(waiting, 2);
+  assert.equal(cancelled, waiting);
+});
