@@ -7,7 +7,15 @@ Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competiti
 
 ## Recall calendar boundaries — 2026-11-25
 
-- Codex owns the previous-day window in `lib/core/recall-frames.ts` and its regression in `tests/hands-free.test.ts`. Base `8a10482`. Previous-day recall uses local calendar boundaries across both daylight-saving transitions.
+- Codex owns the previous-day window in `lib/core/recall-frames.ts` and its regression in `tests/hands-free.test.ts`. Base `8a10482`. Previous-day recall uses local calendar boundaries across both daylight-saving transitions. After [PR #74](https://github.com/harshsinha-12/kaam-ki-baat/pull/74), those cases pass `America/New_York` explicitly because day words follow the speaker's IANA zone.
+
+## R1 — wake false positives, local-day recall, tethered frames — 2026-11-28 (Claude)
+
+- Requested by the user (Charan): deep bug hunt plus research-backed improvements, as separate PRs from fresh `main` `8a10482`. Claude lane (`lib/core`, `lib/zones` call site); one-line touches in Codex-owned `app/components/HandsFree.tsx` noted here.
+- [PR #73](https://github.com/harshsinha-12/kaam-ki-baat/pull/73) `claude/wake-phrase-false-wakes`: "है काम", "time he kam hai", "ae kam se kam", "hi, come here" no longer wake hands-free mode.
+- [PR #74](https://github.com/harshsinha-12/kaam-ki-baat/pull/74) `claude/recall-local-day`: recall "today"/"kal" use the browser's IANA zone (fallback `KKB_TIME_ZONE`, then UTC), DST-safe.
+- This PR `claude/recall-tethered-sources`: frames store a sha256 of the exact lines (never the text). At recall a frame on an older commit stays `current` when those lines are unchanged, follows them when they moved (`sourceNow`), and is stale only when they changed or the file is gone. Idea from Dependency-Tethered Memory (arXiv 2610.25123): re-check the premise, not the whole store.
+- **Verified 2026-11-28:** each branch passes `npm test` and `npm run typecheck` locally (279 / 280 / 281). **Not verified:** real microphone, deployed browser, CI.
 
 ## HF1 — hands-free "Hey Wispr", memory frames, search seed and story sections — 2026-11-22 (Claude)
 

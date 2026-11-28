@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { detectWake, listen, normalizeWake, type Listener } from "../lib/core/wake-phrase";
 import { isConfirmation, planCommand } from "../lib/core/voice-commands";
-import { localMidnight, recallFrames, validTimeZone, type RecallFrame } from "../lib/core/recall-frames";
+import { checkSource, frameFromInput, linesDigest, localMidnight, recallFrames, validTimeZone, type RecallFrame } from "../lib/core/recall-frames";
 import { zoneSetup } from "./helpers/zones";
 
 describe("wake phrase", () => {
@@ -180,6 +180,39 @@ describe("recall frames", () => {
     }
   });
   it("returns nothing rather than a random frame when nothing matches", () => assert.equal(recallFrames(frames, { pinnedSha: "abc" }, "xylophone").hits.length, 0));
+});
+
+describe("tethered recall frames (premise = the exact lines)", () => {
+  const body = ["export function save() {", "  writeOnce();", "  readBack();", "}"];
+  const file = (pre: string[] = [], lines = body) => ({ path: "lib/save.ts", content: [...pre, ...lines, ""].join("\n") });
+  const snap = (sha: string, files: { path: string; content: string }[]) => ({ repository: "team/repo", pinnedSha: sha, files });
+  const captured = (): RecallFrame => {
+    const f = frameFromInput(snap("old", [file()]) as never, "dev", { zone: "code_navigator", query: "where is read back", source: { path: "lib/save.ts", start: 2, end: 3 } });
+    if ("error" in f) throw new Error(f.error);
+    return f;
+  };
+  it("stores a digest of the lines, never the source text", () => {
+    const f = captured();
+    assert.equal(f.source?.digest, linesDigest(body, 2, 3));
+    assert.ok(!JSON.stringify(f).includes("writeOnce"));
+  });
+  it("keeps a frame current across a commit that did not touch its lines", () => {
+    const hit = recallFrames([captured()], snap("new", [file()]), "read back").hits[0];
+    assert.equal(hit.freshness, "current"); assert.equal(hit.sourceCheck, "unchanged");
+  });
+  it("follows lines that moved and opens them where they are now", () => {
+    const hit = recallFrames([captured()], snap("new", [file(["// header", "import x from 'y';", ""])]), "read back").hits[0];
+    assert.equal(hit.sourceCheck, "moved"); assert.equal(hit.freshness, "current");
+    assert.deepEqual([hit.sourceNow?.start, hit.sourceNow?.end, hit.sourceNow?.sha], [5, 6, "new"]);
+  });
+  it("marks a frame stale only when its own lines changed or vanished", () => {
+    const edited = [body[0], "  writeOnce({ retry: true });", body[2], body[3]];
+    assert.equal(checkSource(captured(), snap("new", [file([], edited)])).check, "changed");
+    assert.equal(checkSource(captured(), snap("new", [])).check, "removed");
+    const legacy = { ...captured(), source: { ...captured().source!, digest: undefined } };
+    const hit = recallFrames([legacy], snap("new", [file()]), "read back").hits[0];
+    assert.equal(hit.sourceCheck, "unknown"); assert.equal(hit.freshness, "older_commit");
+  });
 });
 
 describe("hands-free zone actions", () => {
