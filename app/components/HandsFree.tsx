@@ -71,7 +71,7 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
   const push = useCallback((entry: Omit<Log, "id">) => setLog((l) => [{ ...entry, id: ++seq.current }, ...l].slice(0, 5)), []);
 
   const recall = useCallback(async (question: string) => {
-    const r = await zone<{ hits: RecallHitView[]; total: number; window?: string }>("recall_search", { question });
+    const r = await zone<{ hits: RecallHitView[]; total: number; window?: string }>("recall_search", { question, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
     if (r.status !== 200) throw new Error(r.data.error ?? "Recall failed");
     setFrames(r.data.hits);
     return r.data.hits.length ? `Found ${r.data.hits.length} frame${r.data.hits.length > 1 ? "s" : ""}${r.data.window ? ` from ${r.data.window}` : ""}.`

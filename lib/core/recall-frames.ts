@@ -73,16 +73,43 @@ export function framesFor(events: StoredEvent[], participantId: string, reposito
 }
 
 const DAY = 86_400_000;
+
+/** A browser-supplied IANA zone, or null when it is missing or unknown. */
+export function validTimeZone(v: unknown): string | null {
+  if (typeof v !== "string" || !v || v.length > 64) return null;
+  try { new Intl.DateTimeFormat("en-US", { timeZone: v }); return v; } catch { return null; }
+}
+
+/**
+ * Epoch ms of the most recent local midnight in `timeZone`. "Today" and "kal"
+ * are the speaker's days, not the server's: on a UTC host an IST speaker at
+ * 02:00 would otherwise get "today" starting at 05:30 the previous day.
+ */
+export function localMidnight(now: Date, timeZone: string): number {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const partsAt = (ms: number) => Object.fromEntries(fmt.formatToParts(new Date(ms)).map((p) => [p.type, Number(p.value)]));
+  const offsetAt = (ms: number) => {
+    const p = partsAt(ms);
+    return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(ms / 1000) * 1000;
+  };
+  const today = partsAt(now.getTime());
+  const wall = Date.UTC(today.year, today.month - 1, today.day);
+  // The offset at midnight can differ from the offset now (a DST change that day).
+  const guess = wall - offsetAt(now.getTime());
+  return wall - offsetAt(guess);
+}
+
+/** The team default when the browser sent no zone: KKB_TIME_ZONE, else UTC. */
+export const defaultTimeZone = () => validTimeZone(process.env.KKB_TIME_ZONE?.trim()) ?? "UTC";
+
 /** Time words people actually use, in English and Hinglish. */
-function timeWindow(q: string, now: Date): { from: number; to: number; label: string } | null {
-  const t = now.getTime(), start = new Date(now); start.setHours(0, 0, 0, 0);
-  const s = start.getTime();
+function timeWindow(q: string, now: Date, timeZone: string): { from: number; to: number; label: string } | null {
+  const t = now.getTime(), s = localMidnight(now, timeZone);
   if (/\b(today|aaj)\b/.test(q)) return { from: s, to: t + 1, label: "today" };
-  if (/\b(yesterday|kal)\b/.test(q)) {
-    const previous = new Date(start);
-    previous.setDate(previous.getDate() - 1);
-    return { from: previous.getTime(), to: s, label: "yesterday" };
-  }
+  // One millisecond before today's midnight is the previous local day, including across a DST change.
+  if (/\b(yesterday|kal)\b/.test(q)) return { from: localMidnight(new Date(s - 1), timeZone), to: s, label: "yesterday" };
   if (/\b(last week|pichhle hafte|pichle hafte|this week)\b/.test(q)) return { from: t - 7 * DAY, to: t + 1, label: "the last 7 days" };
   if (/\b(just now|abhi|a minute ago|thodi der pehle)\b/.test(q)) return { from: t - 30 * 60_000, to: t + 1, label: "the last 30 minutes" };
   return null;
@@ -93,10 +120,11 @@ const TIME_WORDS = /\b(today|aaj|yesterday|kal|last week|this week|pichh?le haft
  * Rank frames for a recall question. Lexical match on everything the frame
  * holds (question, answer, note, path, tags), an exact-path bonus, and a gentle
  * recency prior (half-life 7 days). An empty question returns the latest frames.
+ * Day words are read in `timeZone` (the speaker's, sent by the browser).
  */
-export function recallFrames(frames: RecallFrame[], snapshot: Pick<EvidenceSnapshot, "pinnedSha">, question: string, now = new Date(), limit = 5): { hits: RecallHit[]; window?: string } {
+export function recallFrames(frames: RecallFrame[], snapshot: Pick<EvidenceSnapshot, "pinnedSha">, question: string, now = new Date(), limit = 5, timeZone = defaultTimeZone()): { hits: RecallHit[]; window?: string } {
   const q = question.toLowerCase();
-  const win = timeWindow(q, now);
+  const win = timeWindow(q, now, timeZone);
   const pool = win ? frames.filter((f) => { const at = Date.parse(f.at); return at >= win.from && at < win.to; }) : frames;
   const terms = [...new Set(tokenize(q.replace(TIME_WORDS, " ")))];
   const df = new Map<string, number>();
