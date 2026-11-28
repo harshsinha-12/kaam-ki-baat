@@ -65,7 +65,9 @@ export function matchAreas(story: RepoStory, question: string): StoryArea[] {
 
 /** Answer "where does this come from?" with an ordered trail of PRs. */
 export function traceTrail(story: RepoStory, question: string, max = 6): Trail {
-  const explicit = [...question.matchAll(/(?:#|pr\s*|pull request\s*)(\d{1,4})/gi)].map((m) => Number(m[1]));
+  const references = question.matchAll(/(?:#|\b(?:pr|pull request)\s*#?)(\d+)\b/gi);
+  const explicit = [...new Set(Array.from(references, (match) => Number(match[1])))]
+    .filter(Number.isSafeInteger);
   const byNumber = new Map(story.prs.map((p) => [p.number, p]));
   if (explicit.length) {
     const prs = explicit.map((n) => byNumber.get(n)).filter((p): p is StoryPR => Boolean(p));

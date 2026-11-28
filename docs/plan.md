@@ -617,3 +617,8 @@ The reader now uses the same newline boundary as tail recovery. The disk-backed 
 Charan is checking the lifetime of sibling file downloads when a public repository import fails.
 
 The import now aborts sibling fetches on failure and releases its deadline timer. A controlled transport observed zero of two pending reads cancelled on main and both cancelled on the fix. Nine import tests, all 278 repository tests and both TypeScript checks passed.
+
+## Repository story reference parsing — 2026-11-28
+
+- Codex owns `lib/story/trail.ts` and `tests/story.test.ts` on `fix/story-trail-reference-parsing`, based on `8a10482`. Scope is exact pull request number parsing and duplicate references in the repository story.
+- Both regressions failed on the base. The parser now uses the complete PR number, respects reference boundaries and deduplicates repeated PRs. All 279 fixture tests and the core TypeScript check passed locally.
