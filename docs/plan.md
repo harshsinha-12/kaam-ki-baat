@@ -605,3 +605,9 @@ Permanent free-plan Redis is provisioned; automatic paid upgrades and eviction a
 Charan's follow-up to #55 covers the ask-lead result in the team workspace. The spoken result and visible ticket receipt must agree when a request succeeds, fails, or is already pending.
 
 Implemented on fix/voice-ticket-receipt. The first refusal case failed on main. Five isolated workspace-handler cases pass here, including retryable failures, pending requests and a valid receipt. Both TypeScript checks and all 277 repository tests pass. Physical audio and deployment are unverified.
+
+### Local event log recovery · 22 Nov 2026
+
+Charan is checking that the recovery reader and the next writer agree on which events can satisfy an idempotent retry after an interrupted append.
+
+The reader now uses the same newline boundary as tail recovery. The disk-backed retry regression failed on main and passes here across a second append and reopen. All 278 tests and both TypeScript checks passed.
