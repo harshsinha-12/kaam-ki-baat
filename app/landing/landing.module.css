@@ -466,6 +466,18 @@
 .callRow b { font: 500 12px var(--mono); color: var(--text); }
 .gate { position: absolute; top: -6px; bottom: -6px; width: 0; border-left: 2px dashed var(--wait); }
 .gate span { position: absolute; top: -20px; left: 4px; font-size: 11.5px; color: var(--wait); white-space: nowrap; }
+.activityCard { grid-column: 1 / -1; }
+.activity { width: min(100%, 640px); height: auto; margin: 0 auto; display: block; overflow: visible; }
+.activityAxis { stroke: rgba(91, 228, 155, .45); stroke-width: 2.5; stroke-linecap: round; }
+.activityValue { stroke: var(--ok); stroke-width: 3; stroke-linecap: round; }
+.activityDot { fill: #f3fff8; stroke: var(--ok); stroke-width: 2; }
+.activityPct { fill: var(--mute); font-family: var(--sans); font-size: 15px; font-weight: 600; }
+.activityName { fill: var(--text); font-family: var(--sans); font-size: 15px; font-weight: 500; }
+.activityValues { transform-box: view-box; transform: scale(.08); transition: transform 1s var(--out); }
+.evals[data-run="true"] .activityValues { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .activityValues { transform: none; transition: none; }
+}
 
 /* ---------- architecture ---------- */
 .archSvg { width: 100%; height: auto; padding: 16px; border-radius: 20px; background: var(--s1); box-shadow: inset 0 0 0 1px var(--line); }
