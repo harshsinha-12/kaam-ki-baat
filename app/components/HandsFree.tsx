@@ -56,7 +56,11 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
   const [busy, setBusy] = useState(false);
   const seq = useRef(0);
   const [, force] = useReducer((x: number) => x + 1, 0);
-  const supported = typeof window !== "undefined" && !!speechCtor();
+  // Known only in the browser. Read it after mount so the server HTML and the
+  // first client render agree (otherwise React drops the tree with a
+  // hydration error and rebuilds it on the client).
+  const [supported, setSupported] = useState<boolean | null>(null);
+  useEffect(() => setSupported(!!speechCtor()), []);
 
   const say = useCallback((line: string) => {
     if (!voiceReply || typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -81,7 +85,11 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
       setPending(null);
       if (isConfirmation(command)) {
         try { const line = await onPlan(waiting, true); push({ heard: command, say: line, kind: "done" }); say(line); }
-        catch (e) { push({ heard: command, say: (e as Error).message, kind: "refused" }); }
+        catch (error) {
+          const line = error instanceof Error ? error.message : "Question could not be sent. Try again.";
+          push({ heard: command, say: line, kind: "refused" });
+          say(line);
+        }
         return;
       }
       push({ heard: command, say: "Cancelled. Nothing was sent.", kind: "refused" });
@@ -233,7 +241,7 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
 
       <footer className={h.foot}>
         <label className={h.opt}><input type="checkbox" checked={voiceReply} onChange={(e) => setVoiceReply(e.target.checked)} />Speak replies</label>
-        <span>{supported ? "Browser speech may be processed by your browser’s provider." : "No speech recogniser here: dictate with Wispr Flow."}</span>
+        <span>{supported === null ? "\u00a0" : supported ? "Browser speech may be processed by your browser’s provider." : "No speech recogniser here: dictate with Wispr Flow."}</span>
       </footer>
     </section>
   );
