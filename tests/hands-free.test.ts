@@ -147,3 +147,15 @@ describe("hands-free zone actions", () => {
     assert.equal((await z.store.all()).length, before);
   });
 });
+
+
+describe("wake window expiry on incoming speech", () => {
+  it("does not dispatch late ordinary speech before the next tick", () => {
+    const awake = listen({ state: "armed" }, { type: "transcript", text: "hey wispr", final: false, now: 0 }).next;
+    const late = listen(awake, { type: "transcript", text: "open the payroll notes", final: true, now: 9000 });
+    assert.equal(late.command, undefined);
+    assert.equal(late.next.state, "armed");
+    assert.equal(listen(awake, { type: "transcript", text: "hey wispr open tests", final: true, now: 9000 }).command, "open tests");
+    assert.equal(listen(awake, { type: "transcript", text: "open tests", final: true, now: 1000 }).command, "open tests");
+  });
+});

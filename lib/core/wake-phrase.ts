@@ -98,6 +98,11 @@ export function listen(cur: Listener, e: ListenEvent, wakeWords: readonly string
     }
     case "transcript": {
       if (cur.state !== "armed" && cur.state !== "awake") return { next: cur };
+      // A delayed transcript may arrive before the next periodic tick.
+      // Expire the old wake window before interpreting any new speech.
+      if (cur.state === "awake" && cur.awakeSince !== undefined && e.now - cur.awakeSince > windowMs) {
+        return listen({ state: "armed" }, e, wakeWords, windowMs);
+      }
       const w = detectWake(e.text, wakeWords);
       if (cur.state === "armed") {
         if (!w.woke) return { next: cur };
