@@ -81,7 +81,11 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
       setPending(null);
       if (isConfirmation(command)) {
         try { const line = await onPlan(waiting, true); push({ heard: command, say: line, kind: "done" }); say(line); }
-        catch (e) { push({ heard: command, say: (e as Error).message, kind: "refused" }); }
+        catch (error) {
+          const line = error instanceof Error ? error.message : "Question could not be sent. Try again.";
+          push({ heard: command, say: line, kind: "refused" });
+          say(line);
+        }
         return;
       }
       push({ heard: command, say: "Cancelled. Nothing was sent.", kind: "refused" });
