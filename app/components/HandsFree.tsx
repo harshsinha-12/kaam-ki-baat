@@ -45,6 +45,7 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
   const [state, setState] = useState<Listener>({ state: "off" });
   const stateRef = useRef(state); stateRef.current = state;
   const rec = useRef<Rec | null>(null);
+  const startAttempt = useRef(0);
   const [heard, setHeard] = useState("");
   const [text, setText] = useState("");
   const [log, setLog] = useState<Log[]>([]);
@@ -144,6 +145,7 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
   const stepRef = useRef(step); stepRef.current = step;
 
   const start = useCallback(async () => {
+    const attempt = ++startAttempt.current;
     const Ctor = speechCtor();
     step({ type: "enable" });
     if (!Ctor) { step({ type: "denied", reason: "This browser has no speech recogniser. Use Wispr Flow in the command field instead." }); return; }
@@ -151,7 +153,11 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
       // Ask for the microphone explicitly so the permission is the person's choice, then release it.
       const media = await navigator.mediaDevices.getUserMedia({ audio: true });
       media.getTracks().forEach((t) => t.stop());
-    } catch { step({ type: "denied", reason: "Microphone permission was not granted. Nothing is listening." }); return; }
+    } catch {
+      if (attempt === startAttempt.current) step({ type: "denied", reason: "Microphone permission was not granted. Nothing is listening." });
+      return;
+    }
+    if (attempt !== startAttempt.current) return;
     const r = new Ctor();
     r.continuous = true; r.interimResults = true; r.lang = "en-IN";
     r.onresult = (ev) => {
@@ -166,10 +172,11 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
     r.onend = () => { if ((stateRef.current.state === "armed" || stateRef.current.state === "awake") && !document.hidden) { try { r.start(); } catch { /* already started */ } } };
     rec.current = r;
     step({ type: "granted" });
-    try { r.start(); } catch { /* started */ }
+    if (!document.hidden) { try { r.start(); } catch { /* started */ } }
   }, [step]);
 
   const stop = useCallback(() => {
+    ++startAttempt.current;
     step({ type: "disable" });
     const r = rec.current; rec.current = null;
     if (r) { r.onend = null; try { r.abort(); } catch { /* idle */ } }
@@ -182,9 +189,16 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
       if (document.hidden) { try { r.stop(); } catch { /* idle */ } } else if (stateRef.current.state === "armed") { try { r.start(); } catch { /* running */ } }
     };
     document.addEventListener("visibilitychange", vis);
-    const tick = setInterval(() => { if (stateRef.current.state === "awake") { step({ type: "tick", now: Date.now() }); force(); } }, 500);
-    return () => { document.removeEventListener("visibilitychange", vis); clearInterval(tick); const r = rec.current; if (r) { r.onend = null; try { r.abort(); } catch { /* idle */ } } };
-  }, [step]);
+    const tick = setInterval(() => { if (stateRef.current.state === "awake") { stepRef.current({ type: "tick", now: Date.now() }); force(); } }, 500);
+    return () => {
+      ++startAttempt.current;
+      document.removeEventListener("visibilitychange", vis);
+      clearInterval(tick);
+      const r = rec.current;
+      rec.current = null;
+      if (r) { r.onend = null; try { r.abort(); } catch { /* idle */ } }
+    };
+  }, []);
   useEffect(() => { if (!enabled && stateRef.current.state !== "off") stop(); }, [enabled, stop]);
 
   const s = state.state;

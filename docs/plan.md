@@ -387,6 +387,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 
 ## 5. Change log (newest first; one line each)
 
+- 2026-11-28 · Synced every open pull request onto current main and merged them: #59, #61, #63, #65, #66, #67, #68, #69, #70, #71, #72, #73, #74, #75, #76. Recall keeps the speaker's time zone, tethered line checks, and search states together; the daylight-saving yesterday cases now pass `America/New_York` explicitly. All 299 repository tests and the full typecheck passed on the combined source. Deployment was not run.
+
 - 2026-11-22 · Claude · HF1 on `claude/hey-wispr-recall-motion`: opt-in "Hey Wispr" wake phrase + Wispr Flow command field, allowlisted voice commands, memory frames, semantic-seeded Code Navigator with alternatives, precise highlights, redesigned Hears and Escalation landing sections, Scaler × Wispr research. 269 local tests pass (8 known env failures); CI, real mic and deployment not verified.
 
 - 2026-11-15 · Claude · Workspace motion (`claude/workspace-motion`): `/team` gains a live **flow rail** (You ask → Wispr Flow → Kaam Ki Baat → Leader Desk | Code Navigator) driven by real state (asking/answer/escalation/graph result), pitch-black aurora backdrop, staggered entrances, rotating gradient ring + floating glyph on the selected agent, zone-coloured focus rings and card sweep, answer reveal, shimmer on idle labels; all motion off under reduced-motion. Files: `app/team/FlowRail.tsx`, `app/team/page.tsx` (3 derived values + one element), `app/zones/zones.module.css` (appended, `.teamPage`-scoped). Static mock screenshotted; CI is the gate (no local npm).
@@ -636,3 +638,9 @@ The import now aborts sibling fetches on failure and releases its deadline timer
 Charan is updating the recall drawer to distinguish searches with no matches from an empty memory or a failed request.
 
 Implemented on fix/recall-search-states. The drawer announces search progress and results, uses the server total to distinguish an unmatched query, and offers a retry after a failure. Older responses cannot overwrite a later drawer search. At 390px a Chromium test of the component with a mocked API failed on main and passed on the branch for a refusal, an unmatched query, an empty library and a successful retry. All 277 repository tests, both typechecks and diff whitespace checks passed.
+
+### Hands-free listener lifetime · 22 Nov 2026
+
+Charan is following up on the two listener lifecycle findings in #55, covering workspace rerenders and late microphone permission.
+
+Implemented on fix/recognizer-lifetime. Chromium with a synthetic permission promise and recognizer reproduced one unwanted start after switch-off, one unwanted abort on rerender, and one unwanted start after unmount. All three counts are zero on this branch. The test released all three temporary permission tracks, and all 277 repository tests and both typechecks passed. Physical audio remains untested.
