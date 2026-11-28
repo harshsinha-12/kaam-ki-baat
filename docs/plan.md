@@ -387,7 +387,7 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 
 ## 5. Change log (newest first; one line each)
 
-- 2026-11-28 · Landing evals gain the GitHub activity cross for harshsinha-12. Public contributionsCollection fetched the same day (23 Nov 2025–28 Nov 2026): 943 commits, 118 pull requests, 9 reviews, 2 issues, which rounds to 88% / 11% / 1% / 0%. Private contributions (193) are excluded because GitHub does not split them. Deployment was not run.
+- 2026-11-28 · Reverted the public GitHub activity cross (merge of PR #77). It was added to this landing by mistake and belongs on the portfolio.
 
 - 2026-11-28 · Synced every open pull request onto current main and merged them: #59, #61, #63, #65, #66, #67, #68, #69, #70, #71, #72, #73, #74, #75, #76. Recall keeps the speaker's time zone, tethered line checks, and search states together; the daylight-saving yesterday cases now pass `America/New_York` explicitly. All 299 repository tests and the full typecheck passed on the combined source. Deployment was not run.
 
