@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { detectWake, listen, normalizeWake, type Listener } from "../lib/core/wake-phrase";
 import { isConfirmation, planCommand } from "../lib/core/voice-commands";
-import { recallFrames, type RecallFrame } from "../lib/core/recall-frames";
+import { localMidnight, recallFrames, validTimeZone, type RecallFrame } from "../lib/core/recall-frames";
 import { zoneSetup } from "./helpers/zones";
 
 describe("wake phrase", () => {
@@ -117,6 +117,26 @@ describe("recall frames", () => {
     assert.deepEqual(recallFrames(frames, { pinnedSha: "abc" }, "kal", now).hits.map((h) => h.frame.id), ["b"]);
     assert.deepEqual(recallFrames(frames, { pinnedSha: "abc" }, "today", now).hits.map((h) => h.frame.id), ["a"]);
     assert.deepEqual(recallFrames(frames, { pinnedSha: "abc" }, "", now).hits.map((h) => h.frame.id), ["a", "b", "c"]);
+  });
+  it("reads today and kal in the speaker's time zone, not the server's", () => {
+    // 02:00 IST on 23 Nov is still 22 Nov in UTC.
+    const lateNight = new Date("2026-11-22T20:30:00Z");
+    const ist = [
+      frame("after-midnight", "2026-11-22T19:00:00Z", { query: "freeze" }), // 00:30 IST, 23 Nov
+      frame("afternoon", "2026-11-22T10:00:00Z", { query: "freeze" }), // 15:30 IST, 22 Nov
+    ];
+    const ids = (q: string, tz: string) => recallFrames(ist, { pinnedSha: "abc" }, q, lateNight, 5, tz).hits.map((h) => h.frame.id);
+    assert.deepEqual(ids("aaj freeze", "Asia/Kolkata"), ["after-midnight"]);
+    assert.deepEqual(ids("kal freeze", "Asia/Kolkata"), ["afternoon"]);
+    assert.deepEqual(ids("today freeze", "UTC").sort(), ["after-midnight", "afternoon"]);
+  });
+  it("accepts only real IANA zones from the browser", () => {
+    assert.equal(validTimeZone("Asia/Kolkata"), "Asia/Kolkata");
+    for (const bad of ["Mars/Base", "", 5, "x".repeat(80), undefined]) assert.equal(validTimeZone(bad), null, String(bad));
+  });
+  it("finds local midnight across a DST change", () => {
+    const m = localMidnight(new Date("2026-03-08T15:00:00Z"), "America/New_York"); // DST starts 8 Mar
+    assert.equal(new Date(m).toISOString(), "2026-03-08T05:00:00.000Z");
   });
   it("returns nothing rather than a random frame when nothing matches", () => assert.equal(recallFrames(frames, { pinnedSha: "abc" }, "xylophone").hits.length, 0));
 });

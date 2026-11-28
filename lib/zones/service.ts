@@ -16,7 +16,7 @@ import { explainFirstPrinciples } from "../codegraph/explain";
 import { understand } from "../core/understand";
 import { ev, zoneEvents } from "./state";
 import { publishSource, readSource, sourceExcerpt } from "../codegraph/source";
-import { captureFrame, framesFor, recallFrames } from "../core/recall-frames";
+import { captureFrame, defaultTimeZone, framesFor, recallFrames, validTimeZone } from "../core/recall-frames";
 import { planCommand } from "../core/voice-commands";
 
 // Framework-free dispatcher for the browser / native companion API
@@ -161,7 +161,7 @@ export async function runZoneAction(rt: ZoneRuntime, action: ZoneAction, token: 
     }
     case "recall_search": {
       const frames = framesFor(await rt.store.all(), actor.participant.id, rt.snapshot.repository);
-      const res = recallFrames(frames, rt.snapshot, String(body.question ?? "").slice(0, 300));
+      const res = recallFrames(frames, rt.snapshot, String(body.question ?? "").slice(0, 300), new Date(), 5, validTimeZone(body.timeZone) ?? defaultTimeZone());
       const hits = res.hits.map(h => ({ ...h, sourceAvailable: !!(h.frame.source && rt.snapshot.files.some(f => f.path === h.frame.source!.path)) }));
       return r(200, { ok: true, hits, window: res.window, total: frames.length });
     }
