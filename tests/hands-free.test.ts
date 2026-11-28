@@ -16,6 +16,22 @@ describe("wake phrase", () => {
   it("does not wake on ordinary speech or a wake word inside another word", () => {
     for (const said of ["we whispered about the freeze", "the kaam was done", "heykaamwala", "whisper it to the lead"]) assert.equal(detectWake(said).woke, false, said);
   });
+  it("does not wake on everyday Hindi, Hinglish or English that shares sounds with the wake phrase", () => {
+    for (const said of [
+      "deadline paas hai, time he kam hai",
+      "ये ज़रूरी है काम पूरा करो",
+      "hi, come here and check the PR",
+      "ae kam se kam test toh likh",
+      "hey, calm down, it's only a lint error",
+      "he kaam karta hai roz",
+    ]) assert.equal(detectWake(said).woke, false, said);
+  });
+  it("still wakes on the real phrases these rules must keep", () => {
+    for (const said of ["hey kam code dikhao", "ae kaam code dikhao", "hey calm code dikhao", "हे काम code dikhao", "hi whisper code dikhao"]) {
+      const w = detectWake(said);
+      assert.ok(w.woke && w.command === "code dikhao", said);
+    }
+  });
   it("keeps only what follows the last wake phrase", () => {
     const w = detectWake("hey kaam open the... no, hey kaam open tests/passkey.test.ts");
     assert.ok(w.woke && w.command === "open tests/passkey.test.ts");

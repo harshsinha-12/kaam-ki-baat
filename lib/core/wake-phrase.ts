@@ -13,12 +13,26 @@
 
 export const DEFAULT_WAKE_WORDS = ["hey wispr", "hey kaam", "ok kaam"] as const;
 
-/** Common mishearings of the wake phrases by speech recognisers, mapped to the canonical form. */
+/**
+ * Common mishearings of the wake phrases by speech recognisers, mapped to the canonical form.
+ *
+ * The Kaam aliases are deliberately narrower than the Wispr ones, because their
+ * parts are everyday Hindi and English: "kam" means "less", "है" means "is",
+ * "he" is a common Hinglish spelling of "hai", and "hi, come" / "hey, calm down"
+ * are ordinary English. So:
+ *   - the short "kam" only counts after an explicit "hey/hay/hei/ok/okay";
+ *   - "ae" (a real Hindi vocative) only counts before the long "kaam/khaam";
+ *   - "he" and "hi" never wake Kaam, and "come" is not an alias;
+ *   - "calm" is accepted after "hey", except in "calm down";
+ *   - in Devanagari only "हे" wakes; "है काम" ("work is ...") is a sentence.
+ */
 const ALIASES: [RegExp, string][] = [
   [/\b(?:hey|hay|hei|he|ae|ey|hi)[\s,.!-]*(?:wispr|whisper|wisper|whispr|whispa|wispar|vispar|visper|wisp)\b/gi, "hey wispr"],
-  [/(?:हे|है|ए)\s*(?:विस्पर|व्हिस्पर|विस्पर्)/g, "hey wispr"],
-  [/\b(?:hey|hay|hei|he|ae|ey|hi)[\s,.!-]*(?:kaam|kam|calm|come|kom|khaam)\b/gi, "hey kaam"],
-  [/(?:हे|है|ए)\s*काम/g, "hey kaam"],
+  [/(?:हे|ए)\s*(?:विस्पर|व्हिस्पर|विस्पर्)/g, "hey wispr"],
+  [/\b(?:hey|hay|hei|ey)[\s,.!-]*(?:kaam|khaam|kam|kom)\b/gi, "hey kaam"],
+  [/\b(?:hey|hay|hei)[\s,.!-]*calm\b(?![\s,.!-]*down\b)/gi, "hey kaam"],
+  [/\bae[\s,.!-]*(?:kaam|khaam)\b/gi, "hey kaam"],
+  [/हे\s*काम/g, "hey kaam"],
   [/\b(?:ok|okay|o\.?k\.?)[\s,.!-]*(?:kaam|kam|calm|kom)\b/gi, "ok kaam"],
 ];
 
