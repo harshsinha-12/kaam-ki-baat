@@ -19,7 +19,7 @@ export interface Frame {
   query?: string; answer?: string; note?: string; sha: string;
   source?: { path: string; start: number; end: number };
 }
-export interface RecallHitView { frame: Frame; score: number; why: string[]; freshness: "current" | "older_commit"; sourceAvailable: boolean }
+export interface RecallHitView { frame: Frame; score: number; why: string[]; freshness: "current" | "older_commit"; sourceAvailable: boolean; sourceCheck?: string; sourceNow?: Frame["source"] }
 
 type Rec = { start(): void; stop(): void; abort(): void; continuous: boolean; interimResults: boolean; lang: string;
   onresult: ((e: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
@@ -219,11 +219,12 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
           <ul className={h.filmstrip}>
             {frames?.map((hit) => (
               <li key={hit.frame.id}>
-                <button type="button" className={h.frame} data-zone={hit.frame.zone} onClick={() => onOpenFrame(hit.frame)}>
+                <button type="button" className={h.frame} data-zone={hit.frame.zone} onClick={() => onOpenFrame(hit.sourceNow ? { ...hit.frame, source: hit.sourceNow } : hit.frame)}>
                   <span className={h.frameTop}><i data-zone={hit.frame.zone} />{new Date(hit.frame.at).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
-                    {hit.freshness === "older_commit" && <em>older commit</em>}</span>
+                    {hit.freshness === "older_commit" && <em>{hit.sourceCheck === "changed" ? "lines changed" : "older commit"}</em>}
+                    {hit.sourceCheck === "moved" && <em>lines moved</em>}</span>
                   <strong>{hit.frame.note ?? hit.frame.query ?? hit.frame.answer}</strong>
-                  {hit.frame.source && <code>{hit.frame.source.path.split("/").slice(-2).join("/")}:{hit.frame.source.start}–{hit.frame.source.end}{!hit.sourceAvailable && " (gone)"}</code>}
+                  {hit.frame.source && <code>{hit.frame.source.path.split("/").slice(-2).join("/")}:{(hit.sourceNow ?? hit.frame.source).start}–{(hit.sourceNow ?? hit.frame.source).end}{!hit.sourceAvailable && " (gone)"}</code>}
                 </button>
               </li>
             ))}

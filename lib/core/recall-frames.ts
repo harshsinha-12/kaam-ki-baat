@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { EvidenceSnapshot } from "../contracts";
 import type { EventStore, StoredEvent } from "../store/event-store";
 import { tokenize } from "../codegraph/search";
@@ -15,14 +15,31 @@ import { ev, zoneEvents } from "../zones/state";
 // and read back before success is reported, and never contain source text.
 
 export type FrameZone = "team_memory" | "leader_desk" | "code_navigator";
-export interface FrameSource { repository: string; sha: string; path: string; start: number; end: number }
+/** `digest` is sha256 of the exact lines start..end at capture: the frame's premise, never the text itself. */
+export interface FrameSource { repository: string; sha: string; path: string; start: number; end: number; digest?: string }
 export interface RecallFrame {
   id: string; participantId: string; at: string; zone: FrameZone;
   repository: string; sha: string;
   query?: string; answer?: string; note?: string; meetingId?: string;
   source?: FrameSource; tags: string[];
 }
-export interface RecallHit { frame: RecallFrame; score: number; why: string[]; freshness: "current" | "older_commit" }
+/**
+ * Tethered source check (after "Dependency-Tethered Memory", arXiv 2610.25123):
+ * a frame rests on the exact lines it showed, so a new commit only stales it
+ * when those lines changed. `same` = same commit; `unchanged` = new commit,
+ * same lines; `moved` = same lines found elsewhere in the file (`sourceNow`);
+ * `changed` / `removed` = the premise no longer holds; `unknown` = an older
+ * frame captured before digests existed.
+ */
+export type SourceCheck = "same" | "unchanged" | "moved" | "changed" | "removed" | "unknown";
+export interface RecallHit {
+  frame: RecallFrame; score: number; why: string[];
+  /** "current" whenever the frame's premise still holds at the pinned commit. */
+  freshness: "current" | "older_commit";
+  sourceCheck?: SourceCheck;
+  /** Where the remembered lines are now, when they moved. */
+  sourceNow?: FrameSource;
+}
 
 const LIMIT = { query: 300, answer: 600, note: 200, path: 300, tags: 8, tag: 40 } as const;
 const ZONES = new Set<FrameZone>(["team_memory", "leader_desk", "code_navigator"]);
@@ -43,7 +60,8 @@ export function frameFromInput(snapshot: EvidenceSnapshot, participantId: string
     if (!file) return { error: "source file is not in the approved snapshot" };
     const total = file.content.split("\n").length;
     if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || end > total || end - start > 200) return { error: "source line range is invalid" };
-    source = { repository: snapshot.repository, sha: snapshot.pinnedSha, path: file.path, start, end };
+    const lines = file.content.split("\n");
+    source = { repository: snapshot.repository, sha: snapshot.pinnedSha, path: file.path, start, end, digest: linesDigest(lines, start, end) };
   }
   const tags = Array.isArray(body.tags) ? body.tags.map((t) => str(t, LIMIT.tag)).filter((t): t is string => !!t).slice(0, LIMIT.tags) : [];
   const meetingId = str(body.meetingId ?? body.meeting_id, 120);
@@ -55,6 +73,33 @@ export function frameFromInput(snapshot: EvidenceSnapshot, participantId: string
   };
   if (!frame.query && !frame.answer && !frame.source && !frame.note) return { error: "nothing on screen to remember" };
   return frame;
+}
+
+export function linesDigest(lines: string[], start: number, end: number): string {
+  return createHash("sha256").update(lines.slice(start - 1, end).join("\n")).digest("hex");
+}
+
+type SnapshotFiles = Pick<EvidenceSnapshot, "pinnedSha"> & { files?: { path: string; content: string }[]; repository?: string };
+
+/** Re-check a frame's premise against the currently pinned snapshot. */
+export function checkSource(frame: RecallFrame, snapshot: SnapshotFiles): { check: SourceCheck; now?: FrameSource } {
+  const src = frame.source;
+  if (!src || frame.sha === snapshot.pinnedSha) return { check: "same" };
+  if (!snapshot.files) return { check: "unknown" };
+  const file = snapshot.files.find((f) => f.path === src.path);
+  if (!file) return { check: "removed" };
+  if (!src.digest) return { check: "unknown" };
+  const lines = file.content.split("\n");
+  const span = src.end - src.start;
+  if (src.end <= lines.length && linesDigest(lines, src.start, src.end) === src.digest) return { check: "unchanged" };
+  // Nearest relocation wins, so a block that moved a few lines is found first.
+  const starts = Array.from({ length: Math.max(0, lines.length - span) }, (_, i) => i + 1)
+    .sort((a, b) => Math.abs(a - src.start) - Math.abs(b - src.start));
+  for (const at of starts) {
+    if (linesDigest(lines, at, at + span) === src.digest)
+      return { check: "moved", now: { ...src, sha: snapshot.pinnedSha, start: at, end: at + span } };
+  }
+  return { check: "changed" };
 }
 
 export async function captureFrame(store: EventStore, snapshot: EvidenceSnapshot, participantId: string, body: Record<string, unknown>, now = new Date()): Promise<CaptureResult> {
@@ -90,7 +135,7 @@ const TIME_WORDS = /\b(today|aaj|yesterday|kal|last week|this week|pichh?le haft
  * holds (question, answer, note, path, tags), an exact-path bonus, and a gentle
  * recency prior (half-life 7 days). An empty question returns the latest frames.
  */
-export function recallFrames(frames: RecallFrame[], snapshot: Pick<EvidenceSnapshot, "pinnedSha">, question: string, now = new Date(), limit = 5): { hits: RecallHit[]; window?: string } {
+export function recallFrames(frames: RecallFrame[], snapshot: SnapshotFiles, question: string, now = new Date(), limit = 5): { hits: RecallHit[]; window?: string } {
   const q = question.toLowerCase();
   const win = timeWindow(q, now);
   const pool = win ? frames.filter((f) => { const at = Date.parse(f.at); return at >= win.from && at < win.to; }) : frames;
@@ -114,7 +159,16 @@ export function recallFrames(frames: RecallFrame[], snapshot: Pick<EvidenceSnaps
     if (terms.length && !matched.length && !why.length) continue;
     score = (terms.length ? score : 1) * (0.6 + 0.4 * recency);
     if (win) why.push(`from ${win.label}`);
-    hits.push({ frame: f, score: Math.round(score * 1000) / 1000, why, freshness: f.sha === snapshot.pinnedSha ? "current" : "older_commit" });
+    const tether = checkSource(f, snapshot);
+    const holds = tether.check === "same" || tether.check === "unchanged" || tether.check === "moved";
+    if (tether.check === "unchanged") why.push("same lines at the new commit");
+    if (tether.check === "moved") why.push(`lines moved to ${tether.now!.start}–${tether.now!.end}`);
+    hits.push({
+      frame: f, score: Math.round(score * 1000) / 1000, why,
+      freshness: f.sha === snapshot.pinnedSha || (f.source && holds) ? "current" : "older_commit",
+      ...(f.source ? { sourceCheck: tether.check } : {}),
+      ...(tether.now ? { sourceNow: tether.now } : {}),
+    });
   }
   hits.sort((a, b) => b.score - a.score || Date.parse(b.frame.at) - Date.parse(a.frame.at));
   return { hits: hits.slice(0, limit), window: win?.label };
