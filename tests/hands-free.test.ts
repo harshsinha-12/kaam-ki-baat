@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { detectWake, listen, normalizeWake, type Listener } from "../lib/core/wake-phrase";
 import { isConfirmation, planCommand } from "../lib/core/voice-commands";
-import { checkSource, frameFromInput, linesDigest, recallFrames, type RecallFrame } from "../lib/core/recall-frames";
+import { checkSource, frameFromInput, linesDigest, localMidnight, recallFrames, validTimeZone, type RecallFrame } from "../lib/core/recall-frames";
 import { zoneSetup } from "./helpers/zones";
 
 describe("wake phrase", () => {
@@ -15,6 +15,22 @@ describe("wake phrase", () => {
   });
   it("does not wake on ordinary speech or a wake word inside another word", () => {
     for (const said of ["we whispered about the freeze", "the kaam was done", "heykaamwala", "whisper it to the lead"]) assert.equal(detectWake(said).woke, false, said);
+  });
+  it("does not wake on everyday Hindi, Hinglish or English that shares sounds with the wake phrase", () => {
+    for (const said of [
+      "deadline paas hai, time he kam hai",
+      "ये ज़रूरी है काम पूरा करो",
+      "hi, come here and check the PR",
+      "ae kam se kam test toh likh",
+      "hey, calm down, it's only a lint error",
+      "he kaam karta hai roz",
+    ]) assert.equal(detectWake(said).woke, false, said);
+  });
+  it("still wakes on the real phrases these rules must keep", () => {
+    for (const said of ["hey kam code dikhao", "ae kaam code dikhao", "hey calm code dikhao", "हे काम code dikhao", "hi whisper code dikhao"]) {
+      const w = detectWake(said);
+      assert.ok(w.woke && w.command === "code dikhao", said);
+    }
   });
   it("keeps only what follows the last wake phrase", () => {
     const w = detectWake("hey kaam open the... no, hey kaam open tests/passkey.test.ts");
@@ -118,6 +134,51 @@ describe("recall frames", () => {
     assert.deepEqual(recallFrames(frames, { pinnedSha: "abc" }, "today", now).hits.map((h) => h.frame.id), ["a"]);
     assert.deepEqual(recallFrames(frames, { pinnedSha: "abc" }, "", now).hits.map((h) => h.frame.id), ["a", "b", "c"]);
   });
+  it("reads today and kal in the speaker's time zone, not the server's", () => {
+    // 02:00 IST on 23 Nov is still 22 Nov in UTC.
+    const lateNight = new Date("2026-11-22T20:30:00Z");
+    const ist = [
+      frame("after-midnight", "2026-11-22T19:00:00Z", { query: "freeze" }), // 00:30 IST, 23 Nov
+      frame("afternoon", "2026-11-22T10:00:00Z", { query: "freeze" }), // 15:30 IST, 22 Nov
+    ];
+    const ids = (q: string, tz: string) => recallFrames(ist, { pinnedSha: "abc" }, q, lateNight, 5, tz).hits.map((h) => h.frame.id);
+    assert.deepEqual(ids("aaj freeze", "Asia/Kolkata"), ["after-midnight"]);
+    assert.deepEqual(ids("kal freeze", "Asia/Kolkata"), ["afternoon"]);
+    assert.deepEqual(ids("today freeze", "UTC").sort(), ["after-midnight", "afternoon"]);
+  });
+  it("accepts only real IANA zones from the browser", () => {
+    assert.equal(validTimeZone("Asia/Kolkata"), "Asia/Kolkata");
+    for (const bad of ["Mars/Base", "", 5, "x".repeat(80), undefined]) assert.equal(validTimeZone(bad), null, String(bad));
+  });
+  it("finds local midnight across a DST change", () => {
+    const m = localMidnight(new Date("2026-03-08T15:00:00Z"), "America/New_York"); // DST starts 8 Mar
+    assert.equal(new Date(m).toISOString(), "2026-03-08T05:00:00.000Z");
+  });
+  it("keeps yesterday within local midnights when the clock changes", () => {
+    const cases = [
+      {
+        now: "2026-03-09T12:00:00-04:00",
+        before: "2026-03-07T23:30:00-05:00",
+        yesterday: "2026-03-08T00:30:00-05:00",
+        today: "2026-03-09T00:00:00-04:00",
+      },
+      {
+        now: "2026-11-02T12:00:00-05:00",
+        before: "2026-10-31T23:30:00-04:00",
+        yesterday: "2026-11-01T00:30:00-04:00",
+        today: "2026-11-02T00:00:00-05:00",
+      },
+    ];
+    for (const sample of cases) {
+      const saved = [
+        frame("before", sample.before, {}),
+        frame("yesterday", sample.yesterday, {}),
+        frame("today", sample.today, {}),
+      ];
+      const result = recallFrames(saved, { pinnedSha: "abc" }, "yesterday", new Date(sample.now), 5, "America/New_York");
+      assert.deepEqual(result.hits.map((hit) => hit.frame.id), ["yesterday"]);
+    }
+  });
   it("returns nothing rather than a random frame when nothing matches", () => assert.equal(recallFrames(frames, { pinnedSha: "abc" }, "xylophone").hits.length, 0));
 });
 
@@ -178,5 +239,17 @@ describe("hands-free zone actions", () => {
     const p = await z.act(z.dev, "command_plan", { text: "hey wispr open lib/core/persist-update.ts line 3" });
     assert.equal(p.status, 200);
     assert.equal((await z.store.all()).length, before);
+  });
+});
+
+
+describe("wake window expiry on incoming speech", () => {
+  it("does not dispatch late ordinary speech before the next tick", () => {
+    const awake = listen({ state: "armed" }, { type: "transcript", text: "hey wispr", final: false, now: 0 }).next;
+    const late = listen(awake, { type: "transcript", text: "open the payroll notes", final: true, now: 9000 });
+    assert.equal(late.command, undefined);
+    assert.equal(late.next.state, "armed");
+    assert.equal(listen(awake, { type: "transcript", text: "hey wispr open tests", final: true, now: 9000 }).command, "open tests");
+    assert.equal(listen(awake, { type: "transcript", text: "open tests", final: true, now: 1000 }).command, "open tests");
   });
 });
