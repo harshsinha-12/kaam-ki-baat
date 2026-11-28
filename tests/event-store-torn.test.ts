@@ -27,3 +27,18 @@ test("the next append removes a torn tail and the log stays readable", async () 
   assert.deepEqual(events.map((e) => e.type === "task_update" && e.record.id), ["a", "b"]);
   assert.ok((await fs.readFile(file, "utf8")).endsWith("\n"));
 });
+
+test("retry persists a complete JSON record whose newline was lost", async (t) => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "kkb-replay-"));
+  t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  const file = path.join(dir, "events.jsonl");
+  const update = rec("pending");
+  await fs.writeFile(file, JSON.stringify({ type: "task_update", at: update.at, record: update }));
+
+  const store = new EventStore(file);
+  assert.deepEqual(await store.writeOnce(update), { id: update.id, replayed: false });
+  await store.writeOnce(rec("later"));
+  const reopened = new EventStore(file);
+  assert.deepEqual(await reopened.read(update.id), update);
+  assert.deepEqual(await reopened.writeOnce(update), { id: update.id, replayed: true });
+});

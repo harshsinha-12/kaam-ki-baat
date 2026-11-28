@@ -11,10 +11,16 @@ export async function acquireLease(store: EventStore, key: string, ttlMs = 60000
   });
   if (!acquired) return null;
   return async () => {
-    await store.appendGuarded<boolean>(events => {
-      const latest = events.filter((e): e is ZoneEvent => e.type === "zone" && e.kind === "runtime_lease" && e.key === key).at(-1);
-      if (latest?.data.owner !== owner) return { reject: false };
-      return { append: { type: "zone", kind: "runtime_lease", key, at: new Date().toISOString(), data: { owner, expiresAt: 0 } }, result: true };
-    });
+    try {
+      await store.appendGuarded<boolean>(events => {
+        const latest = events.filter((e): e is ZoneEvent => e.type === "zone" && e.kind === "runtime_lease" && e.key === key).at(-1);
+        if (latest?.data.owner !== owner) return { reject: false };
+        return { append: { type: "zone", kind: "runtime_lease", key, at: new Date().toISOString(), data: { owner, expiresAt: 0 } }, result: true };
+      });
+    } catch {
+      // The guarded work has finished. Expiry recovers the lease if storage
+      // is temporarily unavailable, and cleanup cannot change its outcome.
+      console.warn("Runtime lease release failed. The lease will expire automatically.");
+    }
   };
 }

@@ -19,7 +19,7 @@ export interface Frame {
   query?: string; answer?: string; note?: string; sha: string;
   source?: { path: string; start: number; end: number };
 }
-export interface RecallHitView { frame: Frame; score: number; why: string[]; freshness: "current" | "older_commit"; sourceAvailable: boolean }
+export interface RecallHitView { frame: Frame; score: number; why: string[]; freshness: "current" | "older_commit"; sourceAvailable: boolean; sourceCheck?: string; sourceNow?: Frame["source"] }
 
 type Rec = { start(): void; stop(): void; abort(): void; continuous: boolean; interimResults: boolean; lang: string;
   onresult: ((e: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
@@ -59,7 +59,11 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
   const [busy, setBusy] = useState(false);
   const seq = useRef(0);
   const [, force] = useReducer((x: number) => x + 1, 0);
-  const supported = typeof window !== "undefined" && !!speechCtor();
+  // Known only in the browser. Read it after mount so the server HTML and the
+  // first client render agree (otherwise React drops the tree with a
+  // hydration error and rebuilds it on the client).
+  const [supported, setSupported] = useState<boolean | null>(null);
+  useEffect(() => setSupported(!!speechCtor()), []);
 
   const say = useCallback((line: string) => {
     if (!voiceReply || typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -73,7 +77,7 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
     const request = ++recallRequest.current;
     setRecallState({ status: "loading" });
     try {
-      const r = await zone<{ hits: RecallHitView[]; total: number; window?: string }>("recall_search", { question });
+      const r = await zone<{ hits: RecallHitView[]; total: number; window?: string }>("recall_search", { question, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
       if (r.status !== 200) throw new Error(r.data.error ?? "Recall failed");
       const { hits, total, window } = r.data;
       const message = hits.length ? `Found ${hits.length} frame${hits.length > 1 ? "s" : ""}${window ? ` from ${window}` : ""}.`
@@ -98,7 +102,11 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
       setPending(null);
       if (isConfirmation(command)) {
         try { const line = await onPlan(waiting, true); push({ heard: command, say: line, kind: "done" }); say(line); }
-        catch (e) { push({ heard: command, say: (e as Error).message, kind: "refused" }); }
+        catch (error) {
+          const line = error instanceof Error ? error.message : "Question could not be sent. Try again.";
+          push({ heard: command, say: line, kind: "refused" });
+          say(line);
+        }
         return;
       }
       push({ heard: command, say: "Cancelled. Nothing was sent.", kind: "refused" });
@@ -240,11 +248,12 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
           <ul className={h.filmstrip}>
             {recallState.status === "ready" && recallState.hits.map((hit) => (
               <li key={hit.frame.id}>
-                <button type="button" className={h.frame} data-zone={hit.frame.zone} onClick={() => onOpenFrame(hit.frame)}>
+                <button type="button" className={h.frame} data-zone={hit.frame.zone} onClick={() => onOpenFrame(hit.sourceNow ? { ...hit.frame, source: hit.sourceNow } : hit.frame)}>
                   <span className={h.frameTop}><i data-zone={hit.frame.zone} />{new Date(hit.frame.at).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
-                    {hit.freshness === "older_commit" && <em>older commit</em>}</span>
+                    {hit.freshness === "older_commit" && <em>{hit.sourceCheck === "changed" ? "lines changed" : "older commit"}</em>}
+                    {hit.sourceCheck === "moved" && <em>lines moved</em>}</span>
                   <strong>{hit.frame.note ?? hit.frame.query ?? hit.frame.answer}</strong>
-                  {hit.frame.source && <code>{hit.frame.source.path.split("/").slice(-2).join("/")}:{hit.frame.source.start}–{hit.frame.source.end}{!hit.sourceAvailable && " (gone)"}</code>}
+                  {hit.frame.source && <code>{hit.frame.source.path.split("/").slice(-2).join("/")}:{(hit.sourceNow ?? hit.frame.source).start}–{(hit.sourceNow ?? hit.frame.source).end}{!hit.sourceAvailable && " (gone)"}</code>}
                 </button>
               </li>
             ))}
@@ -254,7 +263,7 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
 
       <footer className={h.foot}>
         <label className={h.opt}><input type="checkbox" checked={voiceReply} onChange={(e) => setVoiceReply(e.target.checked)} />Speak replies</label>
-        <span>{supported ? "Browser speech may be processed by your browser’s provider." : "No speech recogniser here: dictate with Wispr Flow."}</span>
+        <span>{supported === null ? "\u00a0" : supported ? "Browser speech may be processed by your browser’s provider." : "No speech recogniser here: dictate with Wispr Flow."}</span>
       </footer>
     </section>
   );

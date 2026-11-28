@@ -77,24 +77,6 @@ function Reveal({ children, i = 0, className = "" }: { children: ReactNode; i?: 
   return <div ref={ref} className={`${s.reveal} ${inView || reduced ? s.in : ""} ${className}`} style={{ "--i": i } as CSSProperties}>{children}</div>;
 }
 
-function useCountUp(target: number, run: boolean, ms = 1400) {
-  const reduced = useContext(ReducedMotion);
-  const [v, setV] = useState(0);
-  useEffect(() => {
-    if (!run || reduced) return;
-    let raf = 0;
-    const t0 = performance.now();
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - t0) / ms);
-      setV(Math.round(target * (1 - Math.pow(1 - p, 4))));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, run, ms, reduced]);
-  return reduced ? target : v;
-}
-
 const typingTarget = (el: EventTarget | null) => !!(el as HTMLElement | null)?.closest?.("input, textarea, select, [contenteditable=true]");
 
 /* ------------------------------------------------------- the listener */
@@ -201,7 +183,8 @@ function Console({ zone, onZone, autoplay, keyboard }: { zone: Zone; onZone: (z:
       <div className={s.chat} aria-live="polite">
         <div className={s.msgYou}>
           <span className={s.msgWho}>{zone === "leader_desk" ? "Inbox" : "You"}</span>
-          <p>{asking && !reduced ? <span className={s.typingWave}><VoiceWave active color="#d9d9d9" bars={14} height={14} reduced={reduced} /></span> : null}“{script.ask}”</p>
+          {/* A div, not a p: VoiceWave renders a div, which a p cannot contain (hydration error). */}
+          <div className={s.youBubble}>{asking && !reduced ? <span className={s.typingWave}><VoiceWave active color="#d9d9d9" bars={14} height={14} reduced={reduced} /></span> : null}“{script.ask}”</div>
         </div>
         <div className={s.msgAgent} data-on={!asking || reduced}>
           <span className={s.msgWho}><AgentGlyph zone={zone} size={16} active reduced />{script.label}</span>
@@ -245,7 +228,11 @@ function Problem() {
   const reduced = useContext(ReducedMotion);
   const [ref, inView] = useInView<HTMLDivElement>(0.25);
   const run = inView || reduced;
-  const focus = useCountUp(68, inView, 1200), comm = useCountUp(57, inView, 1200), next = useCountUp(55, inView, 1200), search = useCountUp(61, inView, 1200);
+  // The numbers are the sourced claims, so they are printed as measured from
+  // the first paint (and in the server HTML). Counting up from 0 put a large
+  // "0%" on screen as the section entered. The waffle, bars, ring and clock
+  // carry the motion.
+  const focus = 68, comm = 57, next = 55, search = 61;
   const WTI = "https://www.microsoft.com/en-us/worklab/work-trend-index/will-ai-fix-work";
   return (
     <div ref={ref} className={s.problem} data-run={run}>
@@ -276,7 +263,9 @@ function Problem() {
         <svg className={s.clock} viewBox="0 0 120 120" aria-hidden>
           <path className={s.clockWedge} d="M60 60 L60 10 A50 50 0 0 1 60 110 Z" />
           {Array.from({ length: 60 }, (_, i) => { const ang = (i / 60) * Math.PI * 2 - Math.PI / 2;
-            return <line key={i} x1={60 + 44 * Math.cos(ang)} y1={60 + 44 * Math.sin(ang)} x2={60 + (i % 5 ? 50 : 53) * Math.cos(ang)} y2={60 + (i % 5 ? 50 : 53) * Math.sin(ang)} stroke={i % 5 ? "#2a2a2a" : "#6a6a6a"} strokeWidth={i % 5 ? 1.5 : 2.5} strokeLinecap="round" />; })}
+            // Rounded: server and browser Math.cos can differ in the last digit (hydration mismatch).
+            const r3 = (v: number) => Math.round(v * 1000) / 1000;
+            return <line key={i} x1={r3(60 + 44 * Math.cos(ang))} y1={r3(60 + 44 * Math.sin(ang))} x2={r3(60 + (i % 5 ? 50 : 53) * Math.cos(ang))} y2={r3(60 + (i % 5 ? 50 : 53) * Math.sin(ang))} stroke={i % 5 ? "#2a2a2a" : "#6a6a6a"} strokeWidth={i % 5 ? 1.5 : 2.5} strokeLinecap="round" />; })}
           <line className={s.clockHand} x1="60" y1="60" x2="60" y2="18" />
           <circle cx="60" cy="60" r="3.5" fill="#fafafa" />
         </svg>
