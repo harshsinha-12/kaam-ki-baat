@@ -19,7 +19,7 @@ export interface Frame {
   query?: string; answer?: string; note?: string; sha: string;
   source?: { path: string; start: number; end: number };
 }
-export interface RecallHitView { frame: Frame; score: number; why: string[]; freshness: "current" | "older_commit"; sourceAvailable: boolean }
+export interface RecallHitView { frame: Frame; score: number; why: string[]; freshness: "current" | "older_commit"; sourceAvailable: boolean; sourceCheck?: string; sourceNow?: Frame["source"] }
 
 type Rec = { start(): void; stop(): void; abort(): void; continuous: boolean; interimResults: boolean; lang: string;
   onresult: ((e: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
@@ -52,12 +52,19 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
   const [pending, setPending] = useState<Plan | null>(null);
   const pendingRef = useRef(pending); pendingRef.current = pending;
   const [voiceReply, setVoiceReply] = useState(true);
-  const [frames, setFrames] = useState<RecallHitView[] | null>(null);
+  const [recallState, setRecallState] = useState<
+    { status: "idle" | "loading" | "error" } | { status: "ready"; hits: RecallHitView[]; message: string }
+  >({ status: "idle" });
+  const recallRequest = useRef(0);
   const [recallQ, setRecallQ] = useState("");
   const [busy, setBusy] = useState(false);
   const seq = useRef(0);
   const [, force] = useReducer((x: number) => x + 1, 0);
-  const supported = typeof window !== "undefined" && !!speechCtor();
+  // Known only in the browser. Read it after mount so the server HTML and the
+  // first client render agree (otherwise React drops the tree with a
+  // hydration error and rebuilds it on the client).
+  const [supported, setSupported] = useState<boolean | null>(null);
+  useEffect(() => setSupported(!!speechCtor()), []);
 
   const say = useCallback((line: string) => {
     if (!voiceReply || typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -68,12 +75,26 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
   const push = useCallback((entry: Omit<Log, "id">) => setLog((l) => [{ ...entry, id: ++seq.current }, ...l].slice(0, 5)), []);
 
   const recall = useCallback(async (question: string) => {
-    const r = await zone<{ hits: RecallHitView[]; total: number; window?: string }>("recall_search", { question });
-    if (r.status !== 200) throw new Error(r.data.error ?? "Recall failed");
-    setFrames(r.data.hits);
-    return r.data.hits.length ? `Found ${r.data.hits.length} frame${r.data.hits.length > 1 ? "s" : ""}${r.data.window ? ` from ${r.data.window}` : ""}.`
-      : r.data.total ? "No saved frame matches that." : "No frames yet. Say “remember this” on any answer.";
+    const request = ++recallRequest.current;
+    setRecallState({ status: "loading" });
+    try {
+      const r = await zone<{ hits: RecallHitView[]; total: number; window?: string }>("recall_search", { question, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+      if (r.status !== 200) throw new Error(r.data.error ?? "Recall failed");
+      const { hits, total, window } = r.data;
+      const message = hits.length ? `Found ${hits.length} frame${hits.length > 1 ? "s" : ""}${window ? ` from ${window}` : ""}.`
+        : total ? "No saved frame matches that." : "No frames yet. Say “remember this” on any answer.";
+      if (request === recallRequest.current) setRecallState({ status: "ready", hits, message });
+      return message;
+    } catch (error) {
+      if (request === recallRequest.current) setRecallState({ status: "error" });
+      throw error;
+    }
   }, []);
+
+  const searchFrames = (question: string) => {
+    // The recall drawer renders the error; voice callers handle the rejection separately.
+    void recall(question).catch(() => {});
+  };
 
   const run = useCallback(async (command: string) => {
     // A pending confirmation is answered first: "yes/haan" runs it, anything else cancels it.
@@ -82,7 +103,11 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
       setPending(null);
       if (isConfirmation(command)) {
         try { const line = await onPlan(waiting, true); push({ heard: command, say: line, kind: "done" }); say(line); }
-        catch (e) { push({ heard: command, say: (e as Error).message, kind: "refused" }); }
+        catch (error) {
+          const line = error instanceof Error ? error.message : "Question could not be sent. Try again.";
+          push({ heard: command, say: line, kind: "refused" });
+          say(line);
+        }
         return;
       }
       push({ heard: command, say: "Cancelled. Nothing was sent.", kind: "refused" });
@@ -220,24 +245,29 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
         {log.map((l) => <li key={l.id} data-kind={l.kind}><span>{l.heard}</span><small>{l.say}</small></li>)}
       </ol>}
 
-      <details className={h.frames} onToggle={(e) => { if (e.currentTarget.open && !frames) void recall("").catch(() => setFrames([])); }}>
-        <summary><span>Memory frames</span><small>{frames ? `${frames.length} shown` : "Say “remember this”"}</small></summary>
+      <details className={h.frames} onToggle={(e) => { if (e.currentTarget.open && recallState.status === "idle") searchFrames(""); }}>
+        <summary><span>Memory frames</span><small>{recallState.status === "ready" ? `${recallState.hits.length} shown` : null}</small></summary>
         <div className={h.framesBody}>
           <div className={h.cmd}>
-            <input className={h.input} value={recallQ} onChange={(e) => setRecallQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void recall(recallQ).catch(() => setFrames([])); }}
+            <input className={h.input} value={recallQ} onChange={(e) => setRecallQ(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") searchFrames(recallQ); }}
               placeholder="What was I looking at… (kal, passkey, freeze)" aria-label="Search memory frames" />
-            <button type="button" className={h.go} onClick={() => void recall(recallQ).catch(() => setFrames([]))} aria-label="Search frames">⌕</button>
+            <button type="button" className={h.go} onClick={() => searchFrames(recallQ)} aria-label="Search frames">⌕</button>
           </div>
           <button type="button" className={h.snap} disabled={!enabled} onClick={() => void run("remember this")}>Remember this view</button>
-          {frames?.length === 0 && <p className={h.note}>Nothing yet. Frames keep the question, the answer and the exact lines, never a picture of your screen.</p>}
+          <div role="status">
+            {recallState.status === "loading" && "Searching saved frames…"}
+            {recallState.status === "error" && "Couldn’t load saved frames. Search again to retry."}
+            {recallState.status === "ready" && recallState.message}
+          </div>
           <ul className={h.filmstrip}>
-            {frames?.map((hit) => (
+            {recallState.status === "ready" && recallState.hits.map((hit) => (
               <li key={hit.frame.id}>
-                <button type="button" className={h.frame} data-zone={hit.frame.zone} onClick={() => onOpenFrame(hit.frame)}>
+                <button type="button" className={h.frame} data-zone={hit.frame.zone} onClick={() => onOpenFrame(hit.sourceNow ? { ...hit.frame, source: hit.sourceNow } : hit.frame)}>
                   <span className={h.frameTop}><i data-zone={hit.frame.zone} />{new Date(hit.frame.at).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
-                    {hit.freshness === "older_commit" && <em>older commit</em>}</span>
+                    {hit.freshness === "older_commit" && <em>{hit.sourceCheck === "changed" ? "lines changed" : "older commit"}</em>}
+                    {hit.sourceCheck === "moved" && <em>lines moved</em>}</span>
                   <strong>{hit.frame.note ?? hit.frame.query ?? hit.frame.answer}</strong>
-                  {hit.frame.source && <code>{hit.frame.source.path.split("/").slice(-2).join("/")}:{hit.frame.source.start}–{hit.frame.source.end}{!hit.sourceAvailable && " (gone)"}</code>}
+                  {hit.frame.source && <code>{hit.frame.source.path.split("/").slice(-2).join("/")}:{(hit.sourceNow ?? hit.frame.source).start}–{(hit.sourceNow ?? hit.frame.source).end}{!hit.sourceAvailable && " (gone)"}</code>}
                 </button>
               </li>
             ))}
@@ -247,7 +277,7 @@ export function HandsFree({ enabled, onPlan, captureView, onOpenFrame }: {
 
       <footer className={h.foot}>
         <label className={h.opt}><input type="checkbox" checked={voiceReply} onChange={(e) => setVoiceReply(e.target.checked)} />Speak replies</label>
-        <span>{supported ? "Browser speech may be processed by your browser’s provider." : "No speech recogniser here: dictate with Wispr Flow."}</span>
+        <span>{supported === null ? "\u00a0" : supported ? "Browser speech may be processed by your browser’s provider." : "No speech recogniser here: dictate with Wispr Flow."}</span>
       </footer>
     </section>
   );

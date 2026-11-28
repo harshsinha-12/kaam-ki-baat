@@ -5,6 +5,18 @@ Rules live in [AGENTS.md](../AGENTS.md). Design lives in [architecture.md](archi
 
 Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competition.md)).
 
+## Recall calendar boundaries — 2026-11-25
+
+- Codex owns the previous-day window in `lib/core/recall-frames.ts` and its regression in `tests/hands-free.test.ts`. Base `8a10482`. Previous-day recall uses local calendar boundaries across both daylight-saving transitions. After [PR #74](https://github.com/harshsinha-12/kaam-ki-baat/pull/74), those cases pass `America/New_York` explicitly because day words follow the speaker's IANA zone.
+
+## R1 — wake false positives, local-day recall, tethered frames — 2026-11-28 (Claude)
+
+- Requested by the user (Charan): deep bug hunt plus research-backed improvements, as separate PRs from fresh `main` `8a10482`. Claude lane (`lib/core`, `lib/zones` call site); one-line touches in Codex-owned `app/components/HandsFree.tsx` noted here.
+- [PR #73](https://github.com/harshsinha-12/kaam-ki-baat/pull/73) `claude/wake-phrase-false-wakes`: "है काम", "time he kam hai", "ae kam se kam", "hi, come here" no longer wake hands-free mode.
+- [PR #74](https://github.com/harshsinha-12/kaam-ki-baat/pull/74) `claude/recall-local-day`: recall "today"/"kal" use the browser's IANA zone (fallback `KKB_TIME_ZONE`, then UTC), DST-safe.
+- This PR `claude/recall-tethered-sources`: frames store a sha256 of the exact lines (never the text). At recall a frame on an older commit stays `current` when those lines are unchanged, follows them when they moved (`sourceNow`), and is stale only when they changed or the file is gone. Idea from Dependency-Tethered Memory (arXiv 2610.25123): re-check the premise, not the whole store.
+- **Verified 2026-11-28:** each branch passes `npm test` and `npm run typecheck` locally (279 / 280 / 281). **Not verified:** real microphone, deployed browser, CI.
+
 ## HF1 — hands-free "Hey Wispr", memory frames, search seed and story sections — 2026-11-22 (Claude)
 
 - Requested by the user: drive Kaam Ki Baat by voice ("Hey Wispr"), give agents more control, a persistent "photographic" memory, better code mapping and highlighting with a benchmark, research the Scaler × Wispr hackathon, and redesign the landing "How it hears" and "From not sure to a sourced answer" sections. Branch `claude/hey-wispr-recall-motion`, base `d814ee0`.
@@ -375,6 +387,8 @@ Status: `todo` · `doing (who)` · `done (commit)` · `blocked (why)`. Update in
 
 ## 5. Change log (newest first; one line each)
 
+- 2026-11-28 · Synced every open pull request onto current main and merged them: #59, #61, #63, #65, #66, #67, #68, #69, #70, #71, #72, #73, #74, #75, #76. Recall keeps the speaker's time zone, tethered line checks, and search states together; the daylight-saving yesterday cases now pass `America/New_York` explicitly. All 299 repository tests and the full typecheck passed on the combined source. Deployment was not run.
+
 - 2026-11-22 · Claude · HF1 on `claude/hey-wispr-recall-motion`: opt-in "Hey Wispr" wake phrase + Wispr Flow command field, allowlisted voice commands, memory frames, semantic-seeded Code Navigator with alternatives, precise highlights, redesigned Hears and Escalation landing sections, Scaler × Wispr research. 269 local tests pass (8 known env failures); CI, real mic and deployment not verified.
 
 - 2026-11-15 · Claude · Workspace motion (`claude/workspace-motion`): `/team` gains a live **flow rail** (You ask → Wispr Flow → Kaam Ki Baat → Leader Desk | Code Navigator) driven by real state (asking/answer/escalation/graph result), pitch-black aurora backdrop, staggered entrances, rotating gradient ring + floating glyph on the selected agent, zone-coloured focus rings and card sweep, answer reveal, shimmer on idle labels; all motion off under reduced-motion. Files: `app/team/FlowRail.tsx`, `app/team/page.tsx` (3 derived values + one element), `app/zones/zones.module.css` (appended, `.teamPage`-scoped). Static mock screenshotted; CI is the gate (no local npm).
@@ -595,6 +609,35 @@ Permanent free-plan Redis is provisioned; automatic paid upgrades and eviction a
 **User-approved live provider cutover:** all seven Bolna tool URLs plus completion webhook now point to Vercel. Fresh GET verified persisted tasks/prompts/welcome/auth unchanged except approved URLs. Deployed tool-key check reaches missing-call-token refusal; callback-key check reaches missing-execution-ID refusal. A one-minute, explicitly HTTP-only readiness session with consent=false reaches400 fresh-recording-consent-required, proving deployed browser-call configuration passes without requesting a provider session. No new provider call/audio session was started by this lane. Actual microphone/audio after cutover and camera permission on the Vercel origin remain user/device verification, distinct from prior positive Chrome hardware evidence.
 
 **Validation:** latest-main217 tests and both typechecks pass; combined `02a2a9b` local production build passed, and Vercel's later `d8f5905` deployment is serving successfully. Synthetic UI at1280/390px confirms camera/preview centers exactly on the viewport and no horizontal overflow; help section absent. This is simulated application state, not new physical tracking evidence. Managed localhost3000 was restored to an isolated production release (`9efd67b`), binds both address families, uses hosted storage and serves `/team`/`evals`200; source checkouts preserved. Latest motion/meeting additions are verified on Vercel, not claimed as local-release parity.
+
+### Hands-free escalation receipt · 22 Nov 2026
+
+Charan's follow-up to #55 covers the ask-lead result in the team workspace. The spoken result and visible ticket receipt must agree when a request succeeds, fails, or is already pending.
+
+Implemented on fix/voice-ticket-receipt. The first refusal case failed on main. Five isolated workspace-handler cases pass here, including retryable failures, pending requests and a valid receipt. Both TypeScript checks and all 277 repository tests pass. Physical audio and deployment are unverified.
+
+### Local event log recovery · 22 Nov 2026
+
+Charan is checking that the recovery reader and the next writer agree on which events can satisfy an idempotent retry after an interrupted append.
+
+The reader now uses the same newline boundary as tail recovery. The disk-backed retry regression failed on main and passes here across a second append and reopen. All 278 tests and both TypeScript checks passed.
+
+### Cancel abandoned repository imports · 22 Nov 2026
+
+Charan is checking the lifetime of sibling file downloads when a public repository import fails.
+
+The import now aborts sibling fetches on failure and releases its deadline timer. A controlled transport observed zero of two pending reads cancelled on main and both cancelled on the fix. Nine import tests, all 278 repository tests and both TypeScript checks passed.
+
+## Repository story reference parsing — 2026-11-28
+
+- Codex owns `lib/story/trail.ts` and `tests/story.test.ts` on `fix/story-trail-reference-parsing`, based on `8a10482`. Scope is exact pull request number parsing and duplicate references in the repository story.
+- Both regressions failed on the base. The parser now uses the complete PR number, respects reference boundaries and deduplicates repeated PRs. All 279 fixture tests and the core TypeScript check passed locally.
+
+### Memory frame search feedback · 22 Nov 2026
+
+Charan is updating the recall drawer to distinguish searches with no matches from an empty memory or a failed request.
+
+Implemented on fix/recall-search-states. The drawer announces search progress and results, uses the server total to distinguish an unmatched query, and offers a retry after a failure. Older responses cannot overwrite a later drawer search. At 390px a Chromium test of the component with a mocked API failed on main and passed on the branch for a refusal, an unmatched query, an empty library and a successful retry. All 277 repository tests, both typechecks and diff whitespace checks passed.
 
 ### Hands-free listener lifetime · 22 Nov 2026
 
