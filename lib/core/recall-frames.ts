@@ -108,6 +108,7 @@ export const defaultTimeZone = () => validTimeZone(process.env.KKB_TIME_ZONE?.tr
 function timeWindow(q: string, now: Date, timeZone: string): { from: number; to: number; label: string } | null {
   const t = now.getTime(), s = localMidnight(now, timeZone);
   if (/\b(today|aaj)\b/.test(q)) return { from: s, to: t + 1, label: "today" };
+  // One millisecond before today's midnight is the previous local day, including across a DST change.
   if (/\b(yesterday|kal)\b/.test(q)) return { from: localMidnight(new Date(s - 1), timeZone), to: s, label: "yesterday" };
   if (/\b(last week|pichhle hafte|pichle hafte|this week)\b/.test(q)) return { from: t - 7 * DAY, to: t + 1, label: "the last 7 days" };
   if (/\b(just now|abhi|a minute ago|thodi der pehle)\b/.test(q)) return { from: t - 30 * 60_000, to: t + 1, label: "the last 30 minutes" };

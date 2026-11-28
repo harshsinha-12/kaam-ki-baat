@@ -43,3 +43,21 @@ test("an unrelated question says so instead of guessing", () => {
   assert.equal(t.prs.length, 0);
   assert.match(t.sentences[0], /couldn't tie that/);
 });
+
+test("an explicit PR number is not truncated to an existing prefix", () => {
+  const expanded = {
+    ...story,
+    prs: [...story.prs, { ...story.prs[0]!, number: 1234 }],
+  };
+  const trail = traceTrail(expanded, "what did PR #12345 do?");
+  assert.deepEqual(trail.prs, []);
+  assert.match(trail.sentences[0]!, /12345/);
+});
+
+test("story references are not inferred from identifiers or repeated for the same PR", () => {
+  assert.deepEqual(traceTrail(story, "inspect spr24").prs, []);
+  assert.deepEqual(
+    traceTrail(story, "what did PR 24 and pull request #24 do?").prs.map((pr) => pr.number),
+    [24],
+  );
+});

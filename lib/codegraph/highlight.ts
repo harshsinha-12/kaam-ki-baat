@@ -15,8 +15,8 @@ export function symbolSpan(lines: string[], decl: number, cap = 200): Span {
   const last = Math.min(lines.length, decl + cap - 1);
   for (let n = decl; n <= last; n++) {
     const code = (lines[n - 1] ?? "")
-      .replace(/\/\/.*$/, "")
-      .replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "\"\"");
+      .replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "\"\"")
+      .replace(/\/\/.*$/, "");
     for (const ch of code) {
       if (ch === "{" || ch === "(" || ch === "[") { depth++; opened = true; }
       else if (ch === "}" || ch === ")" || ch === "]") depth--;
@@ -36,7 +36,7 @@ export function symbolSpan(lines: string[], decl: number, cap = 200): Span {
 export function signatureEnd(lines: string[], span: Span): number {
   let paren = 0;
   for (let n = span.start; n <= Math.min(span.end, span.start + 12); n++) {
-    const code = (lines[n - 1] ?? "").replace(/\/\/.*$/, "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "\"\"");
+    const code = (lines[n - 1] ?? "").replace(/(["'`])(?:\\.|(?!\1).)*\1/g, "\"\"").replace(/\/\/.*$/, "");
     for (const ch of code) { if (ch === "(") paren++; else if (ch === ")") paren--; }
     if (paren <= 0 && /(?:\{|=>\s*\{?|=)\s*$/.test(code.trim())) return n;
   }

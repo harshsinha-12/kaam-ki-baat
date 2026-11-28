@@ -5,6 +5,10 @@ Rules live in [AGENTS.md](../AGENTS.md). Design lives in [architecture.md](archi
 
 Hackathon build window: **1–4 PM IST, 2026-11-15** ([competition.md](competition.md)).
 
+## Recall calendar boundaries — 2026-11-25
+
+- Codex owns the previous-day window in `lib/core/recall-frames.ts` and its regression in `tests/hands-free.test.ts`. Base `8a10482`. Previous-day recall uses local calendar boundaries across both daylight-saving transitions.
+
 ## HF1 — hands-free "Hey Wispr", memory frames, search seed and story sections — 2026-11-22 (Claude)
 
 - Requested by the user: drive Kaam Ki Baat by voice ("Hey Wispr"), give agents more control, a persistent "photographic" memory, better code mapping and highlighting with a benchmark, research the Scaler × Wispr hackathon, and redesign the landing "How it hears" and "From not sure to a sourced answer" sections. Branch `claude/hey-wispr-recall-motion`, base `d814ee0`.
@@ -595,3 +599,26 @@ Permanent free-plan Redis is provisioned; automatic paid upgrades and eviction a
 **User-approved live provider cutover:** all seven Bolna tool URLs plus completion webhook now point to Vercel. Fresh GET verified persisted tasks/prompts/welcome/auth unchanged except approved URLs. Deployed tool-key check reaches missing-call-token refusal; callback-key check reaches missing-execution-ID refusal. A one-minute, explicitly HTTP-only readiness session with consent=false reaches400 fresh-recording-consent-required, proving deployed browser-call configuration passes without requesting a provider session. No new provider call/audio session was started by this lane. Actual microphone/audio after cutover and camera permission on the Vercel origin remain user/device verification, distinct from prior positive Chrome hardware evidence.
 
 **Validation:** latest-main217 tests and both typechecks pass; combined `02a2a9b` local production build passed, and Vercel's later `d8f5905` deployment is serving successfully. Synthetic UI at1280/390px confirms camera/preview centers exactly on the viewport and no horizontal overflow; help section absent. This is simulated application state, not new physical tracking evidence. Managed localhost3000 was restored to an isolated production release (`9efd67b`), binds both address families, uses hosted storage and serves `/team`/`evals`200; source checkouts preserved. Latest motion/meeting additions are verified on Vercel, not claimed as local-release parity.
+
+### Hands-free escalation receipt · 22 Nov 2026
+
+Charan's follow-up to #55 covers the ask-lead result in the team workspace. The spoken result and visible ticket receipt must agree when a request succeeds, fails, or is already pending.
+
+Implemented on fix/voice-ticket-receipt. The first refusal case failed on main. Five isolated workspace-handler cases pass here, including retryable failures, pending requests and a valid receipt. Both TypeScript checks and all 277 repository tests pass. Physical audio and deployment are unverified.
+
+### Local event log recovery · 22 Nov 2026
+
+Charan is checking that the recovery reader and the next writer agree on which events can satisfy an idempotent retry after an interrupted append.
+
+The reader now uses the same newline boundary as tail recovery. The disk-backed retry regression failed on main and passes here across a second append and reopen. All 278 tests and both TypeScript checks passed.
+
+### Cancel abandoned repository imports · 22 Nov 2026
+
+Charan is checking the lifetime of sibling file downloads when a public repository import fails.
+
+The import now aborts sibling fetches on failure and releases its deadline timer. A controlled transport observed zero of two pending reads cancelled on main and both cancelled on the fix. Nine import tests, all 278 repository tests and both TypeScript checks passed.
+
+## Repository story reference parsing — 2026-11-28
+
+- Codex owns `lib/story/trail.ts` and `tests/story.test.ts` on `fix/story-trail-reference-parsing`, based on `8a10482`. Scope is exact pull request number parsing and duplicate references in the repository story.
+- Both regressions failed on the base. The parser now uses the complete PR number, respects reference boundaries and deduplicates repeated PRs. All 279 fixture tests and the core TypeScript check passed locally.
