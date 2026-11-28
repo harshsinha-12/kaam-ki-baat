@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import fs from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
 import os from "node:os";
 import path from "node:path";
 import { importPublicRepository, IMPORT_LIMITS } from "../lib/project/import";
@@ -95,6 +97,64 @@ test("repositories without TypeScript still expose file nodes without inventing 
   assert.deepEqual(graph.nodes.map(node => [node.kind, node.path]), [["file", "main.py"]]);
   assert.deepEqual(graph.edges, []);
 });
+
+test("concurrent workspace opens read only complete local snapshots", async () => isolatedStorage(async () => {
+  const base: Runtime = { snapshot: testSnapshot(), store: new EventStore(null), conversations: new Map() };
+  const snapshot = await importPublicRepository("https://github.com/public/repo", githubFixture().transport);
+  snapshot.files = Array.from({ length: 20 }, (_, index) => ({
+    path: `src/module-${index}.ts`, content: "x".repeat(IMPORT_LIMITS.fileBytes),
+  }));
+  const attempts = await Promise.allSettled(
+    Array.from({ length: 12 }, () => openRepositoryWorkspace(base, snapshot, "same-snapshot")),
+  );
+  for (const attempt of attempts) {
+    if (attempt.status === "rejected") throw attempt.reason;
+    assert.deepEqual(attempt.value.rt.snapshot.files, snapshot.files);
+  }
+  const id = createHash("sha256").update(JSON.stringify(snapshot)).digest("hex");
+  assert.deepEqual(await readdir(process.env.KKB_PUBLIC_REPOSITORIES_DIR!), [`${id}.json`]);
+}));
+
+test("a staged local snapshot remains invisible until atomic publication", { timeout: 5000 }, async (t) => isolatedStorage(async () => {
+  const base: Runtime = { snapshot: testSnapshot(), store: new EventStore(null), conversations: new Map() };
+  const snapshot = await importPublicRepository("https://github.com/public/repo", githubFixture().transport);
+  const link = fs.promises.link;
+  let staged = false;
+  const publish = t.mock.method(fs.promises, "link", async (pending: string, destination: string) => {
+    if (!staged) {
+      staged = true;
+      assert.equal(await readFile(pending, "utf8"), JSON.stringify(snapshot));
+      await assert.rejects(readFile(destination, "utf8"), { code: "ENOENT" });
+      // A competing writer wins while the first snapshot is still staged.
+      const competing = await openRepositoryWorkspace(base, snapshot, "competing-snapshot");
+      assert.deepEqual(competing.rt.snapshot.files, snapshot.files);
+    }
+    await link(pending, destination);
+  });
+  syncBuiltinESMExports();
+  try {
+    const opened = await openRepositoryWorkspace(base, snapshot, "first-snapshot");
+    assert.deepEqual(opened.rt.snapshot.files, snapshot.files);
+    assert.equal(publish.mock.callCount(), 2);
+    assert.equal((await readdir(process.env.KKB_PUBLIC_REPOSITORIES_DIR!)).length, 1);
+  } finally {
+    publish.mock.restore();
+    syncBuiltinESMExports();
+  }
+}));
+
+test("local publication preserves an existing snapshot that fails read-back", async () => isolatedStorage(async () => {
+  const base: Runtime = { snapshot: testSnapshot(), store: new EventStore(null), conversations: new Map() };
+  const snapshot = await importPublicRepository("https://github.com/public/repo", githubFixture().transport);
+  const id = createHash("sha256").update(JSON.stringify(snapshot)).digest("hex");
+  const dir = process.env.KKB_PUBLIC_REPOSITORIES_DIR!;
+  const destination = path.join(dir, `${id}.json`);
+  await writeFile(destination, "incomplete", { mode: 0o600 });
+  await assert.rejects(openRepositoryWorkspace(base, snapshot, "invalid-read-back"), /read-back failed/);
+  assert.equal(await readFile(destination, "utf8"), "incomplete");
+  assert.deepEqual(await readdir(dir), [`${id}.json`]);
+  assert.deepEqual(await base.store.all(), []);
+}));
 
 test("a fresh process reconstructs the persisted public workspace without a warm snapshot cache", async () => isolatedStorage(async () => {
   const base: Runtime = { snapshot: testSnapshot(), store: new EventStore(null), conversations: new Map() };
